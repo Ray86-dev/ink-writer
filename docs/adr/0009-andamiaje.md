@@ -33,7 +33,7 @@ Se descartaron dos alternativas:
 
 Los adaptadores reales llegan cuando hacen falta, en M3 y M6. Todos deben pasar la misma batería, `packages/core/test/provider-contract.ts`.
 
-**Prueba de humo.** `--smoke-test` arranca la app real con una base temporal, ejecuta comprobaciones desde la página y termina con el resultado. Es lo que permite afirmar en CI que la app arranca en cada sistema y que la página, el IPC, Rust y SQLite encajan.
+**Prueba de humo.** `--smoke-test` arranca la app real con una base temporal, ejecuta comprobaciones desde la página y termina con el resultado. Es lo que permite afirmar en CI que la app arranca en cada sistema y que la página, el IPC, Rust y SQLite encajan. Necesita un binario con la página incluida: `cargo build` y `cargo test` dejan uno que busca el servidor de desarrollo, por eso `npm run smoke` construye antes de arrancar.
 
 **Licencias en CI.** `npm run licenses` revisa todas las dependencias de todas las plataformas. La MPL-2.0 se acepta solo para los paquetes listados en `scripts/license-policy.mjs`, todos usados sin modificar:
 - `selectors`, `cssparser`, `cssparser-macros` y `dtoa-short`: Tauri los usa al compilar.

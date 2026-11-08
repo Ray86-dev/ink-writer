@@ -98,6 +98,12 @@ fn real_db_path(data_dir: &Path) -> PathBuf {
 fn main() {
     let smoke = std::env::args().any(|arg| arg == SMOKE_FLAG);
     if smoke {
+        // A plain `cargo build` or `cargo test` leaves a binary that loads the page from the dev
+        // server. With none running, the page never appears and the test would only time out.
+        if tauri::is_dev() {
+            eprintln!("smoke test FAILED: this binary needs the dev server. Use: npm run smoke");
+            std::process::exit(3);
+        }
         std::thread::spawn(|| {
             std::thread::sleep(SMOKE_TIMEOUT);
             eprintln!("smoke test FAILED: the page didn't report within {SMOKE_TIMEOUT:?}");
