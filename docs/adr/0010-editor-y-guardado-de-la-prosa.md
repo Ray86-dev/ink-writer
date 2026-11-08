@@ -78,7 +78,7 @@ Con la app real, en el CI de cada sistema y el 8 de noviembre de 2026. Son máqu
 En un equipo de desarrollo con Windows y SSD, 15 cierres forzados y 2131 escrituras confirmadas tampoco perdieron nada. De lo escrito a lo confirmado en disco pasaron unos 7 ms, y como mucho 21 ms en una tanda posterior.
 
 **Lo que estas medidas no dicen:**
-- Las pulsaciones pasan por las transacciones del editor, no por el teclado del sistema. Falta la impresión de una persona escribiendo de verdad.
+- Las pulsaciones pasan por las transacciones del editor, no por el teclado del sistema. El autor probó a escribir en Windows sin notar problemas, pero falta un uso prolongado.
 - Matar el proceso no equivale a un corte de luz. `synchronous=FULL` está pensado para eso, pero no se ha probado.
 - El DOCX se ha comprobado con `mammoth` y LibreOffice, no con Word.
 - La interfaz solo se ha visto en Windows. En macOS y Linux se ha ejecutado, pero nadie la ha mirado.
