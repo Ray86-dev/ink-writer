@@ -21,6 +21,8 @@ Monorepo, shell Tauri 2, core TypeScript, integración continua, SQLite con migr
 
 **Salida:** la app arranca en Windows, macOS y Linux. Pruebas en CI.
 
+**Cerrado.** El CI compila la app, ejecuta las pruebas y la arranca en los tres sistemas con una prueba de humo. Decisiones en `docs/adr/0009-andamiaje.md`.
+
 ## M2 · Editor y persistencia
 
 TipTap con Yjs por escena, capítulos y escenas, guardado continuo, historial por escena, los tres modos del editor (el enlazado queda para M4) y exportación a DOCX y Markdown limpia de marcas.
