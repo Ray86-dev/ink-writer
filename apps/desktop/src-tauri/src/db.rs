@@ -14,7 +14,7 @@ use base64::engine::general_purpose::STANDARD;
 use rusqlite::config::DbConfig;
 use rusqlite::limits::Limit;
 use rusqlite::types::{Value as Sql, ValueRef};
-use rusqlite::{Connection, TransactionBehavior, params_from_iter};
+use rusqlite::{Connection, ErrorCode, TransactionBehavior, params_from_iter};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Number, Value as Json, json};
 
@@ -39,6 +39,9 @@ pub struct ExecResult {
 pub struct Database {
     conn: Mutex<Connection>,
 }
+
+/// What `Database::open` reports when another process holds the database.
+pub const ALREADY_OPEN: &str = "already_open";
 
 fn check_safe(value: i64) -> Result<i64, String> {
     if value.abs() > MAX_SAFE_INTEGER {
@@ -120,14 +123,21 @@ impl Database {
             std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
         }
         let conn = Connection::open(path).map_err(text_error)?;
-        Self::configure(&conn).map_err(text_error)?;
+        Self::configure(&conn).map_err(|error| match error.sqlite_error_code() {
+            Some(ErrorCode::DatabaseBusy | ErrorCode::DatabaseLocked) => ALREADY_OPEN.to_string(),
+            _ => error.to_string(),
+        })?;
         Ok(Self {
             conn: Mutex::new(conn),
         })
     }
 
     fn configure(conn: &Connection) -> rusqlite::Result<()> {
-        conn.busy_timeout(Duration::from_secs(5))?;
+        conn.busy_timeout(Duration::from_secs(1))?;
+        // Only this process may touch the database while it runs, so that two copies of the app
+        // can never edit the same scene. The system releases the lock when a process dies, however
+        // it dies. Must come before WAL, so that WAL needs no shared memory between processes.
+        conn.pragma_update(None, "locking_mode", "EXCLUSIVE")?;
         conn.pragma_update(None, "journal_mode", "WAL")?;
         // FULL syncs the log on every commit, so that a commit survives a power cut too. The cost
         // is small next to losing text, and M2 measures it with real typing.
@@ -136,6 +146,8 @@ impl Database {
         conn.set_db_config(DbConfig::SQLITE_DBCONFIG_DEFENSIVE, true)?;
         conn.set_db_config(DbConfig::SQLITE_DBCONFIG_TRUSTED_SCHEMA, false)?;
         conn.set_limit(Limit::SQLITE_LIMIT_ATTACHED, 0)?;
+        // The lock is taken on first use. Doing it here makes a second copy fail right away.
+        conn.execute_batch("BEGIN IMMEDIATE; COMMIT;")?;
         Ok(())
     }
 
@@ -421,6 +433,36 @@ mod tests {
         let _ = db.execute("PRAGMA writable_schema = ON", &[]);
         assert!(db.execute("DELETE FROM sqlite_master", &[]).is_err());
         assert_eq!(count(&db), 0, "the table is still there");
+    }
+
+    #[test]
+    fn a_second_copy_is_refused_while_the_first_is_open() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("test.db");
+        let first = Database::open(&path).unwrap();
+        table(&first);
+
+        assert_eq!(Database::open(&path).err().as_deref(), Some(ALREADY_OPEN));
+
+        // The refusal didn't disturb the first copy.
+        first.execute("INSERT INTO t VALUES (1)", &[]).unwrap();
+        assert_eq!(count(&first), 1);
+    }
+
+    #[test]
+    fn opens_again_once_the_first_copy_closes() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("test.db");
+        drop(Database::open(&path).unwrap());
+        assert!(Database::open(&path).is_ok());
+    }
+
+    #[test]
+    fn reports_other_problems_as_they_are() {
+        let dir = tempdir().unwrap();
+        // A folder where the database file should be.
+        let error = Database::open(dir.path()).err().unwrap();
+        assert_ne!(error, ALREADY_OPEN);
     }
 
     #[test]

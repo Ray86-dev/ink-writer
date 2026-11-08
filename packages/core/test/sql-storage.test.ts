@@ -135,3 +135,138 @@ describe("SQL storage", () => {
     await expect(promise).rejects.toBeInstanceOf(InvalidInputError);
   });
 });
+
+describe("SQL storage: structure", () => {
+  let driver: ReturnType<typeof createNodeSqliteDriver>;
+  let storage: Storage;
+  let projectId: string;
+
+  beforeEach(async () => {
+    driver = createNodeSqliteDriver();
+    ({ storage } = await openSqlStorage(driver));
+    projectId = (await storage.createProject(newProject)).id;
+  });
+
+  afterEach(() => driver.close());
+
+  const chapterTitles = async () =>
+    (await storage.listChapters(projectId)).map((chapter) => chapter.title);
+
+  it("finds a project by ID, or gives null", async () => {
+    await expect(storage.getProject(projectId)).resolves.toMatchObject(newProject);
+    await expect(storage.getProject("none")).resolves.toBeNull();
+  });
+
+  it("renames chapters and scenes, refusing an empty title", async () => {
+    const chapter = await storage.createChapter(projectId, "Viejo");
+    const scene = await storage.createScene(chapter.id, "Vieja");
+
+    await storage.renameChapter(chapter.id, "  Nuevo ");
+    await storage.renameScene(scene.id, "Nueva");
+
+    expect(await chapterTitles()).toEqual(["Nuevo"]);
+    await expect(storage.listScenes(chapter.id)).resolves.toMatchObject([{ title: "Nueva" }]);
+    await expect(storage.renameChapter(chapter.id, " ")).rejects.toBeInstanceOf(InvalidInputError);
+    await expect(storage.renameScene(scene.id, "")).rejects.toBeInstanceOf(InvalidInputError);
+  });
+
+  it("moves chapters up and down, and does nothing at the ends", async () => {
+    const a = await storage.createChapter(projectId, "A");
+    await storage.createChapter(projectId, "B");
+    const c = await storage.createChapter(projectId, "C");
+
+    await storage.moveChapter(c.id, "up");
+    expect(await chapterTitles()).toEqual(["A", "C", "B"]);
+
+    await storage.moveChapter(a.id, "down");
+    expect(await chapterTitles()).toEqual(["C", "A", "B"]);
+
+    await storage.moveChapter(c.id, "up");
+    await storage.moveChapter((await storage.listChapters(projectId))[2]?.id ?? "", "down");
+    expect(await chapterTitles()).toEqual(["C", "A", "B"]);
+  });
+
+  it("moves scenes inside their chapter only", async () => {
+    const one = await storage.createChapter(projectId, "1");
+    const two = await storage.createChapter(projectId, "2");
+    const a = await storage.createScene(one.id, "a");
+    const b = await storage.createScene(one.id, "b");
+    const other = await storage.createScene(two.id, "other");
+
+    await storage.moveScene(a.id, "down");
+    await storage.moveScene(other.id, "up");
+
+    expect((await storage.listScenes(one.id)).map((s) => s.id)).toEqual([b.id, a.id]);
+    expect((await storage.listScenes(two.id)).map((s) => s.id)).toEqual([other.id]);
+  });
+
+  it("moves past items in the trash as if they weren't there", async () => {
+    await storage.createChapter(projectId, "A");
+    const b = await storage.createChapter(projectId, "B");
+    const c = await storage.createChapter(projectId, "C");
+    await storage.trashChapter(b.id);
+
+    await storage.moveChapter(c.id, "up");
+
+    expect(await chapterTitles()).toEqual(["C", "A"]);
+  });
+
+  it("ignores moving something that doesn't exist", async () => {
+    await expect(storage.moveChapter("none", "up")).resolves.toBeUndefined();
+    await expect(storage.moveScene("none", "down")).resolves.toBeUndefined();
+  });
+
+  it("moves to the trash without destroying, and restores in place", async () => {
+    const chapter = await storage.createChapter(projectId, "C");
+    const a = await storage.createScene(chapter.id, "a");
+    const b = await storage.createScene(chapter.id, "b");
+
+    await storage.trashScene(a.id);
+    expect((await storage.listScenes(chapter.id)).map((s) => s.title)).toEqual(["b"]);
+    await expect(storage.listTrash(projectId)).resolves.toMatchObject({
+      chapters: [],
+      scenes: [{ id: a.id, title: "a" }],
+    });
+
+    await storage.restoreScene(a.id);
+    expect((await storage.listScenes(chapter.id)).map((s) => s.id)).toEqual([a.id, b.id]);
+    await expect(storage.listTrash(projectId)).resolves.toEqual({ chapters: [], scenes: [] });
+  });
+
+  it("does the same for chapters, whose scenes come back with them", async () => {
+    const chapter = await storage.createChapter(projectId, "C");
+    const scene = await storage.createScene(chapter.id, "a");
+
+    await storage.trashChapter(chapter.id);
+    expect(await chapterTitles()).toEqual([]);
+    expect((await storage.listTrash(projectId)).chapters).toMatchObject([{ title: "C" }]);
+
+    await storage.restoreChapter(chapter.id);
+    expect(await chapterTitles()).toEqual(["C"]);
+    await expect(storage.listScenes(chapter.id)).resolves.toMatchObject([{ id: scene.id }]);
+  });
+
+  it("shows each project only its own trash", async () => {
+    const other = await storage.createProject(newProject);
+    const chapter = await storage.createChapter(projectId, "C");
+    await storage.trashChapter(chapter.id);
+
+    await expect(storage.listTrash(other.id)).resolves.toEqual({ chapters: [], scenes: [] });
+  });
+
+  it("never loads prose when listing scenes", async () => {
+    const chapter = await storage.createChapter(projectId, "C");
+    const scene = await storage.createScene(chapter.id, "S");
+    await storage.appendSceneUpdate(scene.id, new Uint8Array([1, 2, 3]));
+
+    const [listed] = await storage.listScenes(chapter.id);
+
+    expect(listed).not.toHaveProperty("ydoc");
+  });
+
+  it("refuses prose for a scene that doesn't exist", async () => {
+    await expect(storage.appendSceneUpdate("none", new Uint8Array([1]))).rejects.toThrow(
+      /FOREIGN KEY/i,
+    );
+  });
+});

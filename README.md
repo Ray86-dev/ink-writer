@@ -2,7 +2,7 @@
 
 App de escritura de novelas, de escritorio y sin conexión. **Tú escribes todo.** La IA construye las fichas de tu historia, vigila la coherencia, te propone pequeños pasos y documenta lo que necesites.
 
-Estado: en desarrollo, todavía sin editor. Nombre provisional.
+Estado: en desarrollo. Ya se puede escribir, con guardado continuo, historial y exportación, pero aún sin IA. Nombre provisional.
 
 ## Empezar
 

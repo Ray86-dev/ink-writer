@@ -135,9 +135,10 @@ SQLite local para estructura. Yjs para la prosa. Esquema orientativo:
 | Tabla | Campos clave |
 |---|---|
 | `projects` | id, title, language, era |
-| `chapters` | id, project_id, position, title, era_override |
-| `scenes` | id, chapter_id, position, title, status, ydoc, content_hash, analyzed_hash |
-| `scene_snapshots` | id, scene_id, created_at, ydoc, label |
+| `chapters` | id, project_id, position, title, era_override, deleted_at |
+| `scenes` | id, chapter_id, position, title, status, ydoc, ydoc_version, deleted_at, content_hash, analyzed_hash |
+| `scene_updates` | id, scene_id, update_data |
+| `scene_snapshots` | id, scene_id, created_at, ydoc, label, word_count |
 | `entities` | id, project_id, type, canonical_name, status, summary |
 | `entity_aliases` | entity_id, alias, source |
 | `mentions` | id, scene_id, entity_id, anchor |
@@ -151,7 +152,8 @@ SQLite local para estructura. Yjs para la prosa. Esquema orientativo:
 | `ai_usage` | day, provider, requests, searches |
 
 Reglas:
-- Una escena es un documento Yjs. Las posiciones de `anchor` son posiciones relativas de Yjs, para sobrevivir a las ediciones.
+- Una escena es un documento Yjs: su base compactada (`ydoc`) más las actualizaciones de `scene_updates`, un registro de solo añadir. Ver `docs/adr/0010-editor-y-guardado-de-la-prosa.md`.
+- Las posiciones de `anchor` son posiciones relativas de Yjs, para sobrevivir a las ediciones.
 - El reanálisis de una escena **sustituye** sus `mentions`, `facts` y `relations`.
 - `user_overrides` nunca se borra por un reanálisis y se aplica después de él.
 

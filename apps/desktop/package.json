@@ -11,11 +11,34 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/instrument-sans": "5.3.0",
+    "@fontsource-variable/literata": "5.3.0",
     "@ink-writer/core": "*",
-    "@tauri-apps/api": "2.12.4"
+    "@tauri-apps/api": "2.12.4",
+    "@tiptap/core": "3.33.0",
+    "@tiptap/extension-bold": "3.33.0",
+    "@tiptap/extension-collaboration": "3.33.0",
+    "@tiptap/extension-document": "3.33.0",
+    "@tiptap/extension-hard-break": "3.33.0",
+    "@tiptap/extension-italic": "3.33.0",
+    "@tiptap/extension-paragraph": "3.33.0",
+    "@tiptap/extension-text": "3.33.0",
+    "@tiptap/pm": "3.33.0",
+    "@tiptap/react": "3.33.0",
+    "@tiptap/y-tiptap": "3.2.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "y-protocols": "1.0.7",
+    "yjs": "13.6.33"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.4",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "fflate": "0.8.3",
     "vite": "8.3.6"
   }
 }

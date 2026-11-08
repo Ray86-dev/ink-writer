@@ -1,7 +1,7 @@
 import type { SqlDriver } from "@ink-writer/core";
 import { describe, expect, it } from "vitest";
 import { createNodeSqliteDriver } from "../../../packages/core/test/support/node-sqlite-driver";
-import { runSmokeChecks } from "../src/smoke";
+import { runSmokeChecks } from "../src/test-modes/smoke";
 
 describe("smoke checks", () => {
   it("pass on a healthy driver, on the first start and on a later one", async () => {

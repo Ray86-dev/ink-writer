@@ -30,7 +30,14 @@ describe("migrate", () => {
       applied: MIGRATIONS.map((m) => m.version),
     });
     expect(await version(driver)).toBe(MIGRATIONS.length);
-    expect(await tableNames(driver)).toEqual(["chapters", "projects", "scenes"]);
+    expect(await tableNames(driver)).toEqual([
+      "chapters",
+      "projects",
+      "scene_snapshots",
+      "scene_updates",
+      "scenes",
+      "sqlite_sequence",
+    ]);
   });
 
   it("does nothing when already up to date", async () => {
