@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Prototipo de la app de novela</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&amp;family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&amp;display=swap">
+<style>
+body{margin:0;background:#EEF0F3}
+a{color:#1B46C8}a:hover{color:#12308C}
+button{font:inherit}
+.lk{display:inline;padding:0;margin:0;border:0;background:none;color:#1B46C8;font:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.lk:hover{color:#12308C;text-decoration-thickness:2px}
+.dark .lk{color:#B9CCFF}
+.dark .lk:hover{color:#FFFFFF}
+.zen .lk{color:inherit;text-decoration-color:#AEB7C4}
+.zen .lk:hover{color:#1B46C8;text-decoration-color:#1B46C8}
+.mk{display:inline;padding:1px 2px;margin:0;border:0;background:#FFF1DC;color:inherit;font:inherit;cursor:pointer;text-decoration:underline wavy #B8530A 1px;text-underline-offset:4px}
+.btn{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid #C9D0DA;background:#FFFFFF;color:#15181E;font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{border-color:#15181E}
+.btn:disabled{color:#57606E;cursor:default;border-color:#D5DAE1}
+.btn-p{min-height:44px;padding:0 18px;border-radius:8px;border:1px solid #FFB35C;background:#FFB35C;color:#15181E;font-weight:700;font-size:14px;cursor:pointer}
+.btn-p:hover{background:#FFC67F}
+.btn-d{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid #5A6270;background:transparent;color:#FFFFFF;font-weight:600;font-size:14px;cursor:pointer}
+.btn-d:hover{border-color:#FFFFFF}
+.pill{min-height:44px;padding:0 12px;border:0;font-weight:600;font-size:13px;cursor:pointer}
+button:focus-visible{outline:2px solid #1B46C8;outline-offset:2px}
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: #EEF0F3; color: #15181E; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D5DAE1">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px">
+      <div>
+        <div style="font-family: Literata, Georgia, serif; font-size: 22px; font-weight: 600; line-height: 1.2">La veda</div>
+        <div style="font-size: 12px; color: #57606E">Novela de ejemplo</div>
+      </div>
+      <nav aria-label="Principal" style="display: flex; gap: 8px">
+        <button type="button" class="btn" onClick="{{goDash}}">Dashboard</button>
+        <button type="button" class="btn" onClick="{{goWrite}}">Escribir</button>
+      </nav>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px">
+      <span style="font-size: 13px; font-weight: 600; color: #57606E">Pistas de la IA</span>
+      <div role="group" aria-label="Nivel de pistas" style="display: flex; flex-wrap: wrap; border: 1px solid #C9D0DA; border-radius: 8px; overflow: hidden">
+        <sc-for list="{{levels}}" as="l" hint-placeholder-count="4">
+          <button type="button" class="pill" aria-pressed="{{l.pressed}}" style="{{l.style}}" onClick="{{l.pick}}">{{l.label}}</button>
+        </sc-for>
+      </div>
+      <button type="button" class="btn" aria-expanded="{{showTypes}}" onClick="{{toggleTypes}}">Tipos</button>
+    </div>
+  </header>
+
+  <sc-if value="{{showTypes}}" hint-placeholder-val="{{false}}">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D5DAE1">
+      <span style="font-size: 13px; color: #57606E">Qué puede señalarte:</span>
+      <sc-for list="{{cats}}" as="c" hint-placeholder-count="4">
+        <button type="button" class="pill" aria-pressed="{{c.pressed}}" style="{{c.style}}" onClick="{{c.pick}}">{{c.label}}</button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isDash}}" hint-placeholder-val="{{true}}">
+    <main style="max-width: 1320px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+
+      <sc-if value="{{hasTask}}" hint-placeholder-val="{{true}}">
+        <section class="dark" aria-label="Siguiente paso" style="background: #15181E; color: #FFFFFF; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+          <div style="font-size: 13px; font-weight: 600; color: #FFB35C">Siguiente paso · {{task.kind}} · {{task.min}}</div>
+          <p style="margin: 0; max-width: 860px; font-family: Literata, Georgia, serif; font-size: 26px; line-height: 1.3"><sc-for list="{{task.segs}}" as="s" hint-placeholder-count="3"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if></sc-for></p>
+          <p style="margin: 0; max-width: 760px; color: #C6CCD6">{{task.why}}</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+            <button type="button" class="btn-p" onClick="{{task.go}}">Hacerlo</button>
+            <button type="button" class="btn-d" onClick="{{skipTask}}">Esta no me sirve</button>
+            <button type="button" class="btn-d" onClick="{{justWrite}}">Hoy solo quiero escribir</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{noTask}}" hint-placeholder-val="{{false}}">
+        <section aria-label="Siguiente paso" style="background: #FFFFFF; border: 1px solid #D5DAE1; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+          <p style="margin: 0; font-family: Literata, Georgia, serif; font-size: 22px; line-height: 1.3">{{noTaskText}}</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <button type="button" class="btn" onClick="{{goWrite}}">Abrir el editor</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px">
+        <sc-for list="{{cards}}" as="c" hint-placeholder-count="9">
+          <section style="background: #FFFFFF; border: 1px solid #D5DAE1; border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px">
+              <h2 style="margin: 0; font-size: 17px; font-weight: 700">{{c.title}}</h2>
+              <span style="font-size: 13px; color: #57606E">{{c.n}}</span>
+            </div>
+            <sc-for list="{{c.items}}" as="it" hint-placeholder-count="3">
+              <div style="padding: 6px 0; border-top: 1px solid #EEF0F3"><sc-for list="{{it.segs}}" as="s" hint-placeholder-count="2"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if></sc-for></div>
+            </sc-for>
+            <sc-if value="{{c.note}}" hint-placeholder-val="{{false}}">
+              <p style="margin: 8px 0 0; font-size: 13px; color: #57606E">{{c.note}}</p>
+            </sc-if>
+          </section>
+        </sc-for>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{isFicha}}" hint-placeholder-val="{{false}}">
+    <main style="max-width: 1120px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+        <button type="button" class="btn" onClick="{{goBack}}">Volver</button>
+        <span style="color: #57606E">{{f.typeLabel}}</span>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <article style="flex: 999 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #D5DAE1; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 20px">
+          <div>
+            <h1 style="margin: 0 0 8px; font-family: Literata, Georgia, serif; font-size: 36px; font-weight: 600; line-height: 1.15">{{f.name}}</h1>
+            <p style="margin: 0; font-size: 17px"><sc-for list="{{f.sum}}" as="s" hint-placeholder-count="3"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if></sc-for></p>
+          </div>
+
+          <sc-if value="{{f.hasFacts}}" hint-placeholder-val="{{true}}">
+            <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px 24px">
+              <sc-for list="{{f.facts}}" as="x" hint-placeholder-count="2">
+                <div>
+                  <dt style="font-size: 13px; color: #57606E">{{x.k}}</dt>
+                  <dd style="margin: 0"><sc-for list="{{x.segs}}" as="s" hint-placeholder-count="1"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if></sc-for></dd>
+                </div>
+              </sc-for>
+            </dl>
+          </sc-if>
+
+          <sc-if value="{{f.hasPass}}" hint-placeholder-val="{{true}}">
+            <section style="display: flex; flex-direction: column; gap: 12px">
+              <h2 style="margin: 0; font-size: 17px; font-weight: 700">Lo que has escrito</h2>
+              <sc-for list="{{f.passages}}" as="p" hint-placeholder-count="3">
+                <div style="padding-top: 12px; border-top: 1px solid #EEF0F3">
+                  <button type="button" class="lk" style="font-size: 13px; font-weight: 600" onClick="{{p.go}}">{{p.label}}</button>
+                  <p style="margin: 4px 0 0; font-family: Literata, Georgia, serif; font-size: 17px; line-height: 1.6"><sc-for list="{{p.segs}}" as="s" hint-placeholder-count="3"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if><sc-if value="{{s.isMark}}" hint-placeholder-val="{{false}}"><button type="button" class="mk" onClick="{{s.goEdit}}">{{s.text}}</button></sc-if></sc-for></p>
+                </div>
+              </sc-for>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{f.isResearch}}" hint-placeholder-val="{{false}}">
+            <section style="display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid #EEF0F3">
+              <h2 style="margin: 0; font-size: 17px; font-weight: 700">Documentación</h2>
+              <sc-if value="{{r.needsSearch}}" hint-placeholder-val="{{false}}">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+                  <span style="color: #57606E">La búsqueda automática está desactivada.</span>
+                  <button type="button" class="btn" onClick="{{r.search}}">Buscar ahora</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{r.asking}}" hint-placeholder-val="{{true}}">
+                <p style="margin: 0">¿Puerto Viejo existe o lo has inventado?</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                  <sc-for list="{{r.choices}}" as="c" hint-placeholder-count="3">
+                    <button type="button" class="btn" onClick="{{c.pick}}">{{c.label}}</button>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{r.isFiction}}" hint-placeholder-val="{{false}}">
+                <p style="margin: 0">Al ser inventado, no busco nada fuera. Te preguntaré por sus calles y su clima para que los definas tú.</p>
+              </sc-if>
+              <sc-if value="{{r.hasGroups}}" hint-placeholder-val="{{false}}">
+                <p style="margin: 0; font-size: 14px; color: #57606E">Datos de muestra. En la app, cada sugerencia enlazaría a su fuente.</p>
+                <sc-for list="{{r.groups}}" as="g" hint-placeholder-count="3">
+                  <div style="background: #FFF1DC; border: 1px solid #F0CFA0; border-radius: 8px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px">
+                    <div style="font-size: 13px; font-weight: 600; color: #7A3C00">{{g.title}}</div>
+                    <div>{{g.text}}</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                      <button type="button" class="btn" onClick="{{g.keep}}">A mis notas</button>
+                      <button type="button" class="btn" onClick="{{g.drop}}">No me sirve</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{r.hasNotes}}" hint-placeholder-val="{{false}}">
+                <div>
+                  <div style="font-size: 13px; font-weight: 600; color: #57606E">En tus notas</div>
+                  <sc-for list="{{r.notes}}" as="n" hint-placeholder-count="1">
+                    <div style="padding: 6px 0; border-top: 1px solid #EEF0F3"><strong>{{n.title}}:</strong> {{n.text}}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{r.showFoot}}" hint-placeholder-val="{{true}}">
+                <p style="margin: 0; font-size: 13px; color: #57606E">{{r.foot}}</p>
+              </sc-if>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{f.isChapter}}" hint-placeholder-val="{{false}}">
+            <div><button type="button" class="btn" onClick="{{f.openEditor}}">Abrir este capítulo en el editor</button></div>
+          </sc-if>
+
+          <sc-if value="{{f.canEdit}}" hint-placeholder-val="{{true}}">
+            <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid #EEF0F3">
+              <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                <button type="button" class="btn" onClick="{{demoNote}}">Mi nota</button>
+                <button type="button" class="btn" onClick="{{demoMerge}}">Fusionar</button>
+                <button type="button" class="btn" onClick="{{demoSplit}}">Separar</button>
+              </div>
+              <sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+                <p role="status" style="margin: 0; font-size: 14px; color: #57606E">{{toast}}</p>
+              </sc-if>
+            </div>
+          </sc-if>
+        </article>
+
+        <aside style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+          <sc-if value="{{f.hasIssues}}" hint-placeholder-val="{{true}}">
+            <section style="background: #FFF1DC; border: 1px solid #F0CFA0; border-radius: 12px; padding: 16px 20px">
+              <h2 style="margin: 0 0 4px; font-size: 16px; font-weight: 700">Por resolver</h2>
+              <sc-for list="{{f.issues}}" as="it" hint-placeholder-count="1">
+                <div style="padding: 6px 0"><sc-for list="{{it.segs}}" as="s" hint-placeholder-count="1"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if></sc-for></div>
+              </sc-for>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{f.hasRels}}" hint-placeholder-val="{{true}}">
+            <section style="background: #FFFFFF; border: 1px solid #D5DAE1; border-radius: 12px; padding: 16px 20px">
+              <h2 style="margin: 0 0 4px; font-size: 16px; font-weight: 700">{{f.relLabel}}</h2>
+              <sc-for list="{{f.rels}}" as="it" hint-placeholder-count="2">
+                <div style="padding: 6px 0"><sc-for list="{{it.segs}}" as="s" hint-placeholder-count="1"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if></sc-for></div>
+              </sc-for>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{f.hasBack}}" hint-placeholder-val="{{true}}">
+            <section style="background: #FFFFFF; border: 1px solid #D5DAE1; border-radius: 12px; padding: 16px 20px">
+              <h2 style="margin: 0 0 4px; font-size: 16px; font-weight: 700">Enlazan aquí</h2>
+              <sc-for list="{{f.backlinks}}" as="it" hint-placeholder-count="2">
+                <div style="padding: 6px 0"><sc-for list="{{it.segs}}" as="s" hint-placeholder-count="1"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if></sc-for></div>
+              </sc-for>
+            </section>
+          </sc-if>
+        </aside>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{isEdit}}" hint-placeholder-val="{{false}}">
+    <main style="background: #FFFFFF; min-height: 760px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 24px; border-bottom: 1px solid #EEF0F3">
+        <nav aria-label="Capítulos" style="display: flex; flex-wrap: wrap; gap: 4px">
+          <sc-for list="{{chapters}}" as="c" hint-placeholder-count="4">
+            <button type="button" class="pill" aria-current="{{c.current}}" style="{{c.style}}" onClick="{{c.go}}">{{c.label}}</button>
+          </sc-for>
+        </nav>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px">
+          <div role="group" aria-label="Modo del editor" style="display: flex; flex-wrap: wrap; border: 1px solid #C9D0DA; border-radius: 8px; overflow: hidden">
+            <sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+              <button type="button" class="pill" aria-pressed="{{m.pressed}}" style="{{m.style}}" onClick="{{m.pick}}">{{m.label}}</button>
+            </sc-for>
+          </div>
+          <span style="font-size: 13px; color: #57606E">{{capWords}} palabras</span>
+        </div>
+        <sc-if value="{{showBulb}}" hint-placeholder-val="{{true}}">
+          <button type="button" class="btn" disabled="{{noHints}}" onClick="{{toggleHint}}" style="display: inline-flex; align-items: center; gap: 8px">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" style="fill: none; stroke: #B8530A; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"></path></svg>
+            <span>{{bulbLabel}}</span>
+          </button>
+        </sc-if>
+        <sc-if value="{{isOff}}" hint-placeholder-val="{{false}}">
+          <span style="font-size: 13px; color: #57606E">Pistas apagadas</span>
+        </sc-if>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 40px 24px; align-items: flex-start">
+        <article class="zen" style="flex: 999 1 560px; min-width: 0">
+          <div style="max-width: 660px; margin: 0 auto">
+            <h1 style="margin: 0 0 32px; font-family: Literata, Georgia, serif; font-size: 32px; font-weight: 600; line-height: 1.2"><button type="button" class="lk" onClick="{{capFicha}}">{{capName}}</button></h1>
+            <sc-if value="{{liveWriting}}" hint-placeholder-val="{{false}}">
+              <sc-if value="{{hasMentions}}" hint-placeholder-val="{{true}}">
+                <nav aria-label="Enlaces de este capítulo" style="display: flex; flex-wrap: wrap; gap: 4px 16px; margin: -16px 0 24px; font-size: 14px">
+                  <sc-for list="{{mentions}}" as="m" hint-placeholder-count="4">
+                    <button type="button" class="lk" onClick="{{m.go}}">{{m.label}}</button>
+                  </sc-for>
+                </nav>
+              </sc-if>
+              <div style="position: relative">
+                <div aria-hidden="true" style="margin: 0; white-space: pre-wrap; overflow-wrap: break-word; color: #15181E; font-family: Literata, Georgia, serif; font-size: 20px; line-height: 1.7"><sc-for list="{{liveSegs}}" as="s" hint-placeholder-count="3"><span style="{{s.style}}">{{s.text}}</span></sc-for></div>
+                <textarea aria-label="Texto del capítulo" value="{{draft}}" onChange="{{onDraft}}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; margin: 0; padding: 0; border: 0; outline: none; resize: none; overflow: hidden; background: transparent; color: transparent; caret-color: #15181E; white-space: pre-wrap; overflow-wrap: break-word; font-family: Literata, Georgia, serif; font-size: 20px; line-height: 1.7"></textarea>
+              </div>
+            </sc-if>
+            <sc-if value="{{plainWriting}}" hint-placeholder-val="{{false}}">
+              <textarea aria-label="Texto del capítulo" rows="{{draftRows}}" value="{{draft}}" onChange="{{onDraft}}" placeholder="Empieza a escribir…" style="display: block; width: 100%; box-sizing: border-box; padding: 0; border: 0; outline: none; resize: none; background: transparent; color: #15181E; font-family: Literata, Georgia, serif; font-size: 20px; line-height: 1.7"></textarea>
+            </sc-if>
+            <sc-if value="{{notWriting}}" hint-placeholder-val="{{true}}">
+            <sc-for list="{{paras}}" as="p" hint-placeholder-count="2">
+              <p style="margin: 0 0 24px; font-family: Literata, Georgia, serif; font-size: 20px; line-height: 1.7"><sc-for list="{{p.segs}}" as="s" hint-placeholder-count="3"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if><sc-if value="{{s.isMark}}" hint-placeholder-val="{{false}}"><button type="button" class="mk" onClick="{{s.go}}">{{s.text}}</button></sc-if></sc-for></p>
+            </sc-for>
+            </sc-if>
+          </div>
+        </article>
+
+        <sc-if value="{{showSide}}" hint-placeholder-val="{{false}}">
+          <aside style="flex: 1 1 320px; min-width: 0; max-width: 440px; display: flex; flex-direction: column; gap: 12px">
+            <sc-if value="{{isBuddy}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; align-items: center; gap: 12px">
+                <button type="button" aria-label="Mostrar u ocultar la pista" onClick="{{toggleHint}}" style="width: 64px; height: 64px; padding: 0; border: 0; background: none; cursor: pointer">
+                  <svg aria-hidden="true" width="64" height="64" viewBox="0 0 24 24"><path d="M12 2.5C12 2.5 5 10.8 5 15.3a7 7 0 0 0 14 0C19 10.8 12 2.5 12 2.5z" style="fill: #15181E"></path><circle cx="9.6" cy="15" r="1.3" style="fill: #FFFFFF"></circle><circle cx="14.4" cy="15" r="1.3" style="fill: #FFFFFF"></circle></svg>
+                </button>
+                <span style="font-size: 14px; color: #57606E">{{buddyLine}}</span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{hasHint}}" hint-placeholder-val="{{true}}">
+              <section aria-label="Pista" style="background: #FFF1DC; border: 1px solid #F0CFA0; border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px">
+                <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; color: #7A3C00">
+                  <span>{{hint.cat}}</span>
+                  <span>Pista {{hint.n}} de {{hint.total}}</span>
+                </div>
+                <sc-for list="{{hint.shown}}" as="st" hint-placeholder-count="1">
+                  <p style="margin: 0; font-size: 16px"><sc-for list="{{st.segs}}" as="s" hint-placeholder-count="2"><sc-if value="{{s.isText}}" hint-placeholder-val="{{true}}"><span>{{s.text}}</span></sc-if><sc-if value="{{s.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="lk" onClick="{{s.go}}">{{s.text}}</button></sc-if></sc-for></p>
+                </sc-for>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+                  <sc-if value="{{hint.hasMore}}" hint-placeholder-val="{{true}}">
+                    <button type="button" class="btn" onClick="{{hint.more}}">Otra pista</button>
+                  </sc-if>
+                  <sc-if value="{{hint.showActions}}" hint-placeholder-val="{{false}}">
+                    <button type="button" class="btn" onClick="{{hint.primary}}">{{hint.primaryLabel}}</button>
+                    <button type="button" class="btn" onClick="{{hint.secondary}}">{{hint.secondaryLabel}}</button>
+                  </sc-if>
+                  <sc-if value="{{hint.hasNext}}" hint-placeholder-val="{{false}}">
+                    <button type="button" class="btn" onClick="{{hint.next}}">Siguiente duda</button>
+                  </sc-if>
+                  <button type="button" class="btn" onClick="{{closeHint}}">Ahora no</button>
+                </div>
+              </section>
+            </sc-if>
+          </aside>
+        </sc-if>
+      </div>
+    </main>
+  </sc-if>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.d = this.buildData();
+    this.state = {
+      view: { s: 'dash' },
+      hist: [],
+      level: 'soft',
+      cats: { coherencia: true, correccion: true, pregunta: true, sugerencia: true, documentacion: true },
+      placeKind: null,
+      researched: false,
+      sug: {},
+      showTypes: false,
+      panelOpen: false,
+      hintId: null,
+      steps: {},
+      done: {},
+      taskIdx: 0,
+      toast: '',
+      texts: {},
+      writing: false,
+      live: false
+    };
+  }
+
+  buildData() {
+    const ENT = {
+      cap1: { type: 'capitulo', name: 'Cap. 1 · El regreso',
+        sum: '[[marta|Marta]] vuelve a [[puerto|Puerto Viejo]] y encuentra [[carta|una carta sin firmar]].',
+        facts: [{ k: 'Dónde', v: '[[puerto|Puerto Viejo]], [[sal|calle de la Sal]]' }, { k: 'Qué cambia', v: 'Alguien sabe que ha vuelto.' }],
+        text: [
+          '[[marta|Marta Rey]] bajó del autobús en [[puerto|Puerto Viejo]] con una sola maleta. Nadie la esperaba en la [[sal|calle de la Sal]], y lo agradeció.',
+          'La casa olía a cerrado. Sobre la mesa, alguien había dejado [[carta|una carta sin firmar]].'
+        ] },
+      cap2: { type: 'capitulo', name: 'Cap. 2 · Los ojos de su madre',
+        sum: '[[tomas|Tomás]] y [[marta|Marta]] se reencuentran en el [[faro|faro]].',
+        facts: [{ k: 'Dónde', v: '[[faro|Faro de la Punta]]' }, { k: 'Cuándo', v: 'Antes de la [[veda|veda]], que empieza el martes' }, { k: 'Qué cambia', v: 'Sale a la luz el reproche entre hermanos.' }],
+        text: [
+          '[[tomas|Tomás]], su hermano, la encontró en el [[faro|faro de la Punta]]. Al verla pensó que [[marta|Marta]] tenía los ojos verdes de su madre, y que eso era lo único que no había cambiado.',
+          '—Este año la [[veda|veda]] empieza el martes —dijo [[tomas|Tomás]]. Ella no contestó.'
+        ] },
+      cap3: { type: 'capitulo', name: 'Cap. 3 · La consulta',
+        sum: '[[ines|Inés]] lleva a la consulta [[carta|una segunda carta]].',
+        facts: [{ k: 'Dónde', v: '[[sal|Calle de la Sal]]' }, { k: 'Qué cambia', v: 'La carta deja de ser un hecho aislado.' }],
+        text: [
+          'En la consulta de la [[sal|calle de la Sal]], [[marta|la doctora]] atendió a [[ines|Inés Cabrera]], patrona del único barco que seguía faenando. [[marta|Marta]] nunca perdonó a [[tomas|Tomás]] que vendiera la barca de su padre.',
+          '[[ines|Inés]] dejó sobre la camilla otra carta, con la misma letra que [[carta|la primera]].'
+        ] },
+      cap4: { type: 'capitulo', name: 'Cap. 4 · Jueves de veda',
+        sum: '[[marta|Marta]] decide enseñarle la carta a [[tomas|Tomás]].',
+        facts: [{ k: 'Dónde', v: '[[faro|Faro de la Punta]]' }, { k: 'Cuándo', v: 'Inicio de la [[veda|veda]]' }, { k: 'Estado', v: 'En curso' }],
+        text: [
+          '[[marta|Marta]] se miró en el cristal del [[faro|faro]]: [[!ojos|sus ojos marrones]] parecían más oscuros con aquella luz. Cuando [[!thomas|Thomas]] [[!typo|halla]] leído la [[carta|carta]], pensó, ya no habrá vuelta atrás.',
+          '[[!dia|El jueves]] empezaba la [[veda|veda]]. [[ines|Inés]] ya había amarrado el barco.'
+        ] },
+      marta: { type: 'personaje', name: 'Marta Rey',
+        sum: 'Médica y hermana de [[tomas|Tomás]]. Vuelve a [[puerto|Puerto Viejo]] en el [[cap1|capítulo 1]].',
+        facts: [{ k: 'También aparece como', v: '«la doctora», en el [[cap3|capítulo 3]]' }],
+        rel: ['Hermana de [[tomas|Tomás]]', 'Médica de [[ines|Inés Cabrera]]'] },
+      tomas: { type: 'personaje', name: 'Tomás',
+        sum: 'Hermano de [[marta|Marta]]. Vendió la barca de su padre.',
+        facts: [],
+        rel: ['Hermano de [[marta|Marta]]'] },
+      ines: { type: 'personaje', name: 'Inés Cabrera',
+        sum: 'Patrona del único barco que sigue faenando. Lleva a [[marta|Marta]] [[carta|la segunda carta]].',
+        facts: [],
+        rel: ['Paciente de [[marta|Marta]]'] },
+      puerto: { type: 'lugar', name: 'Puerto Viejo',
+        sum: 'El pueblo al que vuelve [[marta|Marta]].',
+        facts: [],
+        rel: ['Incluye la [[sal|calle de la Sal]]', 'Incluye el [[faro|faro de la Punta]]'] },
+      sal: { type: 'lugar', name: 'Calle de la Sal',
+        sum: 'Donde [[marta|Marta]] tiene la consulta.',
+        facts: [{ k: 'Está en', v: '[[puerto|Puerto Viejo]]' }], rel: [] },
+      faro: { type: 'lugar', name: 'Faro de la Punta',
+        sum: 'Escenario de los encuentros entre [[marta|Marta]] y [[tomas|Tomás]].',
+        facts: [{ k: 'Está en', v: '[[puerto|Puerto Viejo]]' }], rel: [] },
+      carta: { type: 'lore', name: 'La carta sin firmar',
+        sum: 'Dos cartas con la misma letra. Quién las escribe sigue sin saberse.',
+        facts: [], rel: [] },
+      veda: { type: 'lore', name: 'La veda',
+        sum: 'Periodo en que no se puede faenar. Condiciona a [[ines|Inés]] y al calendario de la historia.',
+        facts: [], rel: [] },
+      h_ia: { type: 'ayuda', name: 'Por qué la IA no escribe por ti',
+        sum: 'La escritura siempre es tuya. La IA lee lo que escribes, crea las fichas, pregunta y sugiere. Solo cambia tu texto si pulsas una corrección.',
+        facts: [], rel: [] },
+      h_fichas: { type: 'ayuda', name: 'Cómo se crean las fichas',
+        sum: 'Al cerrar una escena, la IA actualiza las fichas con lo que has escrito. Cada dato enlaza al pasaje del que sale, y lo que corrijas a mano prevalece.',
+        facts: [], rel: [] }
+    };
+    const HL = [
+      { id: 'ojos', cat: 'coherencia', cap: 'cap4', ent: 'marta', title: '¿Ojos verdes o marrones?',
+        steps: ['Hay algo en este párrafo que no encaja con lo que escribiste antes.', 'Fíjate en cómo describes a [[marta|Marta]] en el [[cap2|capítulo 2]].', 'Capítulo 2: «los ojos verdes de su madre». Aquí: «sus ojos marrones». ¿Cuál vale?'] },
+      { id: 'thomas', cat: 'coherencia', cap: 'cap4', ent: 'tomas', fix: 'Tomás', title: '¿Tomás o Thomas?',
+        steps: ['Este nombre no aparece escrito así en ningún otro sitio.', 'Hasta ahora siempre has escrito [[tomas|Tomás]]. ¿Es la misma persona?'] },
+      { id: 'typo', cat: 'correccion', cap: 'cap4', fix: 'haya', title: 'halla',
+        steps: ['Aquí hay una palabra que suena igual que la correcta.', '«Halla» viene de hallar. ¿Querías el verbo haber?'] },
+      { id: 'dia', cat: 'coherencia', cap: 'cap4', ent: 'veda', title: '¿Martes o jueves?',
+        steps: ['La fecha de esta frase choca con otra anterior.', 'En el [[cap2|capítulo 2]], [[tomas|Tomás]] dice que la [[veda|veda]] empieza el martes. Aquí escribes que empieza el jueves. ¿Cuál vale?'] },
+      { id: 'teme', cat: 'pregunta', cap: 'cap4', ent: 'marta', title: '¿Qué teme Marta?',
+        steps: ['[[marta|Marta]] piensa que «ya no habrá vuelta atrás». ¿Qué teme perder exactamente?'] },
+      { id: 'idea', cat: 'sugerencia', cap: 'cap4', ent: 'ines', title: 'La segunda carta',
+        steps: ['La segunda carta llegó por [[ines|Inés]] y no has vuelto sobre ello.', 'Podrías preguntarte quién se la entregó a ella.'] }
+    ];
+    const TASKS = [
+      { hint: 'dia', kind: 'Resolver', min: '5 min', t: 'El [[cap4|capítulo 4]] dice jueves y el [[cap2|capítulo 2]] dice martes. ¿Cuándo empieza la [[veda|veda]]?', why: 'Te lo propongo porque lo que ocurra después depende de esa fecha.' },
+      { hint: 'teme', kind: 'Definir', min: '10 min', t: '¿Qué teme [[marta|Marta]] y no le contaría a nadie?', why: 'En el capítulo 4 piensa que «ya no habrá vuelta atrás» y aún no sabemos qué perdería.' },
+      { hint: 'idea', kind: 'Escribir', min: '15 min', t: 'Unas 200 palabras: [[ines|Inés]] explica cómo llegó a sus manos la [[carta|segunda carta]].', why: 'Esa carta aparece en el capítulo 3 y no has vuelto a ella.' }
+    ];
+    const H = {};
+    const TRIGGERS = { ojos: 'sus ojos marrones', thomas: 'Thomas', typo: 'halla', dia: 'El jueves' };
+    HL.forEach((h) => { H[h.id] = h; h.trigger = TRIGGERS[h.id] || null; });
+    const ALIASES = {
+      'Marta Rey': 'marta', 'Marta': 'marta', 'la doctora': 'marta', 'La doctora': 'marta',
+      'Tomás': 'tomas', 'Inés Cabrera': 'ines', 'Inés': 'ines', 'Puerto Viejo': 'puerto',
+      'calle de la Sal': 'sal', 'Calle de la Sal': 'sal', 'faro de la Punta': 'faro', 'Faro de la Punta': 'faro',
+      'faro': 'faro', 'veda': 'veda', 'carta': 'carta',
+      'sus ojos marrones': '!ojos', 'Thomas': '!thomas', 'halla': '!typo', 'El jueves': '!dia'
+    };
+    return { ENT, HL, H, TASKS, ALIASES, CH: ['cap1', 'cap2', 'cap3', 'cap4'] };
+  }
+
+  nav(view, extra) {
+    this.setState((p) => Object.assign({ view, hist: p.hist.concat([p.view]), toast: '' }, extra || {}));
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  goEnt(id) { this.nav({ s: 'ficha', id }); }
+  goEdit(cap, extra) { this.nav({ s: 'edit', cap }, Object.assign({ writing: false }, extra || {})); }
+  goHint(id) {
+    const h = this.d.H[id];
+    this.goEdit(h.cap, { hintId: id, panelOpen: true });
+  }
+  openHint(id) { this.setState({ hintId: id, panelOpen: true }); }
+  resolve(id, val) {
+    this.setState((p) => ({ done: Object.assign({}, p.done, { [id]: val }), hintId: null }));
+  }
+  setLevel(level) { this.setState({ level, panelOpen: level === 'buddy', hintId: null }); }
+
+  segs(markup) {
+    const s = this.state;
+    const H = this.d.H;
+    const re = /\[\[([^|\]]+)\|([^\]]+)\]\]/g;
+    const out = [];
+    const txt = (t) => ({ text: t, isText: true, isLink: false, isMark: false });
+    let last = 0;
+    let m;
+    while ((m = re.exec(markup))) {
+      if (m.index > last) out.push(txt(markup.slice(last, m.index)));
+      const key = m[1];
+      const label = m[2];
+      if (key[0] === '!') {
+        const id = key.slice(1);
+        const h = H[id];
+        const st = s.done[id];
+        const shown = !st && (s.level === 'soft' || s.level === 'buddy') && s.cats[h.cat];
+        if (shown) {
+          out.push({ text: label, isText: false, isLink: false, isMark: true, go: () => this.openHint(id), goEdit: () => this.goHint(id) });
+        } else {
+          out.push(txt(st === 'applied' && h.fix ? h.fix : label));
+        }
+      } else if (key[0] === '@') {
+        const id = key.slice(1);
+        out.push({ text: label, isText: false, isLink: true, isMark: false, go: () => this.goHint(id) });
+      } else if (key[0] === '#') {
+        out.push({ text: label, isText: false, isLink: true, isMark: false, go: () => this.setState({ showTypes: true }) });
+      } else {
+        out.push({ text: label, isText: false, isLink: true, isMark: false, go: () => this.goEnt(key) });
+      }
+      last = re.lastIndex;
+    }
+    if (last < markup.length) out.push(txt(markup.slice(last)));
+    return out;
+  }
+
+  items(list) { return list.map((t) => ({ segs: this.segs(t) })); }
+
+  places() {
+    return [
+      { id: 's1', title: 'Calles', text: 'Calle del Muelle, paralela al puerto.' },
+      { id: 's2', title: 'Clima', text: 'En noviembre llueve a menudo y sopla viento del norte.' },
+      { id: 's3', title: 'Cafeterías y bares', text: 'Bar de pescadores junto a la lonja, abierto desde el amanecer.' },
+      { id: 's4', title: 'Ambiente', text: 'Por la mañana, olor a gasoil y a sal en la zona de amarres.' }
+    ];
+  }
+
+  researchSets() {
+    return {
+      puerto: { place: true, term: 'Puerto Viejo', items: this.places() },
+      marta: { term: 'médica rural', items: [
+        { id: 'm1', title: 'Oficio', text: 'Una médica rural suele atender a varios pueblos y hacer visitas a domicilio.' },
+        { id: 'm2', title: 'Detalle', text: 'El maletín y las recetas escritas a mano pueden dar textura a sus escenas.' }
+      ] },
+      ines: { term: 'patrona de barco', items: [
+        { id: 'i1', title: 'Oficio', text: 'Quien patronea un barco de pesca responde de la tripulación y de la navegación.' }
+      ] },
+      faro: { term: 'faros y fareros', items: [
+        { id: 'f1', title: 'Historia', text: 'Muchos faros se automatizaron y dejaron de tener farero residente.' }
+      ] },
+      veda: { term: 'veda de pesca', items: [
+        { id: 'v1', title: 'Normativa', text: 'Las vedas fijan temporadas o zonas en las que no se puede pescar una especie.' },
+        { id: 'v2', title: 'Consecuencias', text: 'Durante la veda, parte de la flota amarra y baja el trabajo en el puerto.' }
+      ] }
+    };
+  }
+
+  docItems() {
+    const s = this.state;
+    if (!this.researchActive()) return [];
+    const sets = this.researchSets();
+    return Object.keys(sets).map((id) => {
+      const set = sets[id];
+      const n = set.items.filter((p) => !s.sug[p.id]).length;
+      if (!n || (set.place && s.placeKind === 'fiction')) return null;
+      return '[[' + id + '|' + this.d.ENT[id].name + ']] · ' + set.term + ' · ' + n;
+    }).filter(Boolean);
+  }
+
+  researchActive() {
+    const s = this.state;
+    return s.researched || (s.level !== 'off' && s.cats.documentacion);
+  }
+
+  puertoItem() {
+    const s = this.state;
+    if (!this.researchActive()) return '[[puerto|Puerto Viejo]]';
+    if (!s.placeKind) return '[[puerto|Puerto Viejo]] · ¿real o inventado?';
+    const n = s.placeKind === 'fiction' ? 0 : this.places().filter((p) => !s.sug[p.id]).length;
+    if (!n) return '[[puerto|Puerto Viejo]]';
+    return '[[puerto|Puerto Viejo]] · ' + n + (n === 1 ? ' sugerencia' : ' sugerencias');
+  }
+
+  buildResearch(entId) {
+    const s = this.state;
+    const set = this.researchSets()[entId];
+    if (!set) return { choices: [], groups: [], notes: [], foot: '' };
+    const kind = set.place ? s.placeKind : 'real';
+    const active = this.researchActive();
+    const mark = (id, val) => this.setState((p) => ({ sug: Object.assign({}, p.sug, { [id]: val }) }));
+    const showing = active && (kind === 'real' || kind === 'inspired');
+    const groups = showing ? set.items.filter((p) => !s.sug[p.id]).map((p) => Object.assign({}, p, {
+      keep: () => mark(p.id, 'kept'),
+      drop: () => mark(p.id, 'no')
+    })) : [];
+    const notes = set.items.filter((p) => s.sug[p.id] === 'kept');
+    return {
+      needsSearch: !active,
+      search: () => this.setState({ researched: true }),
+      asking: active && !kind,
+      choices: [['real', 'Existe'], ['inspired', 'Inventado, basado en uno real'], ['fiction', 'Inventado del todo']].map(([id, label]) => ({
+        label,
+        pick: () => this.setState({ placeKind: id })
+      })),
+      isFiction: active && kind === 'fiction',
+      hasGroups: groups.length > 0,
+      groups,
+      hasNotes: notes.length > 0,
+      notes,
+      showFoot: active,
+      foot: 'Solo se busca «' + set.term + '»: ni tu texto ni los nombres de tus personajes salen de la app. Nada de esto entra en el manuscrito ni cuenta como dato de tu novela hasta que lo guardes.'
+    };
+  }
+
+  strip(markup) { return markup.replace(/\[\[[^|\]]+\|([^\]]+)\]\]/g, '$1'); }
+
+  plainOf(cap) {
+    const t = this.state.texts[cap];
+    if (t !== undefined) return t;
+    return this.d.ENT[cap].text.map((p) => this.strip(p)).join('\n\n');
+  }
+
+  newNames() {
+    const { CH, ALIASES } = this.d;
+    const seen = {};
+    const out = [];
+    CH.forEach((c) => {
+      const t = this.state.texts[c];
+      if (t === undefined) return;
+      const re = /[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+(?: [A-ZÁÉÍÓÚÑ][a-záéíóúñü]+)*/g;
+      let m;
+      while ((m = re.exec(t))) {
+        const head = t.slice(0, m.index);
+        const before = head.trimEnd();
+        if (!before || /\n\s*$/.test(head)) continue;
+        if ('.!?¿¡—«:…'.indexOf(before[before.length - 1]) >= 0) continue;
+        if (/\p{L}/u.test(t[m.index - 1] || '')) continue;
+        if (ALIASES[m[0]] || seen[m[0]]) continue;
+        seen[m[0]] = true;
+        out.push({ id: 'n_' + m[0].toLowerCase().replace(/[^\p{L}]+/gu, '_'), name: m[0] });
+      }
+    });
+    return out;
+  }
+
+  ents() {
+    const out = Object.assign({}, this.d.ENT);
+    this.newNames().forEach((n) => {
+      out[n.id] = { type: 'personaje', name: n.name, facts: [], rel: [],
+        sum: 'Ficha creada a partir de lo que has escrito. Confirma si es un personaje, un lugar u otra cosa.' };
+    });
+    return out;
+  }
+
+  capParas(cap) {
+    if (this.state.texts[cap] === undefined) return this.d.ENT[cap].text;
+    const map = Object.assign({}, this.d.ALIASES);
+    this.newNames().forEach((n) => { map[n.name] = n.id; });
+    const alts = Object.keys(map).sort((a, b) => b.length - a.length).join('|');
+    const re = new RegExp('(?<!\\p{L})(' + alts + ')(?!\\p{L})', 'gu');
+    return this.state.texts[cap].split(/\n+/).filter((p) => p.trim()).map((p) => p.replace(re, (x) => '[[' + map[x] + '|' + x + ']]'));
+  }
+
+  liveSegs(cap) {
+    const plain = this.plainOf(cap);
+    const map = Object.assign({}, this.d.ALIASES);
+    this.newNames().forEach((n) => { map[n.name] = n.id; });
+    const alts = Object.keys(map).sort((a, b) => b.length - a.length).join('|');
+    const re = new RegExp('(?<!\\p{L})(' + alts + ')(?!\\p{L})', 'gu');
+    const line = 'text-decoration: underline; text-decoration-color: #1B46C8; text-underline-offset: 3px';
+    const out = [];
+    let last = 0;
+    let m;
+    while ((m = re.exec(plain))) {
+      if (m.index > last) out.push({ text: plain.slice(last, m.index), style: '' });
+      out.push({ text: m[1], style: map[m[1]][0] === '!' ? '' : line });
+      last = re.lastIndex;
+    }
+    if (last < plain.length) out.push({ text: plain.slice(last), style: '' });
+    out.push({ text: '\n ', style: '' });
+    return out;
+  }
+
+  mentions(cap) {
+    const ents = this.ents();
+    const seen = {};
+    const keys = [];
+    const re = /\[\[([^|\]!@#][^|\]]*)\|/g;
+    const joined = this.capParas(cap).join(' ');
+    let m;
+    while ((m = re.exec(joined))) {
+      if (!seen[m[1]] && ents[m[1]]) { seen[m[1]] = true; keys.push(m[1]); }
+    }
+    return keys.map((k) => ({ label: ents[k].name, go: () => this.goEnt(k) }));
+  }
+
+  isOpen(id) {
+    const h = this.d.H[id];
+    if (this.state.done[id]) return false;
+    return !h.trigger || this.plainOf(h.cap).indexOf(h.trigger) >= 0;
+  }
+
+  applyFix(h) {
+    const text = this.plainOf(h.cap).replace(h.trigger, h.fix);
+    this.setState((p) => ({
+      texts: Object.assign({}, p.texts, { [h.cap]: text }),
+      done: Object.assign({}, p.done, { [h.id]: 'applied' }),
+      hintId: null
+    }));
+  }
+
+  buildCards() {
+    const ENT = this.ents();
+    const { CH } = this.d;
+    const open = (id) => this.isOpen(id);
+    const link = (id) => '[[' + id + '|' + ENT[id].name + ']]';
+    const byType = (t) => Object.keys(ENT).filter((k) => ENT[k].type === t);
+    const verif = [];
+    if (open('ojos')) verif.push('[[@ojos|Ojos de Marta: ¿verdes o marrones?]]');
+    if (open('dia')) verif.push('[[@dia|Inicio de la veda: ¿martes o jueves?]]');
+    if (open('thomas')) verif.push('[[@thomas|¿Tomás o Thomas?]]');
+    const names = ['sal', 'faro', 'ines', 'marta', 'puerto'].map(link);
+    names.push(open('thomas') ? '[[tomas|Tomás]] · variante: [[@thomas|Thomas]]' : link('tomas'));
+    this.newNames().forEach((n) => names.push(link(n.id) + ' · nueva'));
+    const crono = ['[[cap1|Cap. 1]]: regreso de Marta', '[[cap2|Cap. 2]]: la veda se anuncia para el martes', '[[cap4|Cap. 4]]: la veda empieza el jueves'];
+    const raw = [
+      { title: 'Capítulos', list: CH.map(link) },
+      { title: 'Personajes', list: byType('personaje').map(link) },
+      { title: 'Relaciones', list: ['[[marta|Marta]] y [[tomas|Tomás]]: hermanos', '[[marta|Marta]] e [[ines|Inés]]: médica y paciente'] },
+      { title: 'Lugares', list: [this.puertoItem(),'[[sal|Calle de la Sal]], en [[puerto|Puerto Viejo]]', '[[faro|Faro de la Punta]], en [[puerto|Puerto Viejo]]'] },
+      { title: 'Nombres', list: names },
+      { title: 'Lore', list: byType('lore').map(link) },
+      { title: 'Cronología', list: crono },
+      { title: 'Verificación de datos', list: verif, empty: 'Nada pendiente de coherencia.', note: 'La comprobación de datos reales, con fuentes, llegaría en una fase posterior.' },
+      { title: 'Documentación', list: this.docItems(), empty: 'Nada nuevo por revisar.' },
+      { title: 'Ayuda', list: ['[[#pistas|Regular las pistas]]', link('h_ia'), link('h_fichas')], noCount: true }
+    ];
+    return raw.map((c) => ({
+      title: c.title,
+      n: c.noCount ? '' : String(c.list.length),
+      items: c.list.length ? this.items(c.list) : this.items([c.empty]),
+      note: c.note || ''
+    }));
+  }
+
+  buildFicha(id) {
+    const ENT = this.ents();
+    const { CH, HL } = this.d;
+    const e = ENT[id] || { type: 'ayuda', name: 'Ficha sin pasajes', sum: 'Este nombre ya no aparece en lo que has escrito.', facts: [], rel: [] };
+    const labels = { capitulo: 'Capítulos', personaje: 'Personajes', lugar: 'Lugares', lore: 'Lore', ayuda: 'Ayuda' };
+    const tag = '[[' + id + '|';
+    const isChapter = e.type === 'capitulo';
+    const passages = [];
+    if (e.type !== 'ayuda' && !isChapter) {
+      CH.forEach((c) => {
+        this.capParas(c).forEach((t) => {
+          if (t.indexOf(tag) >= 0) {
+            passages.push({ label: ENT[c].name, go: () => this.goEdit(c), segs: this.segs(t) });
+          }
+        });
+      });
+    }
+    let rels = (e.rel || []);
+    let relLabel = 'Relaciones';
+    if (isChapter) {
+      relLabel = 'Aparecen';
+      const joined = this.capParas(id).join(' ');
+      rels = Object.keys(ENT).filter((k) => ENT[k].type !== 'capitulo' && joined.indexOf('[[' + k + '|') >= 0).map((k) => '[[' + k + '|' + ENT[k].name + ']]');
+    }
+    const issues = HL.filter((h) => h.ent === id && this.isOpen(h.id) && h.cat === 'coherencia').map((h) => '[[@' + h.id + '|' + h.title + ']]');
+    const backlinks = Object.keys(ENT).filter((k) => {
+      if (k === id || ENT[k].type === 'capitulo') return false;
+      const hay = [ENT[k].sum].concat((ENT[k].facts || []).map((x) => x.v), ENT[k].rel || []).join(' ');
+      return hay.indexOf(tag) >= 0;
+    }).map((k) => '[[' + k + '|' + ENT[k].name + ']]');
+    const facts = (e.facts || []).map((x) => ({ k: x.k, segs: this.segs(x.v) }));
+    return {
+      name: e.name,
+      typeLabel: labels[e.type],
+      sum: this.segs(e.sum),
+      facts, hasFacts: facts.length > 0,
+      passages, hasPass: passages.length > 0,
+      rels: this.items(rels), relLabel, hasRels: rels.length > 0,
+      issues: this.items(issues), hasIssues: issues.length > 0,
+      backlinks: this.items(backlinks), hasBack: backlinks.length > 0,
+      isChapter,
+      openEditor: () => this.goEdit(id),
+      canEdit: e.type === 'personaje' || e.type === 'lugar' || e.type === 'lore',
+      isResearch: !!this.researchSets()[id]
+    };
+  }
+
+  buildHint(cap) {
+    const s = this.state;
+    const { H, HL } = this.d;
+    const catNames = { coherencia: 'Coherencia', correccion: 'Corrección', pregunta: 'Pregunta', sugerencia: 'Sugerencia' };
+    const visible = s.level === 'off' ? [] : HL.filter((h) => s.cats[h.cat] && this.isOpen(h.id) && h.cap === cap);
+    const picked = s.hintId && H[s.hintId] && this.isOpen(s.hintId) && H[s.hintId].cap === cap ? H[s.hintId] : null;
+    const cur = picked || visible[0] || null;
+    if (!cur || !s.panelOpen) return { visible, hint: null };
+    const n = s.steps[cur.id] || 0;
+    const last = n >= cur.steps.length - 1;
+    const i = visible.findIndex((h) => h.id === cur.id);
+    let primaryLabel = 'Lo corrijo yo';
+    let secondaryLabel = 'Es intencionado';
+    if (cur.fix) { primaryLabel = 'Aplicar «' + cur.fix + '»'; secondaryLabel = 'Déjalo así'; }
+    else if (cur.cat === 'pregunta' || cur.cat === 'sugerencia') { primaryLabel = 'Escribir ahora'; secondaryLabel = 'No me sirve'; }
+    return {
+      visible,
+      hint: {
+        cat: catNames[cur.cat],
+        n: String(n + 1),
+        total: String(cur.steps.length),
+        shown: cur.steps.slice(0, n + 1).map((t) => ({ segs: this.segs(t) })),
+        hasMore: !last,
+        more: () => this.setState((p) => ({ steps: Object.assign({}, p.steps, { [cur.id]: n + 1 }) })),
+        showActions: last,
+        primaryLabel, secondaryLabel,
+        primary: () => {
+          if (cur.fix) this.applyFix(cur);
+          else if (cur.cat === 'coherencia') this.setState({ writing: true, panelOpen: false, hintId: null });
+          else this.setState((p) => ({ done: Object.assign({}, p.done, { [cur.id]: 'ok' }), writing: true, panelOpen: false, hintId: null }));
+        },
+        secondary: () => this.resolve(cur.id, 'ok'),
+        hasNext: visible.length > 1,
+        next: () => this.setState({ hintId: visible[(i + 1) % visible.length].id })
+      }
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const { ENT, CH, TASKS } = this.d;
+    const lastCap = 'cap4';
+    const writing = s.view.s === 'edit' && s.writing;
+    const levels = [['off', 'Apagadas'], ['ask', 'Si las pido'], ['soft', 'Discretas'], ['buddy', 'Compañera']].map(([id, label]) => ({
+      label,
+      pressed: s.level === id,
+      style: s.level === id ? 'background: #15181E; color: #FFFFFF' : 'background: #FFFFFF; color: #15181E',
+      pick: () => this.setLevel(id)
+    }));
+    const cats = [['coherencia', 'Coherencia'], ['correccion', 'Correcciones'], ['pregunta', 'Preguntas'], ['sugerencia', 'Sugerencias'], ['documentacion', 'Documentación']].map(([id, label]) => ({
+      label: (s.cats[id] ? 'Sí · ' : 'No · ') + label,
+      pressed: s.cats[id],
+      style: s.cats[id] ? 'background: #15181E; color: #FFFFFF; border-radius: 8px' : 'background: #EEF0F3; color: #15181E; border-radius: 8px',
+      pick: () => this.setState((p) => ({ cats: Object.assign({}, p.cats, { [id]: !p.cats[id] }), hintId: null }))
+    }));
+
+    const out = {
+      levels, cats,
+      showTypes: s.showTypes,
+      toggleTypes: () => this.setState((p) => ({ showTypes: !p.showTypes })),
+      goDash: () => this.nav({ s: 'dash' }),
+      goWrite: () => this.goEdit(lastCap, { writing: true }),
+      goBack: () => this.setState((p) => {
+        const hist = p.hist.slice();
+        const view = hist.pop() || { s: 'dash' };
+        return { hist, view, toast: '' };
+      }),
+      isDash: s.view.s === 'dash',
+      isFicha: s.view.s === 'ficha',
+      isEdit: s.view.s === 'edit',
+      toast: s.toast,
+      demoNote: () => this.setState({ toast: 'Aquí escribirías una nota propia. Tus notas siempre prevalecen sobre lo que deduzca la IA.' }),
+      demoMerge: () => this.setState({ toast: 'Aquí elegirías otra ficha para unirla con esta, por ejemplo «la doctora» con Marta.' }),
+      demoSplit: () => this.setState({ toast: 'Aquí separarías en otra ficha los pasajes que la IA haya atribuido a la persona equivocada.' })
+    };
+
+    const pending = TASKS.filter((t) => this.isOpen(t.hint));
+    const off = s.level === 'off';
+    const t = pending.length && !off ? pending[s.taskIdx % pending.length] : null;
+    out.hasTask = !!t;
+    out.noTask = !t;
+    out.noTaskText = off ? 'Las pistas están apagadas: la app no te propondrá tareas. Las fichas se siguen actualizando.' : 'No hay tareas pendientes. Sigue escribiendo cuando quieras.';
+    out.task = t ? { kind: t.kind, min: t.min, why: t.why, segs: this.segs(t.t), go: () => this.goHint(t.hint) } : { kind: '', min: '', why: '', segs: [], go: null };
+    out.skipTask = () => this.setState((p) => ({ taskIdx: p.taskIdx + 1 }));
+    out.justWrite = () => { this.setLevel('off'); this.goEdit(lastCap, { writing: true }); };
+    out.cards = this.buildCards();
+    out.r = this.buildResearch(s.view.id);
+
+    out.f = s.view.s === 'ficha' ? this.buildFicha(s.view.id) : { name: '', typeLabel: '', sum: [], facts: [], passages: [], rels: [], issues: [], backlinks: [] };
+
+    const cap = s.view.s === 'edit' ? s.view.cap : lastCap;
+    const built = this.buildHint(cap);
+    const count = built.visible.length;
+    out.chapters = CH.map((c, i) => ({
+      label: 'Cap. ' + (i + 1),
+      current: c === cap ? 'page' : undefined,
+      style: c === cap ? 'background: #15181E; color: #FFFFFF; border-radius: 8px' : 'background: #FFFFFF; color: #15181E; border-radius: 8px',
+      go: () => this.goEdit(c, { hintId: null, writing: s.writing })
+    }));
+    const draft = this.plainOf(cap);
+    const estimated = draft.split('\n').reduce((sum, line) => sum + Math.max(1, Math.ceil(line.length / 58)), 0);
+    out.writing = writing;
+    out.notWriting = !writing;
+    out.draft = draft;
+    out.draftRows = Math.max(14, estimated + 3);
+    out.capWords = String(draft.trim() ? draft.trim().split(/\s+/).length : 0);
+    out.onDraft = (e) => {
+      const value = e.target.value;
+      this.setState((p) => ({ texts: Object.assign({}, p.texts, { [cap]: value }) }));
+    };
+    out.plainWriting = writing && !s.live;
+    out.liveWriting = writing && s.live;
+    out.liveSegs = writing && s.live ? this.liveSegs(cap) : [];
+    out.mentions = writing && s.live ? this.mentions(cap) : [];
+    out.hasMentions = out.mentions.length > 0;
+    const mode = !writing ? 'read' : (s.live ? 'live' : 'write');
+    out.modes = [['write', 'Escribir', { writing: true, live: false }], ['live', 'Escribir con enlaces', { writing: true, live: true }], ['read', 'Ver enlaces y pistas', { writing: false }]].map(([id, label, patch]) => ({
+      label,
+      pressed: mode === id,
+      style: mode === id ? 'background: #15181E; color: #FFFFFF' : 'background: #FFFFFF; color: #15181E',
+      pick: () => this.setState(patch)
+    }));
+    out.capName = ENT[cap].name;
+    out.capFicha = () => this.goEnt(cap);
+    out.paras = this.capParas(cap).map((t2) => ({ segs: this.segs(t2) }));
+    out.isOff = off;
+    out.isBuddy = s.level === 'buddy';
+    out.showBulb = !writing && (s.level === 'ask' || s.level === 'soft');
+    out.noHints = count === 0;
+    out.bulbLabel = count === 0 ? 'Sin pistas aquí' : (s.level === 'ask' ? 'Pedir una pista' : 'Pistas: ' + count);
+    out.toggleHint = () => this.setState((p) => ({ panelOpen: !p.panelOpen }));
+    out.closeHint = () => this.setState({ panelOpen: false, hintId: null });
+    out.hasHint = !!built.hint;
+    out.hint = built.hint || { cat: '', n: '', total: '', shown: [] };
+    out.showSide = !writing && (s.level === 'buddy' || !!built.hint);
+    out.buddyLine = count === 0 ? 'Todo en orden por aquí.' : (built.hint ? 'Te dejo esto, sin prisa.' : 'Tengo ' + count + (count === 1 ? ' pista. Tócame si la quieres.' : ' pistas. Tócame si las quieres.'));
+    return out;
+  }
+}
+</script>
+</body>
+</html>

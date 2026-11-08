@@ -1,0 +1,31 @@
+[package]
+name = "ink-writer"
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+publish = false
+default-run = "ink-writer"
+
+[lib]
+name = "ink_writer"
+path = "src/lib.rs"
+
+# `test = false`: the bin holds no logic, and a test binary that links the Tauri
+# runtime fails to start on Windows without its manifest.
+[[bin]]
+name = "ink-writer"
+path = "src/main.rs"
+test = false
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.23"
+rusqlite = { version = "0.41", features = ["bundled", "limits"] }
+
+[dev-dependencies]
+tempfile = "3"

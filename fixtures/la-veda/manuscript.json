@@ -1,0 +1,55 @@
+{
+  "title": "La veda",
+  "language": "es",
+  "era": "actualidad",
+  "scenes": [
+    {
+      "id": "s01",
+      "chapter": 1,
+      "title": "El regreso",
+      "text": "Marta Rey bajó del autobús en Puerto Viejo con una sola maleta. Nadie la esperaba en la calle de la Sal, y lo agradeció. Hacía once años que se había ido, y aún estaba soltera, para disgusto de su tía Remedios.\n\nLa casa olía a cerrado. Sobre la mesa, alguien había dejado una carta sin firmar. Llegó tarde a la farmacia y la encontró cerrada."
+    },
+    {
+      "id": "s02",
+      "chapter": 2,
+      "title": "Los ojos de su madre",
+      "text": "Tomás, su hermano, la encontró en el faro de la Punta. Al verla pensó que Marta tenía los ojos verdes de su madre, y que eso era lo único que no había cambiado. Era tres años mayor que él, y siempre se lo había recordado.\n\n—Este año la veda empieza el martes —dijo Tomás.\n\n—¿Sigues con el barco?\n\n—Lo vendí. Hace mucho que no piso ese muelle.\n\nDesde Puerto Viejo hasta la capital había una semana larga de camino por la costa."
+    },
+    {
+      "id": "s03",
+      "chapter": 3,
+      "title": "La consulta",
+      "text": "En la consulta de la calle de la Sal, la doctora atendió a Inés Cabrera, patrona del único barco que seguía faenando. Marta nunca perdonó a Tomás que vendiera la barca de su padre.\n\nInés dejó sobre la camilla otra carta, con la misma letra que la primera.\n\n—Me la dio Luis, el cartero.\n\nLuis Ferrer, el alcalde, entró sin llamar y preguntó por la receta de su mujer."
+    },
+    {
+      "id": "s04",
+      "chapter": 3,
+      "title": "Doce años",
+      "text": "Cuando tenía doce años, Marta se escondía en aquel mismo faro para leer. Su padre la buscaba al anochecer con un farol. Ahora, a los cuarenta, le dolían las rodillas en la misma escalera."
+    },
+    {
+      "id": "s05",
+      "chapter": 4,
+      "title": "Jueves de veda",
+      "text": "Marta se miró en el cristal del faro: sus ojos marrones parecían más oscuros con aquella luz. Cuando Thomas halla leído la carta, pensó, ya no habrá vuelta atrás.\n\nEl jueves empezaba la veda. Inés ya había amarrado el barco."
+    },
+    {
+      "id": "s06",
+      "chapter": 4,
+      "title": "El muelle",
+      "text": "Inés lo vio esa misma noche en el muelle, descalzo, soltando amarras a oscuras. Era Tomás, y nadie más lo supo.\n\nMarta salió de Puerto Viejo al amanecer y esa misma tarde estaba en la capital, sentada frente al notario."
+    },
+    {
+      "id": "s07",
+      "chapter": 5,
+      "title": "La boda",
+      "text": "Dos años después, Marta se casó con Julián Sosa en la iglesia de Puerto Viejo. Ya casada, siguió firmando las recetas con su apellido.\n\n- Nunca pensé verte de blanco, dijo Tomás, que era su hermano mayor."
+    },
+    {
+      "id": "s08",
+      "chapter": 6,
+      "title": "Remedios",
+      "text": "Enterraron a la tía Remedios un martes de lluvia. Fue todo el pueblo.\n\nA la semana siguiente, Marta recibió una llamada: la tía Remedios le preguntaba, con su voz de siempre, si pensaba ir a verla el domingo."
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "entities": [
+    { "id": "marta", "type": "person", "names": ["Marta Rey", "Marta", "la doctora"] },
+    { "id": "tomas", "type": "person", "names": ["Tomás"], "variants_to_flag": ["Thomas"] },
+    { "id": "ines", "type": "person", "names": ["Inés Cabrera", "Inés"] },
+    { "id": "remedios", "type": "person", "names": ["tía Remedios"] },
+    { "id": "julian", "type": "person", "names": ["Julián Sosa"] },
+    { "id": "luis_cartero", "type": "person", "names": ["Luis"], "note": "El cartero. No fusionar con el alcalde." },
+    { "id": "luis_alcalde", "type": "person", "names": ["Luis Ferrer"], "note": "El alcalde. No fusionar con el cartero." },
+    { "id": "puerto", "type": "place", "names": ["Puerto Viejo"] },
+    { "id": "sal", "type": "place", "names": ["calle de la Sal"], "parent": "puerto" },
+    { "id": "faro", "type": "place", "names": ["faro de la Punta", "faro"] },
+    { "id": "carta", "type": "lore", "names": ["carta sin firmar", "carta"] },
+    { "id": "veda", "type": "lore", "names": ["veda"] }
+  ],
+  "relations": [
+    { "from": "marta", "to": "tomas", "kind": "hermanos", "quote": "Tomás, su hermano", "scene": "s02" },
+    { "from": "marta", "to": "julian", "kind": "cónyuges", "quote": "Marta se casó con Julián Sosa", "scene": "s07" },
+    { "from": "marta", "to": "remedios", "kind": "sobrina de", "quote": "su tía Remedios", "scene": "s01" }
+  ],
+  "must_resolve_reference": [
+    { "scene": "s01", "quote": "Llegó tarde a la farmacia", "entity": "marta", "why": "Sujeto omitido" },
+    { "scene": "s03", "quote": "la doctora atendió a Inés Cabrera", "entity": "marta", "why": "Epíteto" },
+    { "scene": "s06", "quote": "Inés lo vio esa misma noche", "entity": "tomas", "why": "Pronombre resuelto después" }
+  ],
+  "must_flag": [
+    {
+      "id": "c_ojos", "category": "coherence",
+      "a": { "scene": "s02", "quote": "los ojos verdes de su madre" },
+      "b": { "scene": "s05", "quote": "sus ojos marrones" }
+    },
+    {
+      "id": "c_veda", "category": "coherence",
+      "a": { "scene": "s02", "quote": "la veda empieza el martes" },
+      "b": { "scene": "s05", "quote": "El jueves empezaba la veda" }
+    },
+    {
+      "id": "c_nombre", "category": "coherence",
+      "a": { "scene": "s02", "quote": "Tomás, su hermano" },
+      "b": { "scene": "s05", "quote": "Thomas" }
+    },
+    {
+      "id": "c_viaje", "category": "coherence",
+      "a": { "scene": "s02", "quote": "una semana larga de camino" },
+      "b": { "scene": "s06", "quote": "esa misma tarde estaba en la capital" }
+    },
+    {
+      "id": "c_edad_hermanos", "category": "coherence",
+      "a": { "scene": "s02", "quote": "Era tres años mayor que él" },
+      "b": { "scene": "s07", "quote": "su hermano mayor" }
+    },
+    {
+      "id": "c_difunta", "category": "coherence",
+      "a": { "scene": "s08", "quote": "Enterraron a la tía Remedios" },
+      "b": { "scene": "s08", "quote": "la tía Remedios le preguntaba" }
+    },
+    {
+      "id": "o_halla", "category": "correction",
+      "a": { "scene": "s05", "quote": "halla leído" },
+      "expected_fix": "haya leído"
+    },
+    {
+      "id": "o_raya", "category": "correction",
+      "a": { "scene": "s07", "quote": "- Nunca pensé verte de blanco" },
+      "expected_fix": "Usar raya de diálogo"
+    }
+  ],
+  "must_not_flag": [
+    {
+      "id": "n_estado_civil", "why": "Evolución: soltera y luego casada",
+      "a": { "scene": "s01", "quote": "aún estaba soltera" },
+      "b": { "scene": "s07", "quote": "Ya casada" }
+    },
+    {
+      "id": "n_edad_tiempo", "why": "Recuerdo: doce años entonces, cuarenta ahora",
+      "a": { "scene": "s04", "quote": "Cuando tenía doce años" },
+      "b": { "scene": "s04", "quote": "a los cuarenta" }
+    },
+    {
+      "id": "n_mentira", "why": "Un personaje miente en un diálogo: no es un error de la autora",
+      "a": { "scene": "s02", "quote": "Hace mucho que no piso ese muelle" },
+      "b": { "scene": "s06", "quote": "soltando amarras a oscuras" }
+    },
+    {
+      "id": "n_dos_luis", "why": "Dos personas distintas con el mismo nombre",
+      "a": { "scene": "s03", "quote": "Luis, el cartero" },
+      "b": { "scene": "s03", "quote": "Luis Ferrer, el alcalde" }
+    }
+  ]
+}

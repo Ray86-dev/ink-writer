@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ink Writer · Prototipo M0</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="main.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>Prototipo M0</h1>
+      <p>Prueba de las vías de IA. Se usa una escena de <code>fixtures/la-veda</code>, nunca un manuscrito real. Es desechable.</p>
+    </header>
+
+    <main>
+      <section aria-labelledby="h-chatgpt">
+        <h2 id="h-chatgpt">ChatGPT</h2>
+        <p id="chatgpt-status" class="status" role="status">Comprobando…</p>
+        <div class="row">
+          <button id="chatgpt-login" class="chatgpt">Continue with ChatGPT</button>
+          <label>Puerto (opcional)
+            <input id="chatgpt-port" type="number" min="1024" max="65535" placeholder="libre" />
+          </label>
+          <button id="chatgpt-logout">Cerrar sesión</button>
+        </div>
+        <div class="row">
+          <label>Modelo
+            <select id="chatgpt-model"></select>
+          </label>
+          <span id="chatgpt-plan" hidden>
+            Using ChatGPT plan · <button id="manage-usage" class="link">Manage usage</button>
+          </span>
+        </div>
+        <div class="row">
+          <button data-rewrite="chatgpt" data-model-from="chatgpt-model">Reescribir escena</button>
+          <button data-probes="chatgpt" data-model-from="chatgpt-model">Ejecutar pruebas</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-openrouter">
+        <h2 id="h-openrouter">OpenRouter</h2>
+        <p id="openrouter-status" class="status" role="status">Comprobando…</p>
+        <div class="row">
+          <button id="openrouter-login">Conectar OpenRouter</button>
+        </div>
+        <div class="row">
+          <label>Modelo (solo con salida estructurada)
+            <input id="openrouter-model" list="openrouter-models" placeholder="proveedor/modelo" />
+            <datalist id="openrouter-models"></datalist>
+          </label>
+        </div>
+        <label class="check">
+          <input id="openrouter-search" type="checkbox" />
+          Incluir búsqueda web (de pago, unos 0,007 $ por búsqueda, también con modelos gratuitos)
+        </label>
+        <div class="row">
+          <button data-rewrite="openrouter" data-model-from="openrouter-model">Reescribir escena</button>
+          <button data-probes="openrouter" data-model-from="openrouter-model">Ejecutar pruebas</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-ollama">
+        <h2 id="h-ollama">Ollama</h2>
+        <p id="ollama-status" class="status" role="status">Comprobando…</p>
+        <div class="row">
+          <label>Modelo
+            <select id="ollama-model"></select>
+          </label>
+          <button id="ollama-refresh">Volver a comprobar</button>
+        </div>
+        <div class="row">
+          <button data-rewrite="ollama" data-model-from="ollama-model">Reescribir escena</button>
+          <button data-probes="ollama" data-model-from="ollama-model">Ejecutar pruebas</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-draft" class="wide">
+        <h2 id="h-draft">Borrador</h2>
+        <p class="note">Solo lectura. La app nunca escribe texto generado en un manuscrito.</p>
+        <output id="draft" class="draft"></output>
+        <p id="draft-result" class="status" role="status"></p>
+      </section>
+
+      <section aria-labelledby="h-results" class="wide">
+        <h2 id="h-results">Resultados</h2>
+        <table>
+          <thead>
+            <tr><th>Prueba</th><th>Estado</th><th>HTTP</th><th>Código</th><th>Parámetro</th></tr>
+          </thead>
+          <tbody id="results"></tbody>
+        </table>
+        <p id="report-path" class="status" role="status"></p>
+      </section>
+    </main>
+  </body>
+</html>

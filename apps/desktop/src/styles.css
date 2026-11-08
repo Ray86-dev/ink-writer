@@ -1,0 +1,33 @@
+@import "../../../docs/design/tokens.css";
+
+body {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+main {
+  max-width: 660px;
+  padding: 24px;
+  text-align: center;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 500;
+}
+
+p {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+p.problem {
+  color: var(--rust);
+}

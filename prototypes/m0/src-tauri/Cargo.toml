@@ -1,0 +1,52 @@
+[package]
+name = "ink-writer-m0"
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+publish = false
+default-run = "ink-writer-m0"
+
+[lib]
+name = "m0"
+path = "src/lib.rs"
+
+# `test = false`: the bins hold no logic, and a test binary that links the
+# Tauri runtime fails to start on Windows without its manifest.
+[[bin]]
+name = "ink-writer-m0"
+path = "src/main.rs"
+test = false
+
+[[bin]]
+name = "probe"
+path = "src/bin/probe.rs"
+test = false
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["net", "time", "sync", "rt-multi-thread", "macros", "io-util"] }
+reqwest = { version = "0.13", default-features = false, features = ["native-tls", "http2", "json", "form", "stream"] }
+futures-util = "0.3"
+sha2 = "0.11"
+base64 = "0.23"
+getrandom = "0.4"
+url = "2"
+uuid = { version = "1", features = ["v4"] }
+jsonwebtoken = { version = "11", features = ["rust_crypto"] }
+keyring = "4"
+aes-gcm = "0.11"
+open = "5"
+dirs = "7"
+
+[dev-dependencies]
+rsa = { version = "0.9", features = ["pem", "getrandom"] }
+tempfile = "3"
+
+# RSA key generation in the ID token tests is unusably slow without this.
+[profile.dev.package.num-bigint-dig]
+opt-level = 3

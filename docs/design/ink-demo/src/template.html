@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ink Writer · Dashboard Tinta viva</title>
+<style>
+/*__FONTS__*/
+:root{
+  --paper:#F6F6F2; --sheet:#FFFFFF; --ink:#12141C; --ink-2:#4C5462; --line:#DADCD6;
+  --link:#1B46C8; --rust:#A8430A; --rust-wash:#FCEBD9;
+  --serif:"Literata Variable",Georgia,serif; --sans:"Instrument Sans Variable",system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 var(--sans)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.top{position:absolute;inset:0 0 auto 0;z-index:5;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding:20px 32px}
+.brand{font:600 24px/1.1 var(--serif)}
+.brand small{display:block;font:500 12px/1.4 var(--sans);color:var(--ink-2)}
+.levels{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.levels>span{font-size:13px;font-weight:600;color:var(--ink-2)}
+.seg{display:flex;flex-wrap:wrap;background:rgba(255,255,255,.82);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{min-height:44px;padding:0 14px;border:0;background:none;font-size:13px;font-weight:600;transition:background .25s,color .25s}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.hero{position:relative;min-height:min(84vh,760px);overflow:hidden}
+#ink{position:absolute;inset:0;width:100%;height:100%;display:block}
+.labels{position:absolute;inset:0;pointer-events:none;z-index:2}
+.node{position:absolute;left:0;top:0;min-height:32px;padding:3px 10px;border:0;border-radius:999px;background:rgba(246,246,242,.9);font-size:13px;font-weight:600;white-space:nowrap;pointer-events:auto;opacity:0;transition:opacity .35s,background .2s,color .2s;will-change:transform}
+.node::before{content:"";position:absolute;inset:-7px -2px}
+.node.cap{font-family:var(--serif);font-size:14px}
+.node.conflict{color:var(--rust)}
+.node:hover,.node:focus-visible{background:var(--ink);color:#fff}
+.next{position:relative;z-index:3;width:min(500px,100%);padding:128px 0 48px 32px;display:flex;flex-direction:column;gap:14px}
+.kicker{font-size:13px;font-weight:700;color:var(--rust)}
+.next h1{margin:0;font:400 clamp(30px,3.4vw,46px)/1.16 var(--serif);letter-spacing:-.01em}
+.next h1 button,.link{padding:0;border:0;background:none;color:var(--link);font:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}
+.next p{margin:0;color:var(--ink-2);font-size:16px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.85);font-weight:600;font-size:14px;transition:transform .2s var(--ease),border-color .2s}
+.btn:hover{transform:translateY(-2px);border-color:var(--ink)}
+.btn.main{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn:disabled{transform:none;color:var(--ink-2);cursor:default}
+.board{position:relative;z-index:3;max-width:1376px;margin:0 auto;padding:8px 32px 56px}
+.tools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin-bottom:16px}
+.tools h2{margin:0;font:500 24px/1.2 var(--serif)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:14px}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:16px 20px 12px;opacity:0;transform:translateY(18px);transition:opacity .6s var(--ease),transform .6s var(--ease),box-shadow .25s,border-color .25s}
+.card.in{opacity:1;transform:none}
+.card.in:hover{transform:translateY(-3px);border-color:#BFC3BC;box-shadow:0 14px 28px -20px rgba(18,20,28,.5)}
+.card header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.card h3{margin:0;font-size:16px;font-weight:700}
+.count{font:500 26px/1 var(--serif)}
+.card li{list-style:none;padding:7px 0;border-top:1px solid #EEEFEA}
+.card ul{margin:0;padding:0}
+.card .link{text-align:left}
+.card.alert .count{color:var(--rust)}
+.note{margin:8px 0 4px;font-size:13px;color:var(--ink-2)}
+.foot{padding:0 32px 32px;text-align:center;font-size:13px;color:var(--ink-2)}
+dialog{width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px);padding:28px;border:0;border-radius:18px;background:var(--sheet);color:var(--ink);box-shadow:0 40px 80px -30px rgba(18,20,28,.55)}
+dialog[open]{animation:rise .5s var(--ease)}
+dialog::backdrop{background:rgba(246,246,242,.55)}
+@keyframes rise{from{opacity:0;transform:translateY(22px) scale(.98)}to{opacity:1;transform:none}}
+dialog h2{margin:2px 0 8px;font:600 34px/1.15 var(--serif)}
+dialog .type{font-size:13px;font-weight:600;color:var(--ink-2)}
+dialog blockquote{margin:16px 0 0;padding-top:12px;border-top:1px solid #EEEFEA;font:400 18px/1.6 var(--serif)}
+dialog cite{display:block;margin-top:4px;font:600 13px/1.4 var(--sans);color:var(--ink-2)}
+dialog h3{margin:18px 0 6px;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:600;font-size:14px;color:var(--link)}
+.issue{margin-top:16px;padding:12px 14px;background:var(--rust-wash);border-radius:10px;color:#6E2C05}
+.close{position:absolute;top:12px;right:12px;width:44px;height:44px;border:0;border-radius:10px;background:none;font-size:22px;line-height:1}
+.close:hover{background:#EEEFEA}
+.nb{white-space:nowrap}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.no-webgl #ink,.no-webgl .labels{display:none}
+.no-webgl .hero{min-height:0}
+@media (max-width:759px){
+  .top{position:relative;padding:14px 16px}
+  .next{padding:12px 16px 410px;width:100%}
+  .board{padding:8px 16px 40px}
+  .foot{padding:0 16px 24px}
+  .hero{min-height:0}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .card{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<div class="hero" id="hero">
+  <canvas id="ink" aria-hidden="true"></canvas>
+  <header class="top">
+    <div class="brand">La veda<small>Novela de ejemplo</small></div>
+    <div class="levels">
+      <span>Pistas de la IA</span>
+      <div class="seg" id="levels" role="group" aria-label="Nivel de pistas"></div>
+    </div>
+  </header>
+  <div class="labels" id="labels"></div>
+  <section class="next" id="next" aria-label="Siguiente paso"></section>
+</div>
+<main class="board">
+  <div class="tools">
+    <h2>Tu novela</h2>
+    <button type="button" class="btn" id="grow">Simular una escena nueva</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+<p class="foot">Demo visual con datos de ejemplo.</p>
+<p class="sr" id="live" role="status"></p>
+<dialog id="sheet" aria-labelledby="sheet-title"></dialog>
+<script>/*__BUNDLE__*/</script>
+</body>
+</html>

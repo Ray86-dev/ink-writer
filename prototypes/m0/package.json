@@ -1,0 +1,13 @@
+{
+  "name": "ink-writer-m0",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "description": "Prototipo desechable del hito M0. No forma parte del producto.",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
+  }
+}

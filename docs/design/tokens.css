@@ -1,0 +1,29 @@
+:root {
+  --paper: #f6f6f2;
+  --sheet: #ffffff;
+  --ink: #12141c;
+  --ink-2: #4c5462;
+  --line: #dadcd6;
+  --link: #1b46c8;
+  --rust: #a8430a;
+  --rust-wash: #fcebd9;
+
+  --pigment-chapter: #12141c;
+  --pigment-person: #1a2a86;
+  --pigment-place: #0f5c60;
+  --pigment-lore: #4b2a5e;
+  --pigment-conflict: #b4490b;
+
+  --font-serif: "Literata Variable", Georgia, serif;
+  --font-sans: "Instrument Sans Variable", system-ui, sans-serif;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --touch-target: 44px;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast: 200ms;
+  --duration-base: 350ms;
+  --duration-slow: 600ms;
+}
