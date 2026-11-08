@@ -56,7 +56,7 @@ Desde la raíz, con Node 24 y Rust estable:
 | `npm run check` | Formato, lint y tipos de TypeScript |
 | `npm run check:rust` | `rustfmt` y `clippy` |
 | `npm test` | Todas las pruebas. Por separado: `npm run test:ts` y `npm run test:rust` |
-| `npm run build:debug` y `npm run smoke` | Construye la app real, la arranca con una base temporal y comprueba que todas las capas encajan |
+| `npm run smoke` | Construye la app real, la arranca con una base temporal y comprueba que todas las capas encajan |
 | `npm run licenses` | Revisa las licencias de todas las dependencias (regla 8) |
 | `npm run fixtures` | Valida el material de `fixtures/` |
 

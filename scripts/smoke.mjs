@@ -1,4 +1,4 @@
-// Starts the built app in smoke mode and passes on its result. Run `npm run build:debug` first.
+// Starts the built app in smoke mode and passes on its result. `npm run smoke` builds it first.
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -9,7 +9,7 @@ const name = process.platform === "win32" ? "ink-writer.exe" : "ink-writer";
 const binary = join(import.meta.dirname, "..", "apps/desktop/src-tauri/target/debug", name);
 
 if (!existsSync(binary)) {
-  console.error(`No build at ${binary}. Run: npm run build:debug`);
+  console.error(`No build at ${binary}. Run: npm run smoke`);
   process.exit(1);
 }
 

@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "npm run tauri -w @ink-writer/desktop -- dev",
     "build:debug": "npm run tauri -w @ink-writer/desktop -- build --debug --no-bundle",
-    "smoke": "node scripts/smoke.mjs",
+    "smoke": "npm run build:debug && node scripts/smoke.mjs",
     "check": "biome check . && npm run typecheck --workspaces",
     "test": "npm run test:ts && npm run test:rust",
     "test:ts": "vitest run",
