@@ -22,6 +22,10 @@ describe("describeStartupError", () => {
     expect(describeStartupError(new DatabaseTooNewError(9, 1), messages)).toBe(messages.tooNew);
   });
 
+  it("explains that another copy of the app is open", () => {
+    expect(describeStartupError("already_open", messages)).toBe(messages.alreadyOpen);
+  });
+
   it("includes the cause of any other failure", () => {
     expect(describeStartupError(new Error("disco lleno"), messages)).toContain("disco lleno");
     // The shell's commands reject with a plain string.

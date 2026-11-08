@@ -9,5 +9,13 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "diff": "9.0.0",
+    "fflate": "0.8.3",
+    "yjs": "13.6.33"
+  },
+  "devDependencies": {
+    "mammoth": "1.13.0"
   }
 }

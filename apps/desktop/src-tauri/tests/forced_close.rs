@@ -48,6 +48,7 @@ fn committed_writes_survive_a_forced_close() {
 
     run_child("child_commits_then_dies", &path);
 
+    // Opening at all shows that the child's exclusive lock died with it.
     assert_eq!(rows(&path), ["single", "batch-1", "batch-2"]);
 }
 

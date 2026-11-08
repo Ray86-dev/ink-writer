@@ -31,6 +31,11 @@ export const EXCEPTIONS = new Map([
   ["option-ext", "MPL-2.0"],
   // Vite's CSS tool. Runs at build time only, and none of it reaches the app.
   ["lightningcss", "MPL-2.0"],
+  // Declares just "BSD", but its licence file is BSD-2-Clause. Only used by the tests, via mammoth.
+  ["duck", "BSD"],
+  // The app's fonts, bundled so it works offline. See DESIGN.md.
+  ["@fontsource-variable/literata", "OFL-1.1"],
+  ["@fontsource-variable/instrument-sans", "OFL-1.1"],
 ]);
 
 /** One native package per platform, all from `lightningcss` above. */

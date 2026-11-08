@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 
 const SOURCE = join(import.meta.dirname, "..", "src");
 
+/** Pure JavaScript, usable in a browser and in the desktop WebView alike. */
+const PORTABLE_LIBRARIES = new Set(["diff", "fflate", "yjs"]);
+
 const sourceFiles = readdirSync(SOURCE, { recursive: true, encoding: "utf8" })
   .filter((file) => file.endsWith(".ts"))
   .map((file) => ({ file, code: readFileSync(join(SOURCE, file), "utf8") }));
@@ -17,14 +20,16 @@ describe("the core stays portable", () => {
     expect(sourceFiles.length).toBeGreaterThan(0);
   });
 
-  it.each(sourceFiles)("$file imports only relative modules", ({ code }) => {
+  it.each(sourceFiles)("$file imports only its own modules and portable libraries", ({ code }) => {
     const imports = [...code.matchAll(/from\s+"([^"]+)"/g)].map((match) => match[1] ?? "");
+    const external = imports.filter((path) => !path.startsWith("."));
 
-    expect(imports.filter((path) => !path.startsWith("."))).toEqual([]);
+    expect(external.filter((path) => !PORTABLE_LIBRARIES.has(path))).toEqual([]);
   });
 
   it.each(sourceFiles)("$file doesn't touch the page", ({ code }) => {
-    expect(code).not.toMatch(/\b(window|document|localStorage)\s*[.[]/);
+    // `document` as an API call: the word also appears in comments and in "word/document.xml".
+    expect(code).not.toMatch(/\b(window|localStorage|navigator)\s*[.[]|\bdocument\.\w+\(/);
   });
 
   // The test configuration loads Node's types, so the compiler wouldn't catch these.

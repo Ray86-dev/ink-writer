@@ -42,11 +42,11 @@ Los adaptadores reales llegan cuando hacen falta, en M3 y M6. Todos deben pasar 
 
 Cualquier otro paquete con esa licencia detiene el CI hasta revisarlo. **En M9,** los binarios deben indicar dónde obtener el código de `option-ext` (0008).
 
-**Sin framework de interfaz por ahora.** M1 no lo necesita. Lo decide M2, junto con TipTap.
+**Sin framework de interfaz por ahora.** M1 no lo necesita. Lo decide M2, junto con TipTap: ver la [0010](0010-editor-y-guardado-de-la-prosa.md).
 
 ## Consecuencias
 
 - Las pruebas del core usan `node:sqlite`, experimental en Node 24 y con otra versión de SQLite que `rusqlite`. Las diferencias las cubren las pruebas de Rust y la prueba de humo.
 - El identificador `dev.inkwriter.desktop` determina la carpeta de datos del usuario. El nombre es provisional (`SPEC.md` §11): hay que decidirlo antes de M9, porque cambiarlo después obliga a migrar esa carpeta.
 - `prototypes/m0/` queda fuera del monorepo y del CI. Se conserva para la comprobación pendiente de la 0008.
-- Nada impide abrir dos instancias de la app sobre la misma base. SQLite lo tolera, pero dos editores sobre la misma escena no serían seguros: **M2 debe impedirlo o resolverlo** antes de guardar prosa.
+- Nada impide abrir dos instancias de la app sobre la misma base. La [0010](0010-editor-y-guardado-de-la-prosa.md) lo resuelve.

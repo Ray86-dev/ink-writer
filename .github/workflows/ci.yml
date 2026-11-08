@@ -64,3 +64,27 @@ jobs:
       - name: Build the app with its page embedded, start it and run the smoke test
         if: runner.os == 'Linux'
         run: xvfb-run -a npm run smoke
+      - name: Kill the app while it writes, and check nothing was lost
+        if: runner.os != 'Linux'
+        run: node scripts/crash-test.mjs
+      - name: Kill the app while it writes, and check nothing was lost
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/crash-test.mjs
+      - name: Close the window right after typing
+        if: runner.os != 'Linux'
+        run: node scripts/close-test.mjs
+      - name: Close the window right after typing
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/close-test.mjs
+      - name: Open a second copy of the app
+        if: runner.os != 'Linux'
+        run: node scripts/instance-test.mjs
+      - name: Open a second copy of the app
+        if: runner.os == 'Linux'
+        run: dbus-run-session -- xvfb-run -a node scripts/instance-test.mjs
+      - name: Measure typing with 150,000 words
+        if: runner.os != 'Linux'
+        run: node scripts/perf-test.mjs
+      - name: Measure typing with 150,000 words
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/perf-test.mjs

@@ -23,11 +23,16 @@
     "precheck:rust": "npm run build:web -w @ink-writer/desktop",
     "check:rust": "cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check && cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings",
     "licenses": "node scripts/check-licenses.mjs",
-    "fixtures": "node fixtures/validate.mjs"
+    "fixtures": "node fixtures/validate.mjs",
+    "crash-test": "npm run build:debug && node scripts/crash-test.mjs",
+    "perf-test": "npm run build:debug && node scripts/perf-test.mjs",
+    "instance-test": "npm run build:debug && node scripts/instance-test.mjs",
+    "close-test": "npm run build:debug && node scripts/close-test.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
     "@types/node": "^24",
+    "jsdom": "26.1.0",
     "typescript": "7.0.2",
     "vitest": "5.1.0"
   }

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Only the app's own commands. No file, shell or HTTP plugin reaches the WebView.",
+  "description": "Only the app's own commands. No file, shell or HTTP plugin reaches the WebView. Closing the window is allowed so that the page can finish saving first.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "core:window:allow-destroy"]
 }

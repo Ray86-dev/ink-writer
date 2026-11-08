@@ -57,11 +57,15 @@ Desde la raíz, con Node 24 y Rust estable:
 | `npm run check:rust` | `rustfmt` y `clippy` |
 | `npm test` | Todas las pruebas. Por separado: `npm run test:ts` y `npm run test:rust` |
 | `npm run smoke` | Construye la app real, la arranca con una base temporal y comprueba que todas las capas encajan |
+| `npm run crash-test` | Mata la app real mientras escribe, varias veces, y comprueba que no se pierde nada de lo confirmado (regla 2) |
+| `npm run close-test` | Cierra la ventana justo después de escribir y comprueba que se guardó todo |
+| `npm run perf-test` | Mide el tecleo en la app real con 150.000 palabras |
+| `npm run instance-test` | Comprueba que una segunda copia de la app se cierra sola |
 | `npm run licenses` | Revisa las licencias de todas las dependencias (regla 8) |
 | `npm run fixtures` | Valida el material de `fixtures/` |
 
 La evaluación del análisis aún no existe: llega en M3. Hasta entonces, `npm run fixtures` solo comprueba que el material es coherente.
 
-CI en `.github/workflows/ci.yml`: compila, prueba y arranca la app en Windows, macOS y Linux.
+CI en `.github/workflows/ci.yml`: compila, prueba y arranca la app en Windows, macOS y Linux, y ejecuta las pruebas anteriores en cada uno. Un cambio en guardado, Yjs o sync debe pasar `npm run crash-test`.
 
 Al añadir una migración, crea una nueva en `packages/core/src/storage/migrations.ts`. Nunca edites una ya publicada.

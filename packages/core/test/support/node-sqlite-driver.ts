@@ -9,8 +9,18 @@ export function createNodeSqliteDriver(path = ":memory:"): SqlDriver & { close()
   const db = new DatabaseSync(path);
   db.exec("PRAGMA foreign_keys = ON");
 
-  const toRow = (row: Record<string, unknown>): SqlRow => row as SqlRow;
-  const bind = (params: readonly SqlValue[]) => params as SQLInputValue[];
+  // Copies blobs across, because under jsdom this code and node:sqlite see different Uint8Arrays.
+  const toRow = (row: Record<string, unknown>): SqlRow =>
+    Object.fromEntries(
+      Object.entries(row).map(([key, value]) => [
+        key,
+        ArrayBuffer.isView(value) ? Uint8Array.from(value as Uint8Array) : value,
+      ]),
+    ) as SqlRow;
+  const bind = (params: readonly SqlValue[]) =>
+    params.map((value) =>
+      ArrayBuffer.isView(value) ? Buffer.from(value as Uint8Array) : value,
+    ) as SQLInputValue[];
 
   return {
     async query(sql, params = []) {
