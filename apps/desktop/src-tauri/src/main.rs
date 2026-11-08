@@ -127,6 +127,16 @@ fn test_log(shell: State<'_, Shell>, line: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Closes the window the way the system's close button does, so that a test can go through what
+/// happens then.
+#[tauri::command]
+fn test_close_window(window: tauri::Window, shell: State<'_, Shell>) -> Result<(), String> {
+    if shell.test.is_none() {
+        return Err("only available in a test mode".into());
+    }
+    window.close().map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 fn test_finish(
     app: AppHandle,
@@ -198,6 +208,7 @@ fn main() {
             db_transaction,
             export_file,
             test_log,
+            test_close_window,
             test_finish,
         ])
         .run(tauri::generate_context!())

@@ -4,7 +4,7 @@ import { createTauriShell } from "../tauri-shell";
 import { runCrashVerify, runCrashWriter } from "./crash";
 import { runPerformance } from "./performance";
 import { runSmokeChecks } from "./smoke";
-import { runTour } from "./tour";
+import { runCloseVerify, runCloseWindow, runTour } from "./tour";
 
 export interface TestInfo {
   readonly mode: string;
@@ -46,6 +46,13 @@ export async function runTestMode(test: TestInfo): Promise<void> {
         // Stays open, for a second copy to try starting. Whoever started it ends it.
         await context.log("READY");
         return;
+      case "close":
+        // Ends when the window closes. Reaching the timeout is the failure.
+        await runCloseWindow(createTauriShell(), context);
+        return;
+      case "close-verify":
+        await finish(true, await runCloseVerify(driver));
+        break;
       case "tour":
         await runTour(createTauriShell(), context);
         return;

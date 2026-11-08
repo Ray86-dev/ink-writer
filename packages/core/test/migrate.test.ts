@@ -2,7 +2,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { DatabaseTooNewError, MIGRATIONS, type Migration, migrate } from "../src/index";
+import {
+  createSqlStorage,
+  DatabaseTooNewError,
+  MIGRATIONS,
+  type Migration,
+  migrate,
+} from "../src/index";
 import { createNodeSqliteDriver } from "./support/node-sqlite-driver";
 
 const version = async (driver: ReturnType<typeof createNodeSqliteDriver>) =>
@@ -109,6 +115,32 @@ describe("migrate", () => {
     await expect(migrate(driver, [m(1), m(1)])).rejects.toThrow(/expected 2/);
     await expect(migrate(driver, [m(1), m(3)])).rejects.toThrow(/expected 2/);
     expect(await version(driver)).toBe(0);
+  });
+
+  it("upgrades a novel saved under the first schema, keeping everything in it", async () => {
+    await migrate(driver, MIGRATIONS.slice(0, 1));
+    await driver.execute(
+      "INSERT INTO projects (id, title, language, era) VALUES ('p', 'La veda', 'es', 'actualidad')",
+    );
+    await driver.execute(
+      "INSERT INTO chapters (id, project_id, position, title) VALUES ('c', 'p', 0, 'Uno')",
+    );
+    await driver.execute(
+      "INSERT INTO scenes (id, chapter_id, position, title) VALUES ('s', 'c', 0, 'Una')",
+    );
+
+    const result = await migrate(driver);
+
+    expect(result.from).toBe(1);
+    const storage = createSqlStorage(driver);
+    await expect(storage.listProjects()).resolves.toMatchObject([{ title: "La veda" }]);
+    await expect(storage.listChapters("p")).resolves.toMatchObject([{ title: "Uno" }]);
+    await expect(storage.listScenes("c")).resolves.toMatchObject([{ id: "s", title: "Una" }]);
+    await expect(storage.loadSceneProse("s")).resolves.toEqual({
+      base: null,
+      baseVersion: 0,
+      updates: [],
+    });
   });
 
   it("the shipped migrations have consecutive versions", () => {

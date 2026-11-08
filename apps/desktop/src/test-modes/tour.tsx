@@ -1,4 +1,12 @@
-import { openSqlStorage, PROSE_FIELD, SceneSession } from "@ink-writer/core";
+import {
+  openSqlStorage,
+  PROSE_FIELD,
+  plainText,
+  readParagraphs,
+  SceneSession,
+  type SqlDriver,
+} from "@ink-writer/core";
+import type { Editor } from "@tiptap/core";
 import { createRoot } from "react-dom/client";
 import * as Y from "yjs";
 import { App } from "../App";
@@ -66,6 +74,51 @@ async function seed(shell: Shell): Promise<void> {
   await session.snapshot("Primer borrador");
   write(SAMPLE.slice(2));
   await session.close();
+}
+
+const LAST_WORDS = "Lo último antes de cerrar la ventana.";
+
+/**
+ * The real interface, and then the window's close button. Nothing is awaited between typing and
+ * closing, so that it's the closing itself that has to save.
+ */
+export async function runCloseWindow(shell: Shell, context: TestContext): Promise<void> {
+  await seed(shell);
+  const root = document.getElementById("root");
+  if (root === null) {
+    throw new Error("The page has no root element");
+  }
+  createRoot(root).render(<App shell={shell} language="es" />);
+  (await until(() => button(/La veda/))).click();
+  const prose = await until(() =>
+    document.querySelector<HTMLElement & { editor?: Editor }>(".prose"),
+  );
+  const editor = await until(() => prose.editor);
+  // Lets the window's close listener get registered, which the page does right after showing.
+  await wait(500);
+  editor.commands.setTextSelection(editor.state.doc.content.size - 1);
+  editor.commands.insertContent(LAST_WORDS);
+  await context.invoke("test_close_window");
+}
+
+/** What the close above must have left behind, read from the database after the app is gone. */
+export async function runCloseVerify(driver: SqlDriver): Promise<string> {
+  const { storage } = await openSqlStorage(driver);
+  const [project] = await storage.listProjects();
+  const [chapter] = await storage.listChapters(project?.id ?? "");
+  const [scene] = await storage.listScenes(chapter?.id ?? "");
+  const prose = await storage.loadSceneProse(scene?.id ?? "");
+  const session = await SceneSession.open(storage, scene?.id ?? "", { autoSnapshotMs: 0 });
+  const text = plainText(readParagraphs(session.doc));
+  session.doc.destroy();
+  if (!text.includes(LAST_WORDS)) {
+    throw new Error("Closing the window lost the last words");
+  }
+  if (prose.updates.length > 0) {
+    throw new Error(`Closing left ${prose.updates.length} updates without compacting`);
+  }
+  const versions = await storage.listSnapshots(scene?.id ?? "");
+  return `the last words were saved, the log was compacted, ${versions.length} versions`;
 }
 
 export async function runTour(shell: Shell, context: TestContext): Promise<void> {

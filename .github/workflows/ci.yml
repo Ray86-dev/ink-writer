@@ -70,6 +70,12 @@ jobs:
       - name: Kill the app while it writes, and check nothing was lost
         if: runner.os == 'Linux'
         run: xvfb-run -a node scripts/crash-test.mjs
+      - name: Close the window right after typing
+        if: runner.os != 'Linux'
+        run: node scripts/close-test.mjs
+      - name: Close the window right after typing
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/close-test.mjs
       - name: Open a second copy of the app
         if: runner.os != 'Linux'
         run: node scripts/instance-test.mjs

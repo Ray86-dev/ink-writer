@@ -26,7 +26,8 @@
     "fixtures": "node fixtures/validate.mjs",
     "crash-test": "npm run build:debug && node scripts/crash-test.mjs",
     "perf-test": "npm run build:debug && node scripts/perf-test.mjs",
-    "instance-test": "npm run build:debug && node scripts/instance-test.mjs"
+    "instance-test": "npm run build:debug && node scripts/instance-test.mjs",
+    "close-test": "npm run build:debug && node scripts/close-test.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",

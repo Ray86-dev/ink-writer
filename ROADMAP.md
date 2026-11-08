@@ -29,6 +29,8 @@ TipTap con Yjs por escena, capítulos y escenas, guardado continuo, historial po
 
 **Salida:** ninguna pérdida de texto ante cierre forzado. Tecleo fluido con 150.000 palabras.
 
+**Cerrado.** El CI mata la app real mientras escribe y mide el tecleo en Windows, macOS y Linux. Medidas y límites en `docs/adr/0010-editor-y-guardado-de-la-prosa.md`.
+
 ## M3 · Canal de análisis y evaluación
 
 Extracción, resolución de identidades, comparación, cola sin conexión y arnés de evaluación con `fixtures/`.

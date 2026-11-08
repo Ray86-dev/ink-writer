@@ -60,9 +60,33 @@ El manuscrito se exporta desde lo ya guardado, con capítulos como títulos y es
 
 **Guardar el archivo lo hace Rust.** El diálogo nativo lo abre el shell, y la página no puede elegir por sí sola dónde escribir.
 
+## Medidas
+
+Con la app real, en el CI de cada sistema y el 8 de noviembre de 2026. Son máquinas virtuales compartidas, así que importa el orden de magnitud y no el número exacto.
+
+| | Windows | macOS | Linux |
+|---|---|---|---|
+| Cierres forzados | 8 | 8 | 8 |
+| Escrituras confirmadas | 714 | 4.269 | 1.152 |
+| Texto perdido, desordenado o repetido | Nada | Nada | Nada |
+| De escrito a confirmado en disco, normalmente | 13 ms | 2 ms | 12 ms |
+| De escrito a confirmado en disco, peor caso | 41 ms | 480 ms | 240 ms |
+| Teclear con 150.000 palabras: mediana y peor caso | 4 y 110 ms | 13 y 26 ms | 5 y 24 ms |
+| Lo mismo, tras 20.000 ediciones dispersas | 5 y 7 ms | 19 y 30 ms | 7 y 22 ms |
+| Una escena normal de 500 palabras | 1 y 7 ms | 5 y 16 ms | 4 y 21 ms |
+
+En un equipo de desarrollo con Windows y SSD, 15 cierres forzados y 2131 escrituras confirmadas tampoco perdieron nada. De lo escrito a lo confirmado en disco pasaron unos 7 ms, y como mucho 21 ms en una tanda posterior.
+
+**Lo que estas medidas no dicen:**
+- Las pulsaciones pasan por las transacciones del editor, no por el teclado del sistema. Falta la impresión de una persona escribiendo de verdad.
+- Matar el proceso no equivale a un corte de luz. `synchronous=FULL` está pensado para eso, pero no se ha probado.
+- El DOCX se ha comprobado con `mammoth` y LibreOffice, no con Word.
+- La interfaz solo se ha visto en Windows. En macOS y Linux se ha ejecutado, pero nadie la ha mirado.
+
 ## Consecuencias
 
 - Cada pulsación hace una escritura con `synchronous=FULL`, lo que multiplica las sincronizaciones con el disco. Es asumible porque las escrituras se agrupan y no bloquean el teclado.
+- Por ahora, una escena solo se reordena dentro de su capítulo. Moverla a otro queda pendiente.
 - `scene_updates` crece hasta la siguiente compactación, que ocurre al cerrar la escena o tras muchas actualizaciones.
 - Solo habrá una ventana de la app.
 - Las anclas de M4 son posiciones relativas de Yjs: recuperar una versión sustituye el texto, y las anclas de lo sustituido se pierden. M4 debe tratarlo.
