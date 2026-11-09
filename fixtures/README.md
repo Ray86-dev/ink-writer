@@ -1,8 +1,39 @@
 # Evaluación del análisis
 
-El mayor riesgo del producto es la calidad de las fichas y de la detección de contradicciones. Esta novela breve permite medirla.
+El mayor riesgo del producto es la calidad de las fichas y de la detección de contradicciones. Estas novelas breves permiten medirla.
 
-`node fixtures/validate.mjs` comprueba que el material es coherente: toda cita existe literalmente en su escena.
+`npm run fixtures` comprueba que el material es coherente: toda cita existe literalmente en su escena.
+
+## Cómo se evalúa
+
+```
+npm run eval -- --provider ollama --model gemma4:latest
+npm run eval -- --provider ollama --model gemma4:latest --novel la-feria
+npm run eval:login
+npm run eval -- --provider openrouter --model nvidia/nemotron-3.5-super-vl:free
+```
+
+| Opción | Qué hace |
+|---|---|
+| `--novel` | Qué novela evaluar. Por defecto, `la-veda` |
+| `--verbose` | Muestra entidades, hechos y avisos |
+| `--trace <archivo>` | Guarda cada pregunta y cada respuesta |
+| `--cache-only` | Vuelve a puntuar con lo guardado. Si falta una respuesta, falla en vez de preguntar |
+| `--no-cache` | Pregunta todo de nuevo |
+| `--no-record` | No registra la ejecución |
+| `--no-think` | Pide al modelo que no razone antes de responder |
+| `--resume` | Continúa aunque el cupo del día no alcance para una ejecución completa |
+
+**Sin gastar.** Por OpenRouter solo acepta modelos que OpenRouter declare gratuitos, se detiene en la primera respuesta con coste y no empieza si el cupo diario no alcanza. Nunca pide búsqueda web, que se cobra incluso con modelos gratuitos.
+
+**Registro.** Cada ejecución se guarda en `fixtures/results/`, y al terminar se compara con la anterior del mismo modelo y novela.
+
+## Las dos novelas
+
+- **`la-veda`** es la de trabajo: se puede mirar cada fallo y afinar el canal con ella.
+- **`la-feria`** es la de control: tiene los mismos tipos de caso, escritos de otra forma. **No se afinan los prompts mirando sus resultados**, porque dejaría de decir nada sobre texto que el canal no ha visto. Si revela un fallo de programación, se puede corregir diciendo que se corrigió.
+
+Los prompts no deben usar como ejemplo frases de ninguna de las dos.
 
 ## Qué cubre `la-veda`
 
@@ -21,9 +52,9 @@ El mayor riesgo del producto es la calidad de las fichas y de la detección de c
 | Dos personas con el mismo nombre | `n_dos_luis` |
 | Sujeto omitido, epíteto, pronombre | `must_resolve_reference` |
 
-## Umbrales iniciales
+`la-feria` cubre lo mismo con otras formas. Por ejemplo, al difunto se lo llevan «al cementerio» sin que se nombre la muerte, y los dos Ramones no se presentan con la misma construcción.
 
-Son una propuesta que debe calibrarse en M3 con resultados reales.
+## Umbrales
 
 | Métrica | Umbral |
 |---|---|
@@ -35,4 +66,6 @@ Son una propuesta que debe calibrarse en M3 con resultados reales.
 
 Registrar cada ejecución con modelo, vía y fecha. Si un cambio empeora una métrica, no se integra sin justificarlo.
 
-Conviene ampliar el material con un segundo fixture largo, en inglés y con pasado histórico.
+Los umbrales no puntúan los avisos que no están ni entre los esperados ni entre los prohibidos, aunque molesten al autor. La evaluación los cuenta como «otros avisos»: hay que mirarlos también.
+
+Conviene ampliar el material con un fixture largo, en inglés y con pasado histórico.

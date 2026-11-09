@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-09T09:34:02.906Z",
+  "novel": "la-feria",
+  "provider": "ollama",
+  "model": "gemma4:e2b",
+  "reasoning": "default",
+  "score": {
+    "mustFlag": {
+      "found": [
+        "c_feria",
+        "c_nombre",
+        "o_hechado"
+      ],
+      "missed": [
+        "c_pierna",
+        "c_viaje",
+        "c_edad",
+        "c_difunto",
+        "o_haber"
+      ]
+    },
+    "falseAlarms": [],
+    "inventedQuotes": 0,
+    "discardedQuotes": 0,
+    "twoLuisMerged": false,
+    "references": {
+      "found": 1,
+      "total": 3,
+      "missed": [
+        "la maestra corregía los cuadernos",
+        "Lo encontraron de madrugada"
+      ]
+    },
+    "extraIssues": 0,
+    "passed": false
+  },
+  "requests": 0,
+  "seconds": 0
+}
