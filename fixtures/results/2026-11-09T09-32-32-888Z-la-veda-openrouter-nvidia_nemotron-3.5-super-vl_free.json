@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-09T09:32:32.888Z",
+  "novel": "la-veda",
+  "provider": "openrouter",
+  "model": "nvidia/nemotron-3.5-super-vl:free",
+  "reasoning": "default",
+  "score": {
+    "mustFlag": {
+      "found": [
+        "c_ojos",
+        "c_veda",
+        "c_nombre",
+        "c_viaje",
+        "c_edad_hermanos",
+        "c_difunta",
+        "o_raya"
+      ],
+      "missed": [
+        "o_halla"
+      ]
+    },
+    "falseAlarms": [],
+    "inventedQuotes": 0,
+    "discardedQuotes": 0,
+    "twoLuisMerged": false,
+    "references": {
+      "found": 2,
+      "total": 3,
+      "missed": [
+        "la doctora atendió a Inés Cabrera"
+      ]
+    },
+    "extraIssues": 0,
+    "passed": true
+  },
+  "requests": 3,
+  "seconds": 219
+}

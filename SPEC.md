@@ -141,8 +141,8 @@ SQLite local para estructura. Yjs para la prosa. Esquema orientativo:
 | `scene_snapshots` | id, scene_id, created_at, ydoc, label, word_count |
 | `entities` | id, project_id, type, canonical_name, status, summary |
 | `entity_aliases` | entity_id, alias, source |
-| `mentions` | id, scene_id, entity_id, anchor |
-| `facts` | id, scene_id, entity_id, attribute, value, quote, anchor, story_time |
+| `mentions` | id, scene_id, entity_id, quote, anchor |
+| `facts` | id, scene_id, entity_id, category, attribute, value, quote, sentence, anchor, story_time, in_dialogue |
 | `relations` | id, from_entity, to_entity, label, scene_id, anchor |
 | `user_overrides` | id, kind (merge, split, note, correction, dismiss), payload, created_at |
 | `issues` | id, kind, category, status, hint_steps, fact_a, fact_b, anchor, resolution |
@@ -166,7 +166,7 @@ Reglas:
 **Pasos:**
 1. **Extraer** de la escena entidades, alias, hechos, relaciones y tiempo narrativo, con la cita literal de cada dato. Una cita que no aparezca literalmente en la escena se descarta.
 2. **Resolver identidades** contra las entidades existentes, teniendo en cuenta epítetos («la doctora») y el sujeto omitido del español («llegó tarde»).
-3. **Comparar** los hechos nuevos con el registro, sin releer la novela. Clasificar en contradicción, evolución o sin relación.
+3. **Comparar** los hechos nuevos con el registro, sin releer la novela, en grupos pequeños. Clasificar en contradicción, evolución o sin relación. Cómo se forman los grupos: `docs/adr/0011-canal-de-analisis.md`.
 4. **Generar** resúmenes de ficha, pistas graduales y tareas.
 5. **Revisar ortotipografía** por escena, incluidas las rayas de diálogo.
 
@@ -177,10 +177,12 @@ Contrato de salida del paso 1 (validar con esquema; si falla, un reintento de re
 ```json
 {
   "entities": [{ "name": "Marta Rey", "type": "person", "aliases": ["la doctora"] }],
-  "facts": [{ "entity": "Marta Rey", "attribute": "eye_color", "value": "verdes", "quote": "los ojos verdes de su madre", "story_time": null }],
+  "facts": [{ "entity": "Marta Rey", "category": "physical", "attribute": "eye_color", "value": "verdes", "quote": "los ojos verdes de su madre", "story_time": null }],
   "relations": [{ "from": "Marta Rey", "to": "Tomás", "label": "hermana de", "quote": "Tomás, su hermano" }]
 }
 ```
+
+`category` es una lista cerrada, en `packages/core/src/analysis/contract.ts`.
 
 La calidad se mide con `fixtures/`. Ningún cambio de prompt o modelo se da por bueno sin ejecutar esa evaluación.
 

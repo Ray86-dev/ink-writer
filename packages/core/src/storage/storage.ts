@@ -1,3 +1,5 @@
+import type { AnalysisState } from "../analysis/state";
+
 export interface Project {
   readonly id: string;
   readonly title: string;
@@ -117,4 +119,22 @@ export interface Storage {
   /** Newest first. */
   listSnapshots(sceneId: string): Promise<SnapshotInfo[]>;
   loadSnapshot(id: string): Promise<Uint8Array | null>;
+
+  /** What a scene's text hashes to now. It waits for analysis while this differs from the last one. */
+  setSceneContentHash(sceneId: string, hash: string): Promise<void>;
+  /** Scenes with text not yet analysed, in reading order, without the ones in the trash. */
+  listScenesToAnalyze(projectId: string): Promise<Scene[]>;
+  /** What's known of the novel, with what came from scenes in the trash left out. */
+  loadAnalysis(projectId: string): Promise<AnalysisState>;
+  /**
+   * Stores what analysing a scene produced, all or nothing: its data replaces the scene's old data
+   * (SPEC §4), and `analyzedHash` says which text it describes. If the author kept writing meanwhile,
+   * the scene stays in the queue. An entity already stored keeps its name: only its aliases can grow.
+   */
+  saveSceneAnalysis(
+    projectId: string,
+    sceneId: string,
+    analyzedHash: string,
+    state: AnalysisState,
+  ): Promise<void>;
 }

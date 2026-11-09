@@ -62,4 +62,66 @@ export const MIGRATIONS: readonly Migration[] = [
       "CREATE INDEX scene_snapshots_by_scene ON scene_snapshots (scene_id, created_at)",
     ],
   },
+  {
+    version: 3,
+    name: "analysis",
+    // See docs/adr/0011. Quotes rather than Yjs anchors for now: M4 is what needs to place them.
+    statements: [
+      "ALTER TABLE scenes ADD COLUMN content_hash TEXT",
+      "ALTER TABLE scenes ADD COLUMN analyzed_hash TEXT",
+      `CREATE TABLE entities (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL REFERENCES projects (id) ON DELETE RESTRICT,
+        type TEXT NOT NULL,
+        canonical_name TEXT NOT NULL
+      ) STRICT`,
+      "CREATE INDEX entities_by_project ON entities (project_id)",
+      `CREATE TABLE entity_aliases (
+        entity_id TEXT NOT NULL REFERENCES entities (id) ON DELETE RESTRICT,
+        alias TEXT NOT NULL,
+        source TEXT NOT NULL,
+        PRIMARY KEY (entity_id, alias)
+      ) STRICT`,
+      `CREATE TABLE mentions (
+        scene_id TEXT NOT NULL REFERENCES scenes (id) ON DELETE RESTRICT,
+        entity_id TEXT NOT NULL REFERENCES entities (id) ON DELETE RESTRICT,
+        quote TEXT NOT NULL,
+        PRIMARY KEY (scene_id, entity_id, quote)
+      ) STRICT`,
+      `CREATE TABLE facts (
+        id TEXT PRIMARY KEY,
+        scene_id TEXT NOT NULL REFERENCES scenes (id) ON DELETE RESTRICT,
+        entity_id TEXT NOT NULL REFERENCES entities (id) ON DELETE RESTRICT,
+        category TEXT NOT NULL,
+        attribute TEXT NOT NULL,
+        value TEXT NOT NULL,
+        quote TEXT NOT NULL,
+        sentence TEXT NOT NULL,
+        story_time TEXT,
+        in_dialogue INTEGER NOT NULL CHECK (in_dialogue IN (0, 1))
+      ) STRICT`,
+      "CREATE INDEX facts_by_scene ON facts (scene_id)",
+      `CREATE TABLE relations (
+        id TEXT PRIMARY KEY,
+        scene_id TEXT NOT NULL REFERENCES scenes (id) ON DELETE RESTRICT,
+        from_entity TEXT NOT NULL REFERENCES entities (id) ON DELETE RESTRICT,
+        to_entity TEXT NOT NULL REFERENCES entities (id) ON DELETE RESTRICT,
+        label TEXT NOT NULL,
+        quote TEXT NOT NULL
+      ) STRICT`,
+      "CREATE INDEX relations_by_scene ON relations (scene_id)",
+      `CREATE TABLE issues (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        scene_a TEXT NOT NULL REFERENCES scenes (id) ON DELETE RESTRICT,
+        quote_a TEXT NOT NULL,
+        scene_b TEXT REFERENCES scenes (id) ON DELETE RESTRICT,
+        quote_b TEXT,
+        fix TEXT,
+        reason TEXT NOT NULL
+      ) STRICT`,
+      "CREATE INDEX issues_by_scene_a ON issues (scene_a)",
+      "CREATE INDEX issues_by_scene_b ON issues (scene_b)",
+    ],
+  },
 ];

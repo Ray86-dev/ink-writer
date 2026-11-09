@@ -1,10 +1,15 @@
-// Comprueba que cada cita de expected.json existe literalmente en su escena.
+// Comprueba que cada cita de expected.json existe literalmente en su escena, en cada novela.
 // Uso: node fixtures/validate.mjs
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const dir = join(dirname(fileURLToPath(import.meta.url)), 'la-veda');
+const root = dirname(fileURLToPath(import.meta.url));
+const novels = readdirSync(root).filter((name) => existsSync(join(root, name, 'expected.json')));
+let failed = novels.length === 0;
+
+for (const novel of novels) {
+const dir = join(root, novel);
 const manuscript = JSON.parse(readFileSync(join(dir, 'manuscript.json'), 'utf8'));
 const expected = JSON.parse(readFileSync(join(dir, 'expected.json'), 'utf8'));
 const scenes = new Map(manuscript.scenes.map((s) => [s.id, s.text]));
@@ -41,8 +46,16 @@ expected.must_resolve_reference.forEach((r, i) => {
 const ids = [...expected.must_flag, ...expected.must_not_flag].map((c) => c.id);
 if (new Set(ids).size !== ids.length) errors.push('Hay identificadores repetidos');
 
+expected.must_not_flag.forEach((c) => {
+  (c.namesakes ?? []).forEach((id) => checkEntity(id, c.id));
+});
+
 if (errors.length) {
-  console.error(errors.join('\n'));
-  process.exit(1);
+  console.error(`${novel}:\n${errors.join('\n')}`);
+  failed = true;
+  continue;
 }
-console.log(`OK: ${manuscript.scenes.length} escenas, ${expected.entities.length} entidades, ${expected.must_flag.length} a señalar, ${expected.must_not_flag.length} a no señalar.`);
+console.log(`OK ${novel}: ${manuscript.scenes.length} escenas, ${expected.entities.length} entidades, ${expected.must_flag.length} a señalar, ${expected.must_not_flag.length} a no señalar.`);
+}
+
+process.exit(failed ? 1 : 0);

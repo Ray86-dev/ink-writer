@@ -37,6 +37,8 @@ Extracción, resolución de identidades, comparación, cola sin conexión y arn�
 
 **Salida:** se alcanzan los umbrales de `fixtures/README.md` con al menos dos modelos.
 
+**Cerrado.** `gemma4:latest`, `nemotron-3.5-super` y `gemma4:e2b` alcanzan los umbrales en `la-veda`. En la novela de control, `la-feria`, `gemma4:latest` también y `gemma4:e2b` no. Es el core y el arnés: la app aún no analiza. Resultados, decisiones y límites en `docs/adr/0011-canal-de-analisis.md`.
+
 ## M4 · Fichas y enlaces
 
 Fichas de todos los tipos, tarjeta Nombres, fusionar, separar, notas, enlaces en vivo sin IA, navegación bidireccional y `user_overrides`.

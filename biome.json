@@ -10,7 +10,8 @@
       "!**/dist",
       "!**/target",
       "!**/gen",
-      "!**/icons"
+      "!**/icons",
+      "!**/.cache"
     ]
   },
   "formatter": {

@@ -1,0 +1,55 @@
+{
+  "title": "La feria",
+  "language": "es",
+  "era": "años cincuenta",
+  "scenes": [
+    {
+      "id": "s01",
+      "chapter": "Otoño",
+      "title": "El tren de las nueve",
+      "text": "Adela Montero llegó a Valdelagua en el tren de las nueve. Era la nueva maestra del pueblo y traía un baúl de libros y una carta de Clara, su hermana pequeña. El alcalde, don Anselmo, la recibió en el andén con el sombrero en la mano.\n\nLe dieron la habitación de encima de la panadería. Deshizo el baúl antes de cenar. Aún no cumplía los treinta, y aquella noche se durmió con la ventana abierta."
+    },
+    {
+      "id": "s02",
+      "chapter": "Otoño",
+      "title": "La escuela",
+      "text": "La escuela tenía dos aulas y un mapa viejo de la península. Adela cojeaba de la pierna derecha desde niña, y los alumnos tardaron una semana en dejar de mirarla.\n\n—La feria de ganado es el quince de octubre —le avisó Rufino, el conserje—. Ese día no viene nadie a clase.\n\nPedro, el hijo de Rufino, trabajaba en las minas de Almadén, a tres días de mula de Valdelagua por la sierra."
+    },
+    {
+      "id": "s03",
+      "chapter": "Otoño",
+      "title": "Los dos Ramones",
+      "text": "Esa tarde el herrero, que se llamaba Ramón, le arregló la pata a la pizarra de la escuela y no quiso cobrar. Al salir, Adela se cruzó con Ramón Salas, el notario, que le preguntó cuántos alumnos tenía. No eran parientes, aunque en el pueblo los confundían por carta.\n\nEn la taberna, Rufino juraba a quien quisiera oírlo:\n\n—Yo no he tocado una baraja en mi vida."
+    },
+    {
+      "id": "s04",
+      "chapter": "Otoño",
+      "title": "Soria",
+      "text": "Adela recordaba bien Soria. A los siete años iba a por agua a la fuente de la plaza, y su madre le hacía repetir las tablas en el patio. Ahora era ella quien las explicaba.\n\n—Haber si aprendéis las tablas antes de Navidad —les dijo a los de segundo.\n\nRuffino, desde la puerta, se reía por lo bajo. Aquella semana había hechado de menos a su hijo más que nunca."
+    },
+    {
+      "id": "s05",
+      "chapter": "Otoño",
+      "title": "El ganado",
+      "text": "El tres de octubre se celebró la feria de ganado, y la escuela se quedó vacía. Rufino perdió el jornal a las cartas. Lo encontraron de madrugada junto al lavadero, con los bolsillos vacíos."
+    },
+    {
+      "id": "s06",
+      "chapter": "Otoño",
+      "title": "La visita",
+      "text": "Clara, que le llevaba diez años a Adela, vino a verla por Todos los Santos. La encontró más delgada. Adela bajó a recibirla arrastrando la pierna izquierda, la que le fallaba desde niña.\n\nClara trajo membrillo y noticias de Soria, y se marchó al día siguiente."
+    },
+    {
+      "id": "s07",
+      "chapter": "Invierno",
+      "title": "Febrero",
+      "text": "Pedro salió de Almadén después de comer y llegó a Valdelagua para la cena, con la mula reventada. Venía a ver a su padre.\n\nAquel febrero se llevaron a don Anselmo al cementerio en un carro tirado por mulas, y cerraron la escuela tres días. Por las noches, la maestra corregía los cuadernos junto a la estufa."
+    },
+    {
+      "id": "s08",
+      "chapter": "Primavera",
+      "title": "Mayo",
+      "text": "En mayo, don Anselmo presidió el pleno del ayuntamiento y felicitó a Adela por los exámenes.\n\nAdela dejó la escuela ese verano y abrió una imprenta en la plaza. Seguía corrigiendo, decía, pero ahora cobraba por ello."
+    }
+  ]
+}

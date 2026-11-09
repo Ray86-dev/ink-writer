@@ -63,8 +63,10 @@ Desde la raíz, con Node 24 y Rust estable:
 | `npm run instance-test` | Comprueba que una segunda copia de la app se cierra sola |
 | `npm run licenses` | Revisa las licencias de todas las dependencias (regla 8) |
 | `npm run fixtures` | Valida el material de `fixtures/` |
+| `npm run eval -- --provider ollama --model gemma4:latest` | Evalúa el análisis contra `fixtures/` y registra el resultado. Ver `fixtures/README.md` |
+| `npm run eval:login` | Conecta OpenRouter para la evaluación. La clave queda fuera del repositorio |
 
-La evaluación del análisis aún no existe: llega en M3. Hasta entonces, `npm run fixtures` solo comprueba que el material es coherente.
+La evaluación usa la red y modelos reales, así que no está en el CI. Por OpenRouter solo acepta modelos gratuitos. Usa `--cache-only` para volver a puntuar sin gastar ninguna petición.
 
 CI en `.github/workflows/ci.yml`: compila, prueba y arranca la app en Windows, macOS y Linux, y ejecuta las pruebas anteriores en cada uno. Un cambio en guardado, Yjs o sync debe pasar `npm run crash-test`.
 

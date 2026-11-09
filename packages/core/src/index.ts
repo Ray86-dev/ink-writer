@@ -1,3 +1,17 @@
+export type { AnalysisDeps, SceneAnalysis, SceneToAnalyze } from "./analysis/pipeline";
+export { analyzeScene } from "./analysis/pipeline";
+export type { AnalysisQueueOptions, QueueRun, QueueStatus } from "./analysis/queue";
+export { AnalysisQueue, hashText } from "./analysis/queue";
+export type {
+  AnalysisState,
+  Entity,
+  Fact,
+  Issue,
+  Mention,
+  QuoteRef,
+  Relation,
+} from "./analysis/state";
+export { emptyState, liveEntities, withoutScene } from "./analysis/state";
 export { toDocx } from "./export/docx";
 export type { Manuscript, ManuscriptChapter } from "./export/manuscript";
 export { buildManuscript } from "./export/manuscript";
@@ -15,6 +29,12 @@ export {
   plainText,
   readParagraphs,
 } from "./prose/text";
+export { buildOllamaBody, createOllamaProvider } from "./provider/ollama";
+export {
+  buildOpenRouterBody,
+  createOpenRouterProvider,
+  parseOpenRouterModels,
+} from "./provider/openrouter";
 export type {
   AiProvider,
   BillingKind,
@@ -27,8 +47,18 @@ export type {
   ModelInfo,
   ProviderError,
   StructuredOutputMode,
+  Usage,
 } from "./provider/provider";
 export { collectDraft, unsupportedRequest } from "./provider/provider";
+export type { StructuredFailure, StructuredOptions, Validated } from "./provider/structured";
+export { generateStructured, StructuredOutputError } from "./provider/structured";
+export type {
+  AiTransport,
+  ProviderRoute,
+  TransportRequest,
+  TransportResponse,
+} from "./provider/transport";
+export { readAll, readLines, readSseData } from "./provider/transport";
 export type { SqlDriver, SqlResult, SqlRow, SqlStatement, SqlValue } from "./storage/driver";
 export type { Migration, MigrationResult } from "./storage/migrate";
 export { DatabaseTooNewError, migrate } from "./storage/migrate";

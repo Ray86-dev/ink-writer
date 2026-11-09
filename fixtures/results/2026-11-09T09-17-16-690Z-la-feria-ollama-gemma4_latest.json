@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-09T09:17:16.690Z",
+  "novel": "la-feria",
+  "provider": "ollama",
+  "model": "gemma4:latest",
+  "reasoning": "default",
+  "score": {
+    "mustFlag": {
+      "found": [
+        "c_pierna",
+        "c_feria",
+        "c_nombre",
+        "c_viaje",
+        "o_haber",
+        "o_hechado"
+      ],
+      "missed": [
+        "c_edad",
+        "c_difunto"
+      ]
+    },
+    "falseAlarms": [],
+    "inventedQuotes": 0,
+    "discardedQuotes": 0,
+    "twoLuisMerged": false,
+    "references": {
+      "found": 2,
+      "total": 3,
+      "missed": [
+        "la maestra corregía los cuadernos"
+      ]
+    },
+    "extraIssues": 0,
+    "passed": true
+  },
+  "requests": 38,
+  "seconds": 225
+}

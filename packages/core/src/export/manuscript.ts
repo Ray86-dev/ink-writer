@@ -15,7 +15,8 @@ export interface Manuscript {
   readonly chapters: readonly ManuscriptChapter[];
 }
 
-async function readScene(storage: Storage, sceneId: string): Promise<Paragraph[]> {
+/** A scene's prose as stored: its base and every update since. */
+export async function readScene(storage: Storage, sceneId: string): Promise<Paragraph[]> {
   const prose = await storage.loadSceneProse(sceneId);
   const doc = new Y.Doc();
   try {
