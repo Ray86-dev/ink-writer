@@ -1,0 +1,88 @@
+{
+  "entities": [
+    { "id": "adela", "type": "person", "names": ["Adela Montero", "Adela", "la maestra"] },
+    { "id": "clara", "type": "person", "names": ["Clara"] },
+    { "id": "anselmo", "type": "person", "names": ["don Anselmo"] },
+    { "id": "rufino", "type": "person", "names": ["Rufino"], "variants_to_flag": ["Ruffino"] },
+    { "id": "pedro", "type": "person", "names": ["Pedro"] },
+    { "id": "ramon_herrero", "type": "person", "names": ["Ramón", "el herrero"], "note": "El herrero. No fusionar con el notario." },
+    { "id": "ramon_notario", "type": "person", "names": ["Ramón Salas", "el notario"], "note": "El notario. No fusionar con el herrero." },
+    { "id": "valdelagua", "type": "place", "names": ["Valdelagua"] },
+    { "id": "almaden", "type": "place", "names": ["Almadén"] },
+    { "id": "feria", "type": "lore", "names": ["feria de ganado"] }
+  ],
+  "relations": [
+    { "from": "adela", "to": "clara", "kind": "hermanas", "quote": "Clara, su hermana pequeña", "scene": "s01" },
+    { "from": "pedro", "to": "rufino", "kind": "hijo de", "quote": "Pedro, el hijo de Rufino", "scene": "s02" }
+  ],
+  "must_resolve_reference": [
+    { "scene": "s01", "quote": "Deshizo el baúl antes de cenar", "entity": "adela", "why": "Sujeto omitido" },
+    { "scene": "s07", "quote": "la maestra corregía los cuadernos", "entity": "adela", "why": "Epíteto dicho en otra escena" },
+    { "scene": "s05", "quote": "Lo encontraron de madrugada", "entity": "rufino", "why": "Pronombre resuelto por la frase anterior" }
+  ],
+  "must_flag": [
+    {
+      "id": "c_pierna", "category": "coherence",
+      "a": { "scene": "s02", "quote": "cojeaba de la pierna derecha" },
+      "b": { "scene": "s06", "quote": "arrastrando la pierna izquierda" }
+    },
+    {
+      "id": "c_feria", "category": "coherence",
+      "a": { "scene": "s02", "quote": "La feria de ganado es el quince de octubre" },
+      "b": { "scene": "s05", "quote": "El tres de octubre se celebró la feria de ganado" }
+    },
+    {
+      "id": "c_nombre", "category": "coherence",
+      "a": { "scene": "s02", "quote": "Rufino, el conserje" },
+      "b": { "scene": "s04", "quote": "Ruffino" }
+    },
+    {
+      "id": "c_viaje", "category": "coherence",
+      "a": { "scene": "s02", "quote": "a tres días de mula de Valdelagua" },
+      "b": { "scene": "s07", "quote": "salió de Almadén después de comer y llegó a Valdelagua para la cena" }
+    },
+    {
+      "id": "c_edad", "category": "coherence",
+      "a": { "scene": "s01", "quote": "Clara, su hermana pequeña" },
+      "b": { "scene": "s06", "quote": "Clara, que le llevaba diez años a Adela" }
+    },
+    {
+      "id": "c_difunto", "category": "coherence",
+      "a": { "scene": "s07", "quote": "se llevaron a don Anselmo al cementerio" },
+      "b": { "scene": "s08", "quote": "don Anselmo presidió el pleno" }
+    },
+    {
+      "id": "o_haber", "category": "correction",
+      "a": { "scene": "s04", "quote": "Haber si aprendéis" },
+      "expected_fix": "A ver si aprendéis"
+    },
+    {
+      "id": "o_hechado", "category": "correction",
+      "a": { "scene": "s04", "quote": "había hechado de menos" },
+      "expected_fix": "había echado de menos"
+    }
+  ],
+  "must_not_flag": [
+    {
+      "id": "n_trabajo", "why": "Evolución: dejó de ser maestra",
+      "a": { "scene": "s01", "quote": "Era la nueva maestra del pueblo" },
+      "b": { "scene": "s08", "quote": "Adela dejó la escuela ese verano" }
+    },
+    {
+      "id": "n_recuerdo", "why": "Recuerdo: siete años entonces, casi treinta ahora",
+      "a": { "scene": "s04", "quote": "A los siete años" },
+      "b": { "scene": "s01", "quote": "Aún no cumplía los treinta" }
+    },
+    {
+      "id": "n_mentira", "why": "Un personaje miente en un diálogo: no es un error de la autora",
+      "a": { "scene": "s03", "quote": "Yo no he tocado una baraja en mi vida" },
+      "b": { "scene": "s05", "quote": "Rufino perdió el jornal a las cartas" }
+    },
+    {
+      "id": "n_dos_ramones", "why": "Dos personas distintas con el mismo nombre",
+      "namesakes": ["ramon_herrero", "ramon_notario"],
+      "a": { "scene": "s03", "quote": "el herrero, que se llamaba Ramón" },
+      "b": { "scene": "s03", "quote": "Ramón Salas, el notario" }
+    }
+  ]
+}

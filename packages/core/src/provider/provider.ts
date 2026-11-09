@@ -23,6 +23,8 @@ export interface ModelInfo {
   readonly id: string;
   readonly displayName: string;
   readonly capabilities: ModelCapabilities;
+  /** True only if the provider states that using it costs nothing. */
+  readonly free?: boolean;
 }
 
 export interface GenerateRequest {
@@ -35,7 +37,18 @@ export interface GenerateRequest {
   };
   /** Each search costs money, and one request can run several, so the cap is mandatory. */
   readonly webSearch?: { readonly maxSearches: number };
+  readonly temperature?: number;
+  readonly maxOutputTokens?: number;
+  /** "off" skips the reasoning some models do before answering, which costs time and tokens. */
+  readonly reasoning?: "default" | "off";
   readonly signal?: AbortSignal;
+}
+
+export interface Usage {
+  readonly inputTokens: number | null;
+  readonly outputTokens: number | null;
+  /** In dollars, when the provider says. */
+  readonly cost: number | null;
 }
 
 export interface Citation {
@@ -49,6 +62,7 @@ export interface ProviderError {
   /** Kept for support, as the ChatGPT route asks for. */
   readonly requestId?: string;
   readonly httpStatus?: number;
+  readonly retryAfterSeconds?: number;
 }
 
 /** Only `completed` is success. Any other ending leaves, at most, a partial draft. */
@@ -61,7 +75,7 @@ export type GenerateOutcome =
 export type GenerateEvent =
   | { readonly type: "text"; readonly delta: string }
   | { readonly type: "citation"; readonly citation: Citation }
-  | { readonly type: "end"; readonly outcome: GenerateOutcome };
+  | { readonly type: "end"; readonly outcome: GenerateOutcome; readonly usage?: Usage };
 
 export interface AiProvider {
   readonly id: string;
@@ -99,6 +113,7 @@ export interface Draft {
   readonly outcome: GenerateOutcome;
   /** True only after a `completed` ending. Anything else can't be treated as a finished result. */
   readonly completed: boolean;
+  readonly usage?: Usage;
 }
 
 /**
@@ -112,6 +127,7 @@ export async function collectDraft(
   let text = "";
   const citations: Citation[] = [];
   let outcome: GenerateOutcome | undefined;
+  let usage: Usage | undefined;
   try {
     for await (const event of events) {
       if (event.type === "text") {
@@ -121,6 +137,7 @@ export async function collectDraft(
         citations.push(event.citation);
       } else {
         outcome = event.outcome;
+        usage = event.usage;
         break;
       }
     }
@@ -134,5 +151,11 @@ export async function collectDraft(
     status: "interrupted" as const,
     message: "The stream ended without an ending event",
   };
-  return { text, citations, outcome: final, completed: final.status === "completed" };
+  return {
+    text,
+    citations,
+    outcome: final,
+    completed: final.status === "completed",
+    ...(usage === undefined ? {} : { usage }),
+  };
 }

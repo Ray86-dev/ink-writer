@@ -2,6 +2,7 @@ node_modules/
 dist/
 target/
 gen/
+.cache/
 .impeccable/
 .DS_Store
 *.log

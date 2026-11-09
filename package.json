@@ -27,12 +27,15 @@
     "crash-test": "npm run build:debug && node scripts/crash-test.mjs",
     "perf-test": "npm run build:debug && node scripts/perf-test.mjs",
     "instance-test": "npm run build:debug && node scripts/instance-test.mjs",
-    "close-test": "npm run build:debug && node scripts/close-test.mjs"
+    "close-test": "npm run build:debug && node scripts/close-test.mjs",
+    "eval": "tsx packages/core/eval/run.ts",
+    "eval:login": "tsx packages/core/eval/login.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",
     "@types/node": "^24",
     "jsdom": "26.1.0",
+    "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vitest": "5.1.0"
   }
