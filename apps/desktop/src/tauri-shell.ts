@@ -1,7 +1,17 @@
-import { invoke } from "@tauri-apps/api/core";
+import type { AiTransport } from "@ink-writer/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Shell } from "./shell";
 import { bytesToBase64, createTauriDriver } from "./tauri-driver";
+import { type AiEvent, createTauriTransport } from "./tauri-transport";
+
+export function createTauriAiTransport(): AiTransport {
+  return createTauriTransport(invoke, (onEvent) => {
+    const channel = new Channel<AiEvent>();
+    channel.onmessage = onEvent;
+    return channel;
+  });
+}
 
 export function createTauriShell(): Shell {
   return {

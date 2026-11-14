@@ -7,11 +7,13 @@ use std::path::PathBuf;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
+use ink_writer::ai::{AiClient, AiEvent, AiRequest, Bases, Cancellations};
 use ink_writer::db::{Database, ExecResult, Statement};
 use ink_writer::files::write_atomically;
 use ink_writer::test_mode::TestMode;
 use serde::Serialize;
 use serde_json::{Map, Value};
+use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
@@ -21,6 +23,8 @@ const SINGLE_INSTANCE_TEST: &str = "single-instance";
 struct Shell {
     /// Kept as a `Result` so that the page can explain the problem instead of the app vanishing.
     db: Result<Database, String>,
+    ai: Result<AiClient, String>,
+    ai_calls: Cancellations,
     test: Option<TestMode>,
     /// In a test, where exports go. A test can't answer a dialog.
     test_dir: Option<PathBuf>,
@@ -117,6 +121,42 @@ fn export_file(
     }
 }
 
+/// Sends one request to a model and passes the answer on as it arrives. Everything about how it
+/// went, a failure included, goes through `on_event`, so that the page gets it all in order.
+#[tauri::command]
+async fn ai_send(
+    shell: State<'_, Shell>,
+    id: String,
+    request: AiRequest,
+    on_event: Channel<AiEvent>,
+) -> Result<(), String> {
+    let cancelled = shell.ai_calls.register(&id);
+    let result = match &shell.ai {
+        Ok(client) => {
+            let sink = |event| {
+                // The page going away is no reason to stop here: cancelling is how it says so.
+                let _ = on_event.send(event);
+            };
+            tokio::select! {
+                // No key yet: connecting OpenRouter comes with its own step of M4.
+                result = client.run(&request, None, sink) => result,
+                _ = cancelled => Err("cancelled".to_string()),
+            }
+        }
+        Err(message) => Err(message.clone()),
+    };
+    shell.ai_calls.finish(&id);
+    if let Err(message) = result {
+        let _ = on_event.send(AiEvent::Error { message });
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn ai_cancel(shell: State<'_, Shell>, id: String) {
+    shell.ai_calls.cancel(&id);
+}
+
 /// One line to whoever started the test. Sent only after what it reports has really happened.
 #[tauri::command]
 fn test_log(shell: State<'_, Shell>, line: String) -> Result<(), String> {
@@ -196,6 +236,11 @@ fn main() {
             };
             app.manage(Shell {
                 db: Database::open(&dir.join(DB_FILE)),
+                ai: AiClient::new(match &test {
+                    Some(test) => test.ai_bases(),
+                    None => Bases::default(),
+                }),
+                ai_calls: Cancellations::default(),
                 test_dir: test.is_some().then(|| dir.clone()),
                 test,
             });
@@ -207,6 +252,8 @@ fn main() {
             db_execute,
             db_transaction,
             export_file,
+            ai_send,
+            ai_cancel,
             test_log,
             test_close_window,
             test_finish,
