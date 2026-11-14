@@ -9,8 +9,12 @@
 /** Who pays, so the UI can always say so. Nothing switches between these by itself (rule 10). */
 export type BillingKind = "chatgpt_plan" | "openrouter_credits" | "api_key" | "local";
 
-/** Routes differ here, and on the ChatGPT route the mechanism is still unverified. */
-export type StructuredOutputMode = "json_schema" | "forced_tool" | "none";
+/**
+ * Routes differ here, and on the ChatGPT route the mechanism is still unverified. `json_object` only
+ * guarantees valid JSON: the shape is asked for in the prompt, so it's the answer's validation that
+ * guarantees it.
+ */
+export type StructuredOutputMode = "json_schema" | "json_object" | "forced_tool" | "none";
 
 /** Per model rather than per provider: on OpenRouter they vary from one model to the next. */
 export interface ModelCapabilities {

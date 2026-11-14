@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-14T23:08:22.707Z",
+  "novel": "la-feria",
+  "provider": "deepseek",
+  "model": "deepseek-flash",
+  "reasoning": "default",
+  "score": {
+    "mustFlag": {
+      "found": [
+        "c_pierna",
+        "c_feria",
+        "c_nombre",
+        "c_viaje",
+        "c_edad",
+        "c_difunto",
+        "o_haber",
+        "o_hechado"
+      ],
+      "missed": []
+    },
+    "falseAlarms": [],
+    "inventedQuotes": 0,
+    "discardedQuotes": 0,
+    "twoLuisMerged": false,
+    "references": {
+      "found": 3,
+      "total": 3,
+      "missed": []
+    },
+    "extraIssues": 0,
+    "passed": true
+  },
+  "requests": 49,
+  "seconds": 357,
+  "estimatedCost": 0.09377849999999999
+}

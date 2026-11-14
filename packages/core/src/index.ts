@@ -29,6 +29,11 @@ export {
   plainText,
   readParagraphs,
 } from "./prose/text";
+export {
+  buildDeepSeekBody,
+  createDeepSeekProvider,
+  parseDeepSeekModels,
+} from "./provider/deepseek";
 export { buildOllamaBody, createOllamaProvider } from "./provider/ollama";
 export {
   buildOpenRouterBody,

@@ -3,8 +3,10 @@
  *
  *   npm run eval -- --provider ollama --model gemma4:e2b
  *   npm run eval -- --provider openrouter --model nvidia/nemotron-3.5-super-vl:free
+ *   npm run eval -- --provider deepseek --model deepseek-flash --max-cost 0.50
  *
- * OpenRouter only accepts free models here. Each run is recorded in `fixtures/results/`.
+ * OpenRouter only accepts free models here. DeepSeek is paid, and needs a limit. Each run is recorded
+ * in `fixtures/results/`.
  */
 import {
   appendFileSync,
@@ -18,6 +20,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { type AnalysisDeps, analyzeScene, type SceneToAnalyze } from "../src/analysis/pipeline";
 import { emptyState } from "../src/analysis/state";
+import { createDeepSeekProvider } from "../src/provider/deepseek";
 import { createOllamaProvider } from "../src/provider/ollama";
 import { createOpenRouterProvider } from "../src/provider/openrouter";
 import type { AiProvider, GenerateEvent, GenerateRequest } from "../src/provider/provider";
@@ -28,8 +31,11 @@ import {
   assertAllowance,
   assertFreeModel,
   assertNoCost,
+  createSpendingMeter,
   type DailyAllowance,
   estimateRequests,
+  parseSpendingLimit,
+  pricesFor,
   SpendingRefused,
 } from "./guard";
 import { createNodeTransport } from "./node-transport";
@@ -44,6 +50,13 @@ export const KEY_FILE = join(
   process.env.LOCALAPPDATA ?? join(homedir(), ".local", "share"),
   "ink-writer-dev",
   "openrouter-key",
+);
+
+/** Where a DeepSeek key is read from, unless `DEEPSEEK_API_KEY` is set. Also outside the repository. */
+const DEEPSEEK_KEY_FILE = join(
+  process.env.LOCALAPPDATA ?? join(homedir(), ".local", "share"),
+  "ink-writer-dev",
+  "deepseek-key",
 );
 
 function option(name: string): string | undefined {
@@ -92,6 +105,18 @@ function withTrace(provider: AiProvider, file: string): AiProvider {
   };
 }
 
+async function readBalance(transport: ReturnType<typeof createNodeTransport>): Promise<string> {
+  const response = await transport.send({
+    route: "deepseek",
+    method: "GET",
+    path: "/user/balance",
+  });
+  const body = JSON.parse(await readAll(response.body)) as {
+    balance_infos?: { currency: string; total_balance: string }[];
+  };
+  return (body.balance_infos ?? []).map((b) => `${b.total_balance} ${b.currency}`).join(", ");
+}
+
 interface RunRecord {
   readonly date: string;
   readonly novel: string;
@@ -101,6 +126,8 @@ interface RunRecord {
   readonly score: Score;
   readonly requests: number;
   readonly seconds: number;
+  /** In dollars, at the highest rates, so it can only be above the bill. Only on a paid model. */
+  readonly estimatedCost?: number;
 }
 
 function previousRecord(novel: string, provider: string, model: string): RunRecord | null {
@@ -165,9 +192,12 @@ function printScore(score: Score, previous: RunRecord | null): void {
 async function main(): Promise<void> {
   const providerName = option("provider");
   const model = option("model");
-  if ((providerName !== "ollama" && providerName !== "openrouter") || model === undefined) {
+  if (
+    (providerName !== "ollama" && providerName !== "openrouter" && providerName !== "deepseek") ||
+    model === undefined
+  ) {
     console.error(
-      "Uso: npm run eval -- --provider ollama|openrouter --model <modelo> [--novel <novela>] [--no-think] [--verbose] [--cache-only] [--trace <archivo>]",
+      "Uso: npm run eval -- --provider ollama|openrouter|deepseek --model <modelo> [--novel <novela>] [--max-cost <dólares>] [--no-think] [--verbose] [--cache-only] [--trace <archivo>]",
     );
     process.exit(2);
   }
@@ -181,19 +211,39 @@ async function main(): Promise<void> {
   };
   const expected = JSON.parse(readFileSync(join(dir, "expected.json"), "utf8")) as Expected;
 
-  const key =
-    providerName === "openrouter" && existsSync(KEY_FILE)
-      ? readFileSync(KEY_FILE, "utf8").trim()
-      : null;
-  if (providerName === "openrouter" && key === null) {
+  const readKey = (file: string) => (existsSync(file) ? readFileSync(file, "utf8").trim() : null);
+  const openRouterKey = providerName === "openrouter" ? readKey(KEY_FILE) : null;
+  if (providerName === "openrouter" && openRouterKey === null) {
     console.error("No hay clave de OpenRouter. Ejecuta: npm run eval:login");
     process.exit(2);
   }
-  const transport = createNodeTransport(key);
+  const deepSeekKey =
+    providerName === "deepseek"
+      ? (process.env.DEEPSEEK_API_KEY ?? readKey(DEEPSEEK_KEY_FILE))
+      : null;
+  if (providerName === "deepseek" && deepSeekKey === null) {
+    console.error("No hay clave de DeepSeek. Mira fixtures/README.md");
+    process.exit(2);
+  }
+  // A paid model needs both a price and a limit, and it's checked before anything is sent.
+  const meter =
+    providerName === "deepseek"
+      ? createSpendingMeter(pricesFor(model), parseSpendingLimit(option("max-cost")))
+      : null;
+  const transport = createNodeTransport({
+    ...(openRouterKey === null ? {} : { openrouter: openRouterKey }),
+    ...(deepSeekKey === null ? {} : { deepseek: deepSeekKey }),
+  });
   const base: AiProvider =
     providerName === "ollama"
       ? createOllamaProvider(transport)
-      : createOpenRouterProvider(transport);
+      : providerName === "deepseek"
+        ? createDeepSeekProvider(transport)
+        : createOpenRouterProvider(transport);
+
+  if (providerName === "deepseek" && !flag("cache-only")) {
+    console.log(`Saldo de DeepSeek al empezar: ${await readBalance(transport)}`);
+  }
 
   if (providerName === "openrouter") {
     assertFreeModel(await base.listModels(), model);
@@ -219,7 +269,7 @@ async function main(): Promise<void> {
     onStep: () => {
       requests += 1;
     },
-    onUsage: assertNoCost,
+    onUsage: meter === null ? assertNoCost : meter.count,
     // Numbered, so that the same run makes the same prompts, and the cache can find them.
     newId: (() => {
       let next = 0;
@@ -283,6 +333,13 @@ async function main(): Promise<void> {
     `\n${requests} pasos, ${stats ? `${stats.misses} peticiones reales y ${stats.hits} de la caché` : "sin caché"}, ${seconds} s`,
   );
 
+  if (meter !== null) {
+    console.log(`Gasto estimado, a la tarifa más alta: ${meter.spent().toFixed(4)} $`);
+    if (!flag("cache-only")) {
+      console.log(`Saldo de DeepSeek al terminar: ${await readBalance(transport)}`);
+    }
+  }
+
   if (!flag("no-record")) {
     const date = new Date().toISOString();
     const record: RunRecord = {
@@ -294,6 +351,7 @@ async function main(): Promise<void> {
       score,
       requests: stats?.misses ?? requests,
       seconds,
+      ...(meter === null ? {} : { estimatedCost: meter.spent() }),
     };
     mkdirSync(RESULTS, { recursive: true });
     const name = `${date.replace(/[:.]/g, "-")}-${novel}-${providerName}-${model.replace(/[^a-zA-Z0-9.-]/g, "_")}.json`;

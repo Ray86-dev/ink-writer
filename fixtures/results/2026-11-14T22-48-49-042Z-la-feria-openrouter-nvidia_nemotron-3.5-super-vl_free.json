@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-14T22:48:49.042Z",
+  "novel": "la-feria",
+  "provider": "openrouter",
+  "model": "nvidia/nemotron-3.5-super-vl:free",
+  "reasoning": "default",
+  "score": {
+    "mustFlag": {
+      "found": [
+        "c_pierna",
+        "c_feria",
+        "c_nombre",
+        "c_viaje",
+        "o_haber",
+        "o_hechado"
+      ],
+      "missed": [
+        "c_edad",
+        "c_difunto"
+      ]
+    },
+    "falseAlarms": [],
+    "inventedQuotes": 0,
+    "discardedQuotes": 0,
+    "twoLuisMerged": false,
+    "references": {
+      "found": 3,
+      "total": 3,
+      "missed": []
+    },
+    "extraIssues": 0,
+    "passed": true
+  },
+  "requests": 48,
+  "seconds": 987
+}

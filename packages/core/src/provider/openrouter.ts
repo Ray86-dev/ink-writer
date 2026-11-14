@@ -1,3 +1,4 @@
+import { asObject, type Json, parseJson } from "./json";
 import {
   type AiProvider,
   type GenerateEvent,
@@ -11,20 +12,6 @@ import { type AiTransport, readAll, readSseData } from "./transport";
 
 /** Bounds each request, and leaves room for reasoning, which is spent before any answer. */
 const DEFAULT_MAX_TOKENS = 8000;
-
-type Json = Record<string, unknown>;
-
-function asObject(value: unknown): Json {
-  return typeof value === "object" && value !== null ? (value as Json) : {};
-}
-
-function parseJson(text: string): Json | null {
-  try {
-    return asObject(JSON.parse(text));
-  } catch {
-    return null;
-  }
-}
 
 function toError(
   body: Json | null,

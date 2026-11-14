@@ -11,11 +11,13 @@ npm run eval -- --provider ollama --model gemma4:latest
 npm run eval -- --provider ollama --model gemma4:latest --novel la-feria
 npm run eval:login
 npm run eval -- --provider openrouter --model nvidia/nemotron-3.5-super-vl:free
+npm run eval -- --provider deepseek --model deepseek-flash --max-cost 0.50
 ```
 
 | Opción | Qué hace |
 |---|---|
 | `--novel` | Qué novela evaluar. Por defecto, `la-veda` |
+| `--max-cost` | Tope de gasto en dólares. Obligatorio en un modelo de pago |
 | `--verbose` | Muestra entidades, hechos y avisos |
 | `--trace <archivo>` | Guarda cada pregunta y cada respuesta |
 | `--cache-only` | Vuelve a puntuar con lo guardado. Si falta una respuesta, falla en vez de preguntar |
@@ -25,6 +27,16 @@ npm run eval -- --provider openrouter --model nvidia/nemotron-3.5-super-vl:free
 | `--resume` | Continúa aunque el cupo del día no alcance para una ejecución completa |
 
 **Sin gastar.** Por OpenRouter solo acepta modelos que OpenRouter declare gratuitos, se detiene en la primera respuesta con coste y no empieza si el cupo diario no alcanza. Nunca pide búsqueda web, que se cobra incluso con modelos gratuitos.
+
+**Con DeepSeek sí se gasta.** La API directa cobra por tokens y necesita saldo, así que el evaluador exige `--max-cost`. Cuenta cada respuesta a la tarifa más alta publicada, se detiene al llegar al tope y también si una respuesta no dice cuánto usó. Muestra además el saldo al empezar y al terminar, para contrastarlo. Lo que ya está en la caché no se paga.
+
+La clave se lee de `DEEPSEEK_API_KEY` o de `%LOCALAPPDATA%\ink-writer-dev\deepseek-key`. Para guardarla sin que aparezca en pantalla ni en el historial, cópiala y ejecuta en PowerShell:
+
+```
+Get-Clipboard | Set-Content "$env:LOCALAPPDATA\ink-writer-dev\deepseek-key" -NoNewline
+```
+
+Esta API solo garantiza JSON válido, no su forma: el esquema va en las instrucciones y la respuesta se valida igual que con los demás modelos.
 
 **Registro.** Cada ejecución se guarda en `fixtures/results/`, y al terminar se compara con la anterior del mismo modelo y novela.
 
