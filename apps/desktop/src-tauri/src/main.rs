@@ -4,12 +4,16 @@
 //! surface the WebView can reach, and none of them hands out a credential (rule 9).
 
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Duration;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
-use ink_writer::ai::{AiClient, AiEvent, AiRequest, Bases, Cancellations};
+use ink_writer::ai::{AiClient, AiEvent, AiRequest, Bases, Cancellations, Route};
 use ink_writer::db::{Database, ExecResult, Statement};
 use ink_writer::files::write_atomically;
+use ink_writer::openrouter_login::Login;
+use ink_writer::secrets::{Keys, MemoryStore, SystemStore};
 use ink_writer::test_mode::TestMode;
 use serde::Serialize;
 use serde_json::{Map, Value};
@@ -19,12 +23,17 @@ use tauri_plugin_dialog::DialogExt;
 
 const DB_FILE: &str = "ink-writer.db";
 const SINGLE_INSTANCE_TEST: &str = "single-instance";
+const KEY_FILE: &str = "openrouter-key";
+const LOGIN_ID: &str = "openrouter-login";
+/// How long the author has to come back from the browser. They can also cancel at any time.
+const LOGIN_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 
 struct Shell {
     /// Kept as a `Result` so that the page can explain the problem instead of the app vanishing.
     db: Result<Database, String>,
     ai: Result<AiClient, String>,
     ai_calls: Cancellations,
+    keys: Arc<Keys>,
     test: Option<TestMode>,
     /// In a test, where exports go. A test can't answer a dialog.
     test_dir: Option<PathBuf>,
@@ -131,21 +140,31 @@ async fn ai_send(
     on_event: Channel<AiEvent>,
 ) -> Result<(), String> {
     let cancelled = shell.ai_calls.register(&id);
-    let result = match &shell.ai {
-        Ok(client) => {
-            let sink = |event| {
-                // The page going away is no reason to stop here: cancelling is how it says so.
-                let _ = on_event.send(event);
-            };
-            tokio::select! {
-                // No key yet: connecting OpenRouter comes with its own step of M4.
-                result = client.run(&request, None, sink) => result,
-                _ = cancelled => Err("cancelled".to_string()),
-            }
-        }
-        Err(message) => Err(message.clone()),
+    let result = async {
+        let client = shell.ai.as_ref().map_err(Clone::clone)?;
+        // Read only for the service it belongs to. The system's store can be slow to answer.
+        let key = if request.route == Route::Openrouter {
+            let keys = shell.keys.clone();
+            tauri::async_runtime::spawn_blocking(move || keys.openrouter())
+                .await
+                .map_err(|error| error.to_string())?
+                .map_err(|error| format!("key: {error}"))?
+        } else {
+            None
+        };
+        let sink = |event| {
+            // The page going away is no reason to stop here: cancelling is how it says so.
+            let _ = on_event.send(event);
+        };
+        client.run(&request, key.as_deref(), sink).await
     };
-    shell.ai_calls.finish(&id);
+    let result = tokio::select! {
+        result = result => {
+            shell.ai_calls.finish(&id);
+            result
+        }
+        _ = cancelled => Err("cancelled".to_string()),
+    };
     if let Err(message) = result {
         let _ = on_event.send(AiEvent::Error { message });
     }
@@ -155,6 +174,66 @@ async fn ai_send(
 #[tauri::command]
 fn ai_cancel(shell: State<'_, Shell>, id: String) {
     shell.ai_calls.cancel(&id);
+}
+
+#[derive(Serialize)]
+struct OpenrouterStatus {
+    connected: bool,
+}
+
+/// Whether there's a key. The key itself never goes to the page (rule 9).
+#[tauri::command(async)]
+fn openrouter_status(shell: State<'_, Shell>) -> Result<OpenrouterStatus, String> {
+    Ok(OpenrouterStatus {
+        connected: shell.keys.openrouter()?.is_some(),
+    })
+}
+
+/// Signs in through the author's browser and keeps the key. Resolves once connected. An error
+/// starts with what went wrong: `cancelled`, `timeout`, `listen`, `browser`, `unreachable`,
+/// `refused` or `store`.
+#[tauri::command]
+async fn openrouter_connect(shell: State<'_, Shell>) -> Result<(), String> {
+    if shell.test.is_some() {
+        return Err("browser: a test can't sign in".into());
+    }
+    let client = shell.ai.as_ref().map_err(Clone::clone)?;
+    // A new attempt takes the place of one still waiting, which ends as cancelled.
+    let cancelled = shell.ai_calls.register(LOGIN_ID);
+    let attempt = async {
+        let base = client.openrouter_base();
+        let login = Login::begin(base)
+            .await
+            .map_err(|error| error.to_string())?;
+        open::that_detached(&login.auth_url).map_err(|error| format!("browser: {error}"))?;
+        let key = tokio::time::timeout(LOGIN_TIMEOUT, login.finish(client.http(), base))
+            .await
+            .map_err(|_| "timeout".to_string())?
+            .map_err(|error| error.to_string())?;
+        let keys = shell.keys.clone();
+        tauri::async_runtime::spawn_blocking(move || keys.set_openrouter(&key))
+            .await
+            .map_err(|error| error.to_string())?
+            .map_err(|error| format!("store: {error}"))
+    };
+    tokio::select! {
+        result = attempt => {
+            shell.ai_calls.finish(LOGIN_ID);
+            result
+        }
+        _ = cancelled => Err("cancelled".to_string()),
+    }
+}
+
+#[tauri::command]
+fn openrouter_cancel_connect(shell: State<'_, Shell>) {
+    shell.ai_calls.cancel(LOGIN_ID);
+}
+
+/// Forgets the key on this machine. It doesn't delete it from the author's OpenRouter account.
+#[tauri::command(async)]
+fn openrouter_disconnect(shell: State<'_, Shell>) -> Result<(), String> {
+    shell.keys.clear_openrouter()
 }
 
 /// One line to whoever started the test. Sent only after what it reports has really happened.
@@ -241,6 +320,11 @@ fn main() {
                     None => Bases::default(),
                 }),
                 ai_calls: Cancellations::default(),
+                // A test never touches the author's real credentials.
+                keys: Arc::new(Keys::new(match &test {
+                    Some(_) => Box::new(MemoryStore::default()),
+                    None => Box::new(SystemStore::new(dir.join(KEY_FILE))),
+                })),
                 test_dir: test.is_some().then(|| dir.clone()),
                 test,
             });
@@ -254,6 +338,10 @@ fn main() {
             export_file,
             ai_send,
             ai_cancel,
+            openrouter_status,
+            openrouter_connect,
+            openrouter_cancel_connect,
+            openrouter_disconnect,
             test_log,
             test_close_window,
             test_finish,

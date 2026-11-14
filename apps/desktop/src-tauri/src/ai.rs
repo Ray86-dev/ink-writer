@@ -158,6 +158,14 @@ impl AiClient {
         Ok(Self { http, bases })
     }
 
+    pub fn http(&self) -> &reqwest::Client {
+        &self.http
+    }
+
+    pub fn openrouter_base(&self) -> &str {
+        &self.bases.openrouter
+    }
+
     /// Sends one request and hands over the answer as it arrives. `Err` means it ended badly, at
     /// whatever point: nothing after it reaches `sink`.
     pub async fn run(

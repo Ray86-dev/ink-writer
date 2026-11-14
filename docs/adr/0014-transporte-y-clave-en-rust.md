@@ -1,6 +1,6 @@
-# 0014 · Transporte de IA en Rust
+# 0014 · Transporte de IA y clave de OpenRouter en Rust
 
-**Estado:** aceptada. Primer paso de la conexión mínima de la 0012.
+**Estado:** aceptada. Primeros pasos de la conexión mínima de la 0012.
 
 **Contexto.** Los adaptadores del core hablan con los modelos a través de `AiTransport`. En la evaluación lo implementa Node. En la app tiene que hacerlo el shell, porque la CSP impide a la página abrir conexiones y porque las claves no pueden llegar al WebView (regla 9).
 
@@ -27,18 +27,35 @@
 
 **En un modo de prueba, la app nunca alcanza los servicios reales.** Las dos vías apuntan a donde diga `--test-ai`, y si no se indica, a una dirección donde no escucha nadie.
 
+## La clave de OpenRouter
+
+**Se obtiene entrando por el navegador,** como pide `SPEC.md` §6: PKCE con S256 y un `state` nuevo en cada intento. El shell abre un puerto en `127.0.0.1` antes que el navegador, espera el regreso y canjea el código. Es la misma secuencia que ya usa `npm run eval:login`, escrita de nuevo en Rust, sin tomar nada de `prototypes/m0/`.
+
+- **Solo cuenta la respuesta de este intento.** Una petición a otra ruta, sin código o con otro `state` se rechaza y la espera sigue.
+- **El navegador dice la verdad.** La página de «listo» se sirve después del canje, no antes.
+- **Se puede cancelar en todo momento,** y a los 5 minutos se abandona. Un intento nuevo cancela el anterior. Lo pedía la 0008.
+
+**Se guarda en el almacén seguro del sistema,** con `keyring`. Si no hay ninguno, como en un Linux sin servicio de secretos, va a un archivo en la carpeta de datos que solo su dueño puede leer, con escritura atómica. Nunca en la base de datos, que la página puede consultar.
+
+**Ningún comando devuelve la clave.** La página solo puede preguntar si hay conexión, iniciarla, cancelarla y quitarla. Quitarla la olvida en este equipo, pero no la borra de la cuenta de OpenRouter.
+
+**En un modo de prueba** la clave vive en memoria y no se puede iniciar sesión, para no tocar las credenciales reales ni abrir un navegador.
+
 ## Dependencias
 
-`reqwest` con `native-tls`, `tokio` y `futures-util`, todas MIT o Apache-2.0. Se usa el TLS del sistema: no añade licencias nuevas a `npm run licenses`, y en Linux necesita `libssl-dev`, que el CI ya instala.
+`reqwest` con `native-tls`, `tokio`, `futures-util`, `keyring`, `sha2`, `getrandom`, `url` y `open`, todas MIT o Apache-2.0. Se usa el TLS del sistema: no añade excepciones a `npm run licenses`, y en Linux necesita `libssl-dev`, que el CI ya instala.
 
 ## Pruebas
 
 - **Rust:** contra un servidor local. Lista cerrada, modelo de pago rechazado antes de salir, respuesta a trozos con un carácter partido, error del servicio, redirección, servicio inalcanzable, respuesta cortada y destino de la clave.
 - **Página:** orden de los eventos, cancelación en cada momento y lectura abandonada.
 - **Prueba de humo:** en la app real, un adaptador lista modelos y recibe una respuesta de un servidor simulado, y el shell rechaza un modelo de pago. Se ejecuta en los tres sistemas.
+- **Login:** contra un servidor local que hace de OpenRouter y un cliente que hace de navegador. Canje correcto, respuestas ajenas rechazadas, canje denegado y espera sin respuesta.
+- **Almacén:** el del sistema se prueba a mano, porque escribe en las credenciales reales de quien lo ejecuta: `cargo test --lib system_store -- --ignored`. Comprobado en Windows 11.
+
+**Sin comprobar todavía:** el login completo contra OpenRouter real desde la app, que necesita la pantalla de ajustes, y el almacén del sistema en macOS y Linux.
 
 ## Pendiente en M4
 
-- La clave de OpenRouter: el login y el almacén seguro. Hasta entonces esa vía va sin credencial.
 - El ajuste de vía y modelo, la cola conectada a la app y su estado a la vista.
 - El aviso de que el texto sale del equipo, antes de la primera petición por OpenRouter.

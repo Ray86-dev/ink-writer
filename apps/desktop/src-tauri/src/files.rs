@@ -6,6 +6,16 @@ use std::path::Path;
 /// Writes to a temporary file beside the target, syncs it, then renames it over the target. If
 /// anything fails or the process dies, the target is either the old file or the new one, whole.
 pub fn write_atomically(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    write(path, bytes, false)
+}
+
+/// The same, for a secret: where the system allows it, only its owner can read the file, and from
+/// before anything is written to it.
+pub fn write_private_atomically(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    write(path, bytes, true)
+}
+
+fn write(path: &Path, bytes: &[u8], private: bool) -> std::io::Result<()> {
     let dir = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -16,7 +26,19 @@ pub fn write_atomically(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
         .to_string_lossy();
     let temporary = dir.join(format!(".{name}.{}.tmp", std::process::id()));
     let result = (|| {
-        let mut file = std::fs::File::create(&temporary)?;
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create(true).truncate(true);
+        #[cfg(unix)]
+        if private {
+            use std::os::unix::fs::OpenOptionsExt;
+            // A leftover from a crash could have other permissions, and `mode` only applies to
+            // a file that's created.
+            let _ = std::fs::remove_file(&temporary);
+            options.mode(0o600);
+        }
+        #[cfg(not(unix))]
+        let _ = private;
+        let mut file = options.open(&temporary)?;
         file.write_all(bytes)?;
         file.sync_all()?;
         drop(file);
@@ -39,6 +61,26 @@ mod tests {
         let path = dir.path().join("novela.docx");
         write_atomically(&path, b"datos").unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), b"datos");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_private_file_is_readable_only_by_its_owner() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("key");
+        write_private_atomically(&path, b"secret").unwrap();
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode();
+        assert_eq!(mode & 0o777, 0o600);
+    }
+
+    #[test]
+    fn writes_a_private_file_and_replaces_it() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("key");
+        write_private_atomically(&path, b"one").unwrap();
+        write_private_atomically(&path, b"two").unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"two");
     }
 
     #[test]
