@@ -1,6 +1,6 @@
-# 0014 · Transporte de IA y clave de OpenRouter en Rust
+# 0014 · La conexión mínima en la app
 
-**Estado:** aceptada. Primeros pasos de la conexión mínima de la 0012.
+**Estado:** aceptada. Cómo se ha hecho la conexión mínima que decidió la 0012: el transporte, la clave, el ajuste y la cola.
 
 **Contexto.** Los adaptadores del core hablan con los modelos a través de `AiTransport`. En la evaluación lo implementa Node. En la app tiene que hacerlo el shell, porque la CSP impide a la página abrir conexiones y porque las claves no pueden llegar al WebView (regla 9).
 
@@ -53,9 +53,36 @@
 - **Login:** contra un servidor local que hace de OpenRouter y un cliente que hace de navegador. Canje correcto, respuestas ajenas rechazadas, canje denegado y espera sin respuesta.
 - **Almacén:** el del sistema se prueba a mano, porque escribe en las credenciales reales de quien lo ejecuta: `cargo test --lib system_store -- --ignored`. Comprobado en Windows 11.
 
-**Sin comprobar todavía:** el login completo contra OpenRouter real desde la app, que necesita la pantalla de ajustes, y el almacén del sistema en macOS y Linux.
+- **Pantalla:** el panel de IA y la cola, con modelos simulados. Nada se analiza sin elegir modelo, solo se pregunta al elegido, cada estado se ve, y el aviso precede a la conexión.
+- **Prueba de humo, de punta a punta:** la app real lee la escena guardada, la envía por el shell y guarda el dato con su cita.
+
+## El ajuste y la cola
+
+**La elección del autor se guarda en la base,** en una tabla `settings` nueva (migración 4): vía y modelo. Nunca una credencial. Es de toda la app, no de cada novela.
+
+**Sin elección no se analiza nada.** La app no trae ningún modelo por defecto ni cambia a otro si el elegido falla (regla 10). Lo que se guardó y no se entiende cuenta como no haber elegido.
+
+**Solo se ofrecen modelos que sirven:** los que siguen un esquema y, por OpenRouter, los gratuitos.
+
+**El aviso de OpenRouter va antes de conectar.** Dice que el texto sale del equipo y que algunos proveedores gratuitos pueden guardarlo o usarlo para entrenar. Se acepta una vez y queda anotado. Sin esa aceptación, la cola no arranca por OpenRouter aunque la elección esté guardada. El aviso sigue a la vista después.
+
+**La cola de la 0011, conectada:** arranca al abrir la novela, se entera de cada cambio al teclear y de cada escena que se deja, una vez guardada. Su estado se ve en la barra, junto a los demás controles, y con detalle en el panel. Como el resto de la barra, desaparece mientras se escribe.
+
+**Dos correcciones en la cola,** que la app sacó a la luz:
+
+- Abrir una escena cuenta como un cambio en ella, y eso retrasaba hasta la siguiente pausa el análisis de la escena recién cerrada. Ahora un cambio no aplaza una pasada que ya toca.
+- Una escena cerrada mientras se analizaba otra esperaba una pausa entera. Ahora va justo después.
+
+No cambian los prompts ni lo que se pregunta al modelo, así que la evaluación de `fixtures/` no se ve afectada.
+
+## Sin comprobar todavía
+
+- **El login contra OpenRouter real desde la app.** Las pruebas usan un servidor simulado. Hay que hacerlo una vez a mano.
+- **Un análisis en la app con un modelo real,** por Ollama o por OpenRouter. El canal se midió en M3 con el arnés, y aquí solo se ha probado el recorrido con respuestas simuladas.
+- **El almacén del sistema en macOS y Linux.**
+- **El aspecto del panel.** Las pruebas comprueban lo que dice y lo que hace, no cómo se ve.
+- **La política de datos de cada modelo gratuito,** que pedía la 0012. El aviso es general y no distingue entre modelos.
 
 ## Pendiente en M4
 
-- El ajuste de vía y modelo, la cola conectada a la app y su estado a la vista.
-- El aviso de que el texto sale del equipo, antes de la primera petición por OpenRouter.
+Las fichas, la tarjeta Nombres, fusionar, separar, notas, los enlaces en vivo y `user_overrides`.

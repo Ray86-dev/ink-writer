@@ -1,8 +1,11 @@
 import {
+  type AiConnection,
   buildManuscript,
+  loadAiConnection,
   type Project,
   type SceneSessionOptions,
   type Storage,
+  saveAiConnection,
   type Trash,
   toDocx,
   toMarkdown,
@@ -13,12 +16,14 @@ import { SceneEditor } from "../editor/SceneEditor";
 import { useLanguage } from "../i18n";
 import { describeError } from "../messages";
 import type { Shell } from "../shell";
+import { AiPanel } from "./AiPanel";
 import { HistoryPanel } from "./HistoryPanel";
 import { type ChapterNode, StructurePanel } from "./StructurePanel";
+import { type AnalysisOptions, useAnalysis } from "./useAnalysis";
 import { useSceneSession } from "./useSceneSession";
 
 export type EditorMode = "write" | "live" | "read";
-type Panel = "structure" | "history" | null;
+type Panel = "structure" | "history" | "ai" | null;
 
 const MODES: readonly EditorMode[] = ["write", "live", "read"];
 
@@ -28,6 +33,7 @@ export interface ProjectScreenProps {
   readonly shell: Shell;
   readonly onBack: () => void;
   readonly sessionOptions?: SceneSessionOptions;
+  readonly analysisOptions?: AnalysisOptions;
 }
 
 /** A title can hold characters that no operating system allows in a file name. */
@@ -67,6 +73,7 @@ export function ProjectScreen({
   shell,
   onBack,
   sessionOptions,
+  analysisOptions,
 }: ProjectScreenProps) {
   const { messages } = useLanguage();
   const [tree, setTree] = useState<readonly ChapterNode[]>([]);
@@ -82,11 +89,36 @@ export function ProjectScreen({
   const [closeBlocked, setCloseBlocked] = useState(false);
   const [editor, setEditor] = useState<Editor | null>(null);
   const typingRef = useRef(false);
+  const [connection, setConnection] = useState<AiConnection | null>(null);
+
+  const analysis = useAnalysis(storage, project, shell.ai.transport, connection, analysisOptions);
 
   const { session, saveState, saveError, openError, closeCurrent } = useSceneSession(
     storage,
     sceneId,
     sessionOptions,
+    analysis.sceneClosed,
+  );
+
+  // The author's choice of model. Until it's read, and without one, nothing is analysed.
+  useEffect(() => {
+    let active = true;
+    loadAiConnection(storage)
+      .then((saved) => {
+        if (active) setConnection(saved);
+      })
+      .catch((error: unknown) => setNotice(describeError(error)));
+    return () => {
+      active = false;
+    };
+  }, [storage]);
+
+  const changeConnection = useCallback(
+    async (next: AiConnection | null) => {
+      await saveAiConnection(storage, next);
+      setConnection(next);
+    },
+    [storage],
   );
 
   const sceneKey = `last-scene-${project.id}`;
@@ -144,12 +176,16 @@ export function ProjectScreen({
     setMode(next);
   };
 
+  const sceneEdited = analysis.sceneEdited;
   const onInput = useCallback(() => {
+    if (sceneId !== null) {
+      sceneEdited(sceneId);
+    }
     if (!typingRef.current) {
       typingRef.current = true;
       setTyping(true);
     }
-  }, []);
+  }, [sceneId, sceneEdited]);
 
   const reveal = useCallback(() => {
     if (typingRef.current) {
@@ -259,6 +295,13 @@ export function ProjectScreen({
           >
             {messages.history}
           </button>
+          <button
+            type="button"
+            aria-expanded={panel === "ai"}
+            onClick={() => setPanel(panel === "ai" ? null : "ai")}
+          >
+            {messages.ai}: {messages.analysisShort[analysis.view.status]}
+          </button>
           <details className="menu" ref={exportMenu}>
             <summary>{messages.export}</summary>
             <div className="menu-items">
@@ -325,6 +368,20 @@ export function ProjectScreen({
             <h2>{messages.readingPanelTitle}</h2>
             <p>{messages.readingPanelEmpty}</p>
           </aside>
+        )}
+
+        {panel === "ai" && (
+          <AiPanel
+            storage={storage}
+            ai={shell.ai}
+            connection={connection}
+            onConnection={changeConnection}
+            view={analysis.view}
+            onClose={() => setPanel(null)}
+            {...(analysisOptions?.createProvider === undefined
+              ? {}
+              : { createProvider: analysisOptions.createProvider })}
+          />
         )}
 
         {panel === "history" && session !== null && (

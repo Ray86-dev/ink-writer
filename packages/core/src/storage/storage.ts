@@ -120,6 +120,11 @@ export interface Storage {
   listSnapshots(sceneId: string): Promise<SnapshotInfo[]>;
   loadSnapshot(id: string): Promise<Uint8Array | null>;
 
+  /** A choice the author made for the whole app. Null if they haven't. Never a credential. */
+  getSetting(key: string): Promise<string | null>;
+  /** Null forgets it. */
+  setSetting(key: string, value: string | null): Promise<void>;
+
   /** What a scene's text hashes to now. It waits for analysis while this differs from the last one. */
   setSceneContentHash(sceneId: string, hash: string): Promise<void>;
   /** Scenes with text not yet analysed, in reading order, without the ones in the trash. */

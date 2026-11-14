@@ -124,4 +124,16 @@ export const MIGRATIONS: readonly Migration[] = [
       "CREATE INDEX issues_by_scene_b ON issues (scene_b)",
     ],
   },
+  {
+    version: 4,
+    name: "settings",
+    // What the author chose for the whole app, as which model analyses. Never a credential: the
+    // page can read this database, and keys stay in the shell (rule 9).
+    statements: [
+      `CREATE TABLE settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      ) STRICT`,
+    ],
+  },
 ];

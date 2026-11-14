@@ -6,9 +6,11 @@ import { createNodeSqliteDriver } from "../../../packages/core/test/support/node
 import { App } from "../src/App";
 import type { Shell } from "../src/shell";
 import { stubLayout } from "./support/environment";
+import { fakeAi } from "./support/fake-ai";
 
 const shellOver = (driver: Shell["driver"]): Shell => ({
   driver,
+  ai: fakeAi().ai,
   exportFile: vi.fn(async () => true),
   onCloseRequested: () => () => {},
   forceClose: vi.fn(),

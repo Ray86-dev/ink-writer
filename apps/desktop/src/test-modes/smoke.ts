@@ -1,5 +1,6 @@
 import {
   type AiTransport,
+  AnalysisQueue,
   buildManuscript,
   collectDraft,
   createOllamaProvider,
@@ -132,6 +133,27 @@ export async function runSmokeChecks(
       );
     assert(paid.includes("free"), `The shell didn't refuse a paid model: ${paid}`);
     answer = `${draft.text.length} characters`;
+
+    // The whole way round: the scene saved above is read, sent, and what comes back is stored.
+    if (context.host !== undefined) {
+      const queue = new AnalysisQueue({
+        storage,
+        projectId: project.id,
+        analysis: { provider, model: "smoke-model", language: "es" },
+      });
+      const run = await queue.run();
+      await queue.stop();
+      assert(
+        run.status === "done" && run.analyzed.includes(scene.id),
+        `The scene wasn't analysed: ${JSON.stringify(run)}`,
+      );
+      const { facts } = await storage.loadAnalysis(project.id);
+      assert(
+        facts.some((fact) => fact.quote === "los ojos verdes de su madre"),
+        "The analysis didn't keep the fact with its quote",
+      );
+      answer += `, ${facts.length} fact stored`;
+    }
   }
 
   return `schema ${migration.to}, ${scenes.length} scene, ${bytes.length} blob bytes, ${words} words saved, AI answer of ${answer}`;

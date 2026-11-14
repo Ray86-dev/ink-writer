@@ -16,6 +16,26 @@ export function createTauriAiTransport(): AiTransport {
 export function createTauriShell(): Shell {
   return {
     driver: createTauriDriver(invoke),
+    ai: {
+      transport: createTauriAiTransport(),
+      async openrouterConnected() {
+        const { connected } = await invoke<{ connected: boolean }>("openrouter_status");
+        return connected;
+      },
+      async connectOpenrouter() {
+        try {
+          await invoke("openrouter_connect");
+        } catch (error) {
+          throw new Error(error instanceof Error ? error.message : String(error));
+        }
+      },
+      cancelConnectOpenrouter() {
+        void invoke("openrouter_cancel_connect").catch(() => {});
+      },
+      async disconnectOpenrouter() {
+        await invoke("openrouter_disconnect");
+      },
+    },
     async exportFile(suggestedName, extension, data) {
       const saved = await invoke<boolean>("export_file", {
         suggestedName,

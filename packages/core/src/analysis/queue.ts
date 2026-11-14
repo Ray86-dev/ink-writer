@@ -60,10 +60,13 @@ export class AnalysisQueue {
   /** Until the first run has looked at every scene: a crash can leave saved text with an old hash. */
   private checkedAll = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  /** True while the timer is for a run that mustn't wait, as after a scene was closed. */
+  private timerIsDue = false;
   private running: Promise<QueueRun> | null = null;
   private following: Promise<void> | null = null;
   private controller = new AbortController();
-  private runAgain = false;
+  /** How long after the run in progress to run again, for what changed meanwhile. Null: not asked. */
+  private runAgainIn: number | null = null;
   private stopped = false;
   private retryMs: number;
 
@@ -71,10 +74,18 @@ export class AnalysisQueue {
     this.retryMs = options.retryMs ?? DEFAULT_RETRY_MS;
   }
 
-  /** Called as the author writes. It only restarts a timer, so typing never reaches a model. */
+  /**
+   * Called as the author writes. It only restarts a timer, so typing never reaches a model. It
+   * doesn't put off a run that's already due: a scene just closed isn't kept waiting because the
+   * author went on to write the next one.
+   */
   sceneEdited(sceneId: string): void {
     this.changed.add(sceneId);
     this.resetRetry();
+    if (this.timer !== null && this.timerIsDue) {
+      this.runAgainIn ??= this.options.pauseMs ?? DEFAULT_PAUSE_MS;
+      return;
+    }
     this.schedule(this.options.pauseMs ?? DEFAULT_PAUSE_MS);
   }
 
@@ -123,6 +134,7 @@ export class AnalysisQueue {
     if (this.timer !== null) {
       clearTimeout(this.timer);
       this.timer = null;
+      this.timerIsDue = false;
     }
   }
 
@@ -131,12 +143,15 @@ export class AnalysisQueue {
       return;
     }
     if (this.running !== null) {
-      this.runAgain = true;
+      // The shortest wait asked for wins: a scene closed meanwhile doesn't wait out a pause.
+      this.runAgainIn = Math.min(this.runAgainIn ?? delayMs, delayMs);
       return;
     }
     this.clearTimer();
+    this.timerIsDue = delayMs === 0;
     this.timer = setTimeout(() => {
       this.timer = null;
+      this.timerIsDue = false;
       this.following = this.runAndFollowUp();
     }, delayMs);
   }
@@ -145,9 +160,10 @@ export class AnalysisQueue {
     try {
       const run = await this.run();
       this.options.onRun?.(run);
-      if (this.runAgain) {
-        this.runAgain = false;
-        this.schedule(this.options.pauseMs ?? DEFAULT_PAUSE_MS);
+      if (this.runAgainIn !== null) {
+        const delayMs = this.runAgainIn;
+        this.runAgainIn = null;
+        this.schedule(delayMs);
       } else if (run.status === "waiting") {
         this.schedule(this.retryMs);
         this.retryMs = Math.min(this.retryMs * 2, LONGEST_RETRY_MS);

@@ -90,7 +90,7 @@ Una entidad sin escenas que la respalden deja de ofrecerse al modelo, pero se qu
 
 M3 es el core y el arnés. **La app todavía no analiza nada:** el transporte en Rust y los ajustes de conexión son de M6, las fichas y `user_overrides` de M4, y las pistas de M5. Los datos guardan la cita y no el `anchor` de Yjs de SPEC §4: lo añadirá la migración de M4, cuando haya que situarlos en el editor.
 
-La 0012 adelanta a M4 una conexión mínima con Ollama y OpenRouter.
+La 0012 adelanta a M4 una conexión mínima con Ollama y OpenRouter, y la 0014 cuenta cómo se hizo: desde entonces la app sí analiza.
 
 ## El arnés
 

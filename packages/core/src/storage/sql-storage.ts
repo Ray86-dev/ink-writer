@@ -385,6 +385,22 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
       return row === undefined ? null : blob(row, "ydoc");
     },
 
+    async getSetting(key: string) {
+      const [row] = await driver.query("SELECT value FROM settings WHERE key = ?", [key]);
+      return row === undefined ? null : text(row, "value");
+    },
+
+    async setSetting(key: string, value: string | null) {
+      if (value === null) {
+        await driver.execute("DELETE FROM settings WHERE key = ?", [key]);
+      } else {
+        await driver.execute(
+          "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+          [key, value],
+        );
+      }
+    },
+
     async setSceneContentHash(sceneId: string, hash: string) {
       await driver.execute("UPDATE scenes SET content_hash = ? WHERE id = ?", [hash, sceneId]);
     },
