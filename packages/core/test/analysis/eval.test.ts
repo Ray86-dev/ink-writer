@@ -7,7 +7,10 @@ import {
   assertAllowance,
   assertFreeModel,
   assertNoCost,
+  createSpendingMeter,
   estimateRequests,
+  parseSpendingLimit,
+  pricesFor,
   SpendingRefused,
 } from "../../eval/guard";
 import { type Expected, mergedPeople, sameQuote, scoreAnalysis } from "../../eval/score";
@@ -390,6 +393,57 @@ describe("spending guard", () => {
     expect(estimateRequests(8)).toBeGreaterThanOrEqual(8 * 3);
     expect(estimateRequests(0)).toBe(0);
   });
+});
+
+describe("spending on a paid model", () => {
+  const prices = { inputPerMillion: 0.3, outputPerMillion: 1.2 };
+
+  it("adds up what each answer cost", () => {
+    const meter = createSpendingMeter(prices, 1);
+
+    meter.count({ inputTokens: 1_000_000, outputTokens: 0, cost: null });
+    meter.count({ inputTokens: 0, outputTokens: 100_000, cost: null });
+
+    expect(meter.spent()).toBeCloseTo(0.42);
+  });
+
+  it("stops once it reaches the limit, and not before", () => {
+    const meter = createSpendingMeter(prices, 0.5);
+
+    expect(() => meter.count({ inputTokens: 0, outputTokens: 400_000, cost: null })).not.toThrow();
+    expect(() => meter.count({ inputTokens: 0, outputTokens: 100_000, cost: null })).toThrow(
+      SpendingRefused,
+    );
+  });
+
+  it.each([
+    { inputTokens: null, outputTokens: 5, cost: null },
+    { inputTokens: 5, outputTokens: null, cost: null },
+  ])("stops if an answer can't be counted: %j", (usage) => {
+    expect(() => createSpendingMeter(prices, 1).count(usage)).toThrow(SpendingRefused);
+  });
+
+  it.each([undefined, "", "0", "-1", "mucho", "Infinity"])(
+    "won't start with a limit of %j",
+    (limit) => {
+      expect(() => parseSpendingLimit(limit)).toThrow(SpendingRefused);
+    },
+  );
+
+  it("takes a limit in dollars", () => {
+    expect(parseSpendingLimit("0.50")).toBe(0.5);
+  });
+
+  it("counts at the highest published rates for the model it knows", () => {
+    expect(pricesFor("deepseek-flash")).toEqual(prices);
+  });
+
+  it.each(["deepseek-v4-pro", "deepseek-v4-flash", "otro"])(
+    "has no price, so refuses, %s",
+    (model) => {
+      expect(() => pricesFor(model)).toThrow(SpendingRefused);
+    },
+  );
 });
 
 describe("cache", () => {

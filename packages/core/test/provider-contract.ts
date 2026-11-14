@@ -33,7 +33,9 @@ export function describeProviderContract(name: string, makeProvider: () => AiPro
       expect(models.length).toBeGreaterThan(0);
       for (const model of models) {
         expect(model.id).not.toBe("");
-        expect(model.capabilities.structuredOutput).toMatch(/^(json_schema|forced_tool|none)$/);
+        expect(model.capabilities.structuredOutput).toMatch(
+          /^(json_schema|json_object|forced_tool|none)$/,
+        );
         expect(typeof model.capabilities.webSearch).toBe("boolean");
         expect(typeof model.capabilities.tools).toBe("boolean");
       }

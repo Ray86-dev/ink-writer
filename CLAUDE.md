@@ -66,7 +66,7 @@ Desde la raíz, con Node 24 y Rust estable:
 | `npm run eval -- --provider ollama --model gemma4:latest` | Evalúa el análisis contra `fixtures/` y registra el resultado. Ver `fixtures/README.md` |
 | `npm run eval:login` | Conecta OpenRouter para la evaluación. La clave queda fuera del repositorio |
 
-La evaluación usa la red y modelos reales, así que no está en el CI. Por OpenRouter solo acepta modelos gratuitos. Usa `--cache-only` para volver a puntuar sin gastar ninguna petición.
+La evaluación usa la red y modelos reales, así que no está en el CI. Por OpenRouter solo acepta modelos gratuitos. DeepSeek es de pago y exige `--max-cost`. Usa `--cache-only` para volver a puntuar sin gastar ninguna petición.
 
 CI en `.github/workflows/ci.yml`: compila, prueba y arranca la app en Windows, macOS y Linux, y ejecuta las pruebas anteriores en cada uno. Un cambio en guardado, Yjs o sync debe pasar `npm run crash-test`.
 

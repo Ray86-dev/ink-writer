@@ -37,11 +37,11 @@ Extracción, resolución de identidades, comparación, cola sin conexión y arn�
 
 **Salida:** se alcanzan los umbrales de `fixtures/README.md` con al menos dos modelos.
 
-**Cerrado.** `gemma4:latest`, `nemotron-3.5-super` y `gemma4:e2b` alcanzan los umbrales en `la-veda`. En la novela de control, `la-feria`, `gemma4:latest` también y `gemma4:e2b` no. Es el core y el arnés: la app aún no analiza. Resultados, decisiones y límites en `docs/adr/0011-canal-de-analisis.md`.
+**Cerrado.** `gemma4:latest`, `nemotron-3.5-super` y `gemma4:e2b` alcanzan los umbrales en `la-veda`. En la novela de control, `la-feria`, `gemma4:latest` y `nemotron-3.5-super` también, y `gemma4:e2b` no. Es el core y el arnés: la app aún no analiza. Resultados, decisiones y límites en `docs/adr/0011-canal-de-analisis.md`.
 
 ## M4 · Fichas y enlaces
 
-Fichas de todos los tipos, tarjeta Nombres, fusionar, separar, notas, enlaces en vivo sin IA, navegación bidireccional y `user_overrides`.
+Conexión mínima con Ollama y OpenRouter, para que la app analice de verdad (`docs/adr/0012-conexion-minima-en-m4.md`). Fichas de todos los tipos, tarjeta Nombres, fusionar, separar, notas, enlaces en vivo sin IA, navegación bidireccional y `user_overrides`.
 
 **Salida:** borrar un párrafo elimina sus datos. Las correcciones del autor sobreviven al reanálisis.
 
@@ -55,7 +55,7 @@ Niveles, interruptores por tipo, pistas graduales, Siguiente paso, cierre autom�
 
 **Antes de empezar:** ejecutar con una cuenta Plus o Pro la comprobación pendiente de `docs/adr/0008-resultado-m0-vias-de-ia.md`. Su resultado decide si ChatGPT es la vía principal.
 
-«Continue with ChatGPT» definitivo con todos sus errores e interfaz, OpenRouter, Ollama, API keys, topes de uso y borrador en streaming.
+«Continue with ChatGPT» definitivo con todos sus errores e interfaz, lo que falte de OpenRouter y Ollama tras la conexión mínima de M4, API keys, topes de uso y borrador en streaming.
 
 **Salida:** cada error de `SPEC.md` §6 tiene su prueba. Nunca se cambia de vía en silencio.
 

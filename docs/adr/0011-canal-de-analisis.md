@@ -90,6 +90,8 @@ Una entidad sin escenas que la respalden deja de ofrecerse al modelo, pero se qu
 
 M3 es el core y el arnés. **La app todavía no analiza nada:** el transporte en Rust y los ajustes de conexión son de M6, las fichas y `user_overrides` de M4, y las pistas de M5. Los datos guardan la cita y no el `anchor` de Yjs de SPEC §4: lo añadirá la migración de M4, cuando haya que situarlos en el editor.
 
+La 0012 adelanta a M4 una conexión mínima con Ollama y OpenRouter.
+
 ## El arnés
 
 `npm run eval`. Ver `fixtures/README.md`.
@@ -115,12 +117,13 @@ Con los prompts definitivos. Las ejecuciones están en `fixtures/results/`.
 | Modelo | Vía | `la-veda` | `la-feria` (control) |
 |---|---|---|---|
 | `gemma4:latest` | Ollama | **Supera:** 6 de 8 | **Supera:** 6 de 8 |
-| `nvidia/nemotron-3.5-super-vl:free` | OpenRouter | **Supera:** 7 de 8 | Pendiente, por el cupo diario |
+| `nvidia/nemotron-3.5-super-vl:free` | OpenRouter | **Supera:** 7 de 8 | **Supera:** 6 de 8 y 3 de 3 referencias |
 | `gemma4:e2b` | Ollama | **Supera:** 6 de 8 | **No supera:** 3 de 8 y 1 de 3 referencias |
+| `deepseek-flash` | DeepSeek, de pago | **Supera:** 8 de 8 | **Supera:** 8 de 8 y 3 de 3 referencias |
 
 Salvo donde se indica, todas dan 2 de 3 referencias. En todas: 0 falsas alarmas, 0 citas inventadas y las dos personas con un mismo nombre separadas.
 
-**Se cumple el criterio de salida de M3:** tres modelos alcanzan los umbrales en `la-veda`.
+**Se cumple el criterio de salida de M3:** tres modelos alcanzan los umbrales en `la-veda`. La fila de DeepSeek es posterior al cierre y solo para pruebas: ver la 0013.
 
 Tres matices:
 

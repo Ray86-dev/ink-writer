@@ -3,19 +3,18 @@ import type { AiTransport, ProviderRoute } from "../src/provider/transport";
 const BASES: Readonly<Record<ProviderRoute, string>> = {
   openrouter: "https://openrouter.ai",
   ollama: "http://127.0.0.1:11434",
+  deepseek: "https://api.deepseek.com",
 };
 
 /** The network from Node, for the evaluation. In the app, the Rust shell plays this part. */
-export function createNodeTransport(openRouterKey: string | null): AiTransport {
+export function createNodeTransport(keys: Partial<Record<ProviderRoute, string>>): AiTransport {
   return {
     async send({ route, method, path, body, signal }) {
       const response = await fetch(`${BASES[route]}${path}`, {
         method,
         headers: {
           ...(body === undefined ? {} : { "content-type": "application/json" }),
-          ...(route === "openrouter" && openRouterKey !== null
-            ? { authorization: `Bearer ${openRouterKey}` }
-            : {}),
+          ...(keys[route] === undefined ? {} : { authorization: `Bearer ${keys[route]}` }),
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         ...(signal === undefined ? {} : { signal }),

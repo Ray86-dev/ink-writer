@@ -1,3 +1,4 @@
+import { asObject, type Json, parseJson } from "./json";
 import type { AiProvider, GenerateEvent, GenerateRequest, ModelInfo, Usage } from "./provider";
 import { unsupportedRequest } from "./provider";
 import { type AiTransport, readAll, readLines } from "./transport";
@@ -6,20 +7,6 @@ import { type AiTransport, readAll, readLines } from "./transport";
 const CONTEXT_TOKENS = 16384;
 
 const CAPABILITIES = { structuredOutput: "json_schema", webSearch: false, tools: false } as const;
-
-type Json = Record<string, unknown>;
-
-function asObject(value: unknown): Json {
-  return typeof value === "object" && value !== null ? (value as Json) : {};
-}
-
-function parseJson(text: string): Json | null {
-  try {
-    return asObject(JSON.parse(text));
-  } catch {
-    return null;
-  }
-}
 
 export function buildOllamaBody(request: GenerateRequest): Json {
   return {

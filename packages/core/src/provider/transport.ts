@@ -4,7 +4,7 @@
  * Node.
  */
 
-export type ProviderRoute = "openrouter" | "ollama";
+export type ProviderRoute = "openrouter" | "ollama" | "deepseek";
 
 export interface TransportRequest {
   readonly route: ProviderRoute;
