@@ -13,8 +13,10 @@ import {
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useLanguage } from "../i18n";
 import { describeError, type Messages } from "../messages";
+import { DocsOverview, PlaceDocs } from "../research/ResearchPanel";
+import type { Research } from "../research/useResearch";
 
-export type CardsTab = "person" | "place" | "lore" | "relations" | "chapters" | "names";
+export type CardsTab = "person" | "place" | "lore" | "relations" | "chapters" | "names" | "docs";
 
 /** Which card is open: the tab it's under and its id. */
 export interface CardSelection {
@@ -31,12 +33,24 @@ export interface CardsScreenProps {
   /** Goes to the passage in the editor. */
   readonly onOpenPassage: (passage: Passage) => void;
   readonly onOpenScene: (sceneId: string) => void;
+  /** What was looked up about the novel's places and topics. */
+  readonly research: Research;
+  /** Opens the source of something found, in the author's browser. */
+  readonly onOpenLink: (url: string) => void;
   /** Called after the author changed something, for the cards to be worked out again. */
   readonly onChanged: () => Promise<void>;
   readonly onClose: () => void;
 }
 
-const TABS: readonly CardsTab[] = ["person", "place", "lore", "relations", "chapters", "names"];
+const TABS: readonly CardsTab[] = [
+  "person",
+  "place",
+  "lore",
+  "relations",
+  "chapters",
+  "names",
+  "docs",
+];
 const ENTITY_TABS = ["person", "place", "lore"] as const;
 
 const isEntityTab = (tab: CardsTab): tab is EntityRef["type"] =>
@@ -122,9 +136,20 @@ interface EntityDetailProps {
   readonly onOpenPassage: (passage: Passage) => void;
   readonly apply: (override: Override) => Promise<void>;
   readonly undo: (overrideId: string) => Promise<void>;
+  readonly research: Research;
+  readonly onOpenLink: (url: string) => void;
 }
 
-function EntityDetail({ card, view, onSelect, onOpenPassage, apply, undo }: EntityDetailProps) {
+function EntityDetail({
+  card,
+  view,
+  onSelect,
+  onOpenPassage,
+  apply,
+  undo,
+  research,
+  onOpenLink,
+}: EntityDetailProps) {
   const { messages } = useLanguage();
   const [note, setNote] = useState(card.note ?? "");
   const [name, setName] = useState(card.name);
@@ -141,6 +166,7 @@ function EntityDetail({ card, view, onSelect, onOpenPassage, apply, undo }: Enti
   const possibleParents = places.filter(
     (place) => !place.within.some((parent) => parent.id === card.id),
   );
+  const placeDocs = research.view.places.find((place) => place.card.id === card.id);
 
   const saveNote = (event: FormEvent) => {
     event.preventDefault();
@@ -250,6 +276,15 @@ function EntityDetail({ card, view, onSelect, onOpenPassage, apply, undo }: Enti
             ))}
           </ul>
         </section>
+      )}
+
+      {placeDocs !== undefined && (
+        <PlaceDocs
+          key={`${placeDocs.topic?.id ?? ""}-${placeDocs.topic?.reality ?? ""}`}
+          place={placeDocs}
+          research={research}
+          onOpenLink={onOpenLink}
+        />
       )}
 
       <section className="card-section">
@@ -601,6 +636,8 @@ export function CardsScreen({
   onSelect,
   onOpenPassage,
   onOpenScene,
+  research,
+  onOpenLink,
   onChanged,
   onClose,
 }: CardsScreenProps) {
@@ -646,7 +683,19 @@ export function CardsScreen({
         ? view.relations.length
         : which === "chapters"
           ? view.chapters.length
-          : view.names.length;
+          : which === "names"
+            ? view.names.length
+            : // What's been found and the author hasn't looked at yet.
+              [
+                ...research.view.places,
+                ...research.view.topics,
+                ...(research.view.era === null ? [] : [research.view.era]),
+              ].reduce(
+                (sum, topic) =>
+                  sum + topic.items.filter((item) => item.status === "suggested").length,
+                0,
+              );
+  const listed = tab !== "names" && tab !== "docs";
 
   return (
     <section className="cards" aria-label={messages.cards}>
@@ -670,7 +719,7 @@ export function CardsScreen({
             </li>
           ))}
         </ul>
-        {tab !== "names" && (
+        {listed && (
           <ul className="cards-list">
             {items.map((item) => (
               <li key={item.id}>
@@ -693,7 +742,7 @@ export function CardsScreen({
             {problem}
           </p>
         )}
-        {tab !== "names" && items.length === 0 && (
+        {listed && items.length === 0 && (
           <p className="card-empty">
             {view.cards.length === 0 ? messages.cardsNoneYet : messages.cardsNone}
           </p>
@@ -707,6 +756,8 @@ export function CardsScreen({
             onOpenPassage={onOpenPassage}
             apply={apply}
             undo={undo}
+            research={research}
+            onOpenLink={onOpenLink}
           />
         )}
         {relationCard != null && (
@@ -721,6 +772,7 @@ export function CardsScreen({
           />
         )}
         {tab === "names" && <NamesIndex view={view} onSelect={onSelect} apply={apply} />}
+        {tab === "docs" && <DocsOverview research={research} onOpenLink={onOpenLink} />}
       </div>
     </section>
   );

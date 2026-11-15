@@ -16,6 +16,8 @@ import {
   InvalidInputError,
   type MoveDirection,
   type NewProject,
+  type NewResearchItem,
+  type NewResearchTopic,
   type NewSnapshot,
   type Project,
   type Scene,
@@ -23,6 +25,8 @@ import {
   type Storage,
   type StoredHintState,
   type StoredOverride,
+  type StoredResearchItem,
+  type StoredResearchTopic,
   type StoredUsage,
 } from "./storage";
 
@@ -147,6 +151,20 @@ function toIssue(row: SqlRow): Issue {
 /** The project's scenes that aren't in the trash, by themselves or through their chapter. */
 const LIVE_SCENES = `SELECT s.id FROM scenes s JOIN chapters c ON c.id = s.chapter_id
   WHERE c.project_id = ? AND s.deleted_at IS NULL AND c.deleted_at IS NULL`;
+
+const RESEARCH_TOPIC = "id, project_id, kind, name, reality, term, place, status, searched_at";
+
+const toResearchTopic = (row: SqlRow): StoredResearchTopic => ({
+  id: text(row, "id"),
+  projectId: text(row, "project_id"),
+  kind: text(row, "kind"),
+  name: text(row, "name"),
+  reality: textOrNull(row, "reality"),
+  term: textOrNull(row, "term"),
+  place: textOrNull(row, "place"),
+  status: text(row, "status"),
+  searchedAt: typeof row.searched_at === "number" ? row.searched_at : null,
+});
 
 /** The columns of a snapshot without its data, which can be large. */
 const SNAPSHOT_INFO = "id, scene_id, created_at, label, word_count";
@@ -525,6 +543,114 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
           cost: typeof row.cost === "number" ? row.cost : 0,
         }),
       );
+    },
+
+    async saveResearchTopic(topic: NewResearchTopic) {
+      const { projectId, kind, reality, term, place, status } = topic;
+      const name = required("name", topic.name);
+      await driver.transaction([
+        {
+          sql: `DELETE FROM research_items WHERE status <> 'noted' AND topic_id IN
+                (SELECT id FROM research_topics WHERE project_id = ? AND kind = ? AND name = ?)`,
+          params: [projectId, kind, name],
+        },
+        {
+          sql: `INSERT INTO research_topics
+                  (id, project_id, kind, name, reality, term, place, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (project_id, kind, name) DO UPDATE SET
+                  reality = excluded.reality, term = excluded.term, place = excluded.place,
+                  status = excluded.status, searched_at = NULL`,
+          params: [newId(), projectId, kind, name, reality, term, place, status, now()],
+        },
+      ]);
+      const [saved] = await driver.query(
+        `SELECT ${RESEARCH_TOPIC} FROM research_topics
+         WHERE project_id = ? AND kind = ? AND name = ?`,
+        [projectId, kind, name],
+      );
+      if (saved === undefined) {
+        throw new Error("The topic wasn't stored");
+      }
+      return toResearchTopic(saved);
+    },
+
+    async listResearchTopics(projectId: string) {
+      const rows = await driver.query(
+        `SELECT ${RESEARCH_TOPIC} FROM research_topics
+         WHERE project_id = ? ORDER BY created_at, rowid`,
+        [projectId],
+      );
+      return rows.map(toResearchTopic);
+    },
+
+    async removeResearchTopic(id: string) {
+      await driver.transaction([
+        { sql: "DELETE FROM research_items WHERE topic_id = ?", params: [id] },
+        { sql: "DELETE FROM research_topics WHERE id = ?", params: [id] },
+      ]);
+    },
+
+    async saveResearchResult(topicId: string, status: string, items: readonly NewResearchItem[]) {
+      const at = now();
+      await driver.transaction([
+        {
+          sql: "DELETE FROM research_items WHERE topic_id = ? AND status = 'suggested'",
+          params: [topicId],
+        },
+        // What the author already kept or discarded isn't offered again.
+        ...items.map(
+          (item): SqlStatement => ({
+            sql: `INSERT INTO research_items
+                    (id, topic_id, category, text, source_url, source_title, retrieved_at)
+                  SELECT ?, ?, ?, ?, ?, ?, ?
+                  WHERE NOT EXISTS (SELECT 1 FROM research_items
+                    WHERE topic_id = ? AND source_url = ? AND text = ?)`,
+            params: [
+              newId(),
+              topicId,
+              item.category,
+              item.text,
+              item.sourceUrl,
+              item.sourceTitle,
+              at,
+              topicId,
+              item.sourceUrl,
+              item.text,
+            ],
+          }),
+        ),
+        {
+          sql: "UPDATE research_topics SET status = ?, searched_at = ? WHERE id = ?",
+          params: [status, at, topicId],
+        },
+      ]);
+    },
+
+    async listResearchItems(projectId: string) {
+      const rows = await driver.query(
+        `SELECT i.id, i.topic_id, i.category, i.text, i.source_url, i.source_title,
+                i.retrieved_at, i.status
+         FROM research_items i JOIN research_topics t ON t.id = i.topic_id
+         WHERE t.project_id = ? ORDER BY i.rowid`,
+        [projectId],
+      );
+      return rows.map(
+        (row): StoredResearchItem => ({
+          id: text(row, "id"),
+          topicId: text(row, "topic_id"),
+          category: text(row, "category"),
+          text: text(row, "text"),
+          sourceUrl: text(row, "source_url"),
+          sourceTitle: text(row, "source_title"),
+          retrievedAt: integer(row, "retrieved_at"),
+          status: text(row, "status"),
+        }),
+      );
+    },
+
+    async setResearchItemStatus(id: string, status: string) {
+      await driver.execute("UPDATE research_items SET status = ? WHERE id = ?", [status, id]);
     },
 
     async getSetting(key: string) {

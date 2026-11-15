@@ -15,6 +15,7 @@ import { ProjectScreen, safeFileName } from "../src/project/ProjectScreen";
 import type { Shell } from "../src/shell";
 import { stubLayout } from "./support/environment";
 import { fakeAi } from "./support/fake-ai";
+import { fakeResearch } from "./support/fake-research";
 
 const fakeShell = () => {
   const exported: { name: string; extension: string; data: Uint8Array }[] = [];
@@ -22,6 +23,7 @@ const fakeShell = () => {
   const shell: Shell = {
     driver: {} as Shell["driver"],
     ai: fakeAi().ai,
+    ...fakeResearch().shell,
     exportFile: vi.fn(async (name, extension, data) => {
       exported.push({ name, extension, data });
       return true;

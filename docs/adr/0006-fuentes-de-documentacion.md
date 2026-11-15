@@ -1,6 +1,6 @@
 # 0006 · Fuentes de la documentación proactiva
 
-**Estado:** aceptada.
+**Estado:** aceptada. La [0019](0019-documentacion-con-fuentes-abiertas.md) cambió la tercera fuente: Wikipedia en lugar de la búsqueda web del modelo.
 
 **Decisión.** OpenStreetMap vía Overpass para calles y locales actuales; Open-Meteo para clima; búsqueda web del modelo con citas para lo demás. Se busca el tema, nunca al personaje.
 

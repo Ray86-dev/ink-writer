@@ -110,9 +110,9 @@ Dos funciones en una tarjeta:
 
 ### 3.7 Documentación
 
-La IA investiga de forma proactiva sobre **todo**: lugares (calles, clima, cafeterías), oficios, objetos, época y costumbres. Normas en §7.
+La app investiga sobre lugares (calles, clima, cafeterías), oficios, objetos, época y costumbres. Normas en §7. Por ahora busca por su cuenta los lugares y la época; los oficios, objetos y costumbres los añade el autor como temas (`docs/adr/0019-documentacion-con-fuentes-abiertas.md`).
 
-Las sugerencias se agrupan en la tarjeta Documentación y en cada ficha. Nunca aparecen mientras se escribe. Solo entran en las notas si el autor pulsa **A mis notas**. No se consideran datos de la novela hasta entonces.
+Las sugerencias se agrupan en la tarjeta Documentación y en cada ficha. Hasta que exista el Dashboard, la tarjeta es una pestaña de las fichas. Nunca aparecen mientras se escribe. Solo entran en las notas si el autor pulsa **A mis notas**. No se consideran datos de la novela hasta entonces.
 
 Antes de documentar un lugar, se pregunta si existe, si está basado en uno real o si es inventado del todo. Si es inventado, no se busca nada y se pregunta al autor.
 
@@ -151,8 +151,8 @@ SQLite local para estructura. Yjs para la prosa. Esquema orientativo:
 | `entity_summaries` | entity_id, summary, basis |
 | `scene_notes` | scene_id, change, text_hash |
 | `scene_prompts` | id, scene_id, kind (question, suggestion), text, quote |
-| `research_topics` | id, entity_id, term, era, status, searched_at |
-| `research_items` | id, topic_id, category, text, source_url, source_title, retrieved_at, status |
+| `research_topics` | id, project_id, kind (place, era, topic), name, reality (real, based, invented), term, place, status, searched_at |
+| `research_items` | id, topic_id, category, text, source_url, source_title, retrieved_at, status (suggested, noted, dismissed) |
 | `ai_usage` | day, route, requests, cost |
 
 Reglas:
@@ -160,6 +160,7 @@ Reglas:
 - Cada dato se sitúa en el texto por su cita literal. Si la cita ya no está en la escena, el dato no se muestra. Ver `docs/adr/0015-fichas-enlaces-y-correcciones-del-autor.md`.
 - El reanálisis de una escena **sustituye** sus `mentions`, `facts` y `relations`.
 - `user_overrides` nunca se borra por un reanálisis y se aplica encima de él cada vez que se calculan las fichas.
+- Un tema de documentación se conoce por su nombre en la novela, no por un id del análisis, así que lo que el autor dijo de un lugar tampoco lo toca ningún reanálisis. Un resultado no se puede guardar sin el enlace a su fuente.
 - Las pistas y las tareas no se guardan: se calculan desde las fichas. Lo que el autor decide de cada una va a `hint_states`, por los pasajes que cita, y tampoco lo toca ningún reanálisis.
 
 ## 5. Canal de análisis
@@ -266,19 +267,20 @@ Con salida estructurada, enviar `provider.require_parameters` para no perder el 
 
 | Dato | Fuente | Condición |
 |---|---|---|
+| Dónde está un lugar real | OpenStreetMap vía Nominatim | Una consulta por segundo como mucho; User-Agent identificativo; guardar el resultado. Atribución a OpenStreetMap |
 | Calles, cafeterías, lugares actuales | OpenStreetMap vía Overpass | En uso automatizado, unas 100 consultas y 10 MB al día por instancia pública; User-Agent identificativo; esperar 30 s tras 429/406. Atribución a OpenStreetMap |
 | Clima | Open-Meteo | Gratis solo sin fines comerciales, menos de 10.000 llamadas al día, CC BY 4.0 |
-| Oficios, historia, ambiente | Búsqueda web del modelo | Con citas |
+| Oficios, historia, ambiente | Wikipedia, en el idioma del proyecto | CC BY-SA 4.0, con enlace al artículo. La búsqueda web del modelo queda fuera: es de pago y no se ha podido probar |
 
 Normas innegociables:
-- Se busca el tema, **nunca el nombre de un personaje ni el texto del autor**.
+- Se busca el tema, **nunca el nombre de un personaje ni el texto del autor**. Un término que contenga el nombre de un personaje se rechaza, aunque sea un lugar real.
 - Cada sugerencia lleva fuente enlazada. **Sin fuente, no se muestra.**
-- Se tiene en cuenta la época. OpenStreetMap solo da lo actual: si la historia transcurre en el pasado, usar solo fuentes históricas.
+- Se tiene en cuenta la época. OpenStreetMap solo da lo actual: si la historia no transcurre claramente en el presente, no se consultan calles ni locales.
 - Una vez por tema nuevo, con resultado guardado para consultar sin conexión.
-- Tope diario regulable.
+- Tope diario regulable, 60 búsquedas por defecto, vigilado en Rust.
 - Con pistas apagadas o el tipo Documentación desactivado, solo se busca si el autor pulsa **Buscar ahora**.
 
-Un modelo local no busca por sí solo: en ese caso, usar estas APIs directamente.
+Ninguna búsqueda pasa por un modelo: la app llama a estos servicios directamente, sea cual sea la conexión de IA, y también sin ninguna.
 
 ## 8. Sincronización y navegador
 

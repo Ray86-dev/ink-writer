@@ -1,4 +1,4 @@
-import type { AiTransport, SqlDriver } from "@ink-writer/core";
+import type { AiTransport, ResearchTransport, SqlDriver } from "@ink-writer/core";
 
 /**
  * How the page reaches a model. Credentials stay on the other side: the page can ask whether
@@ -33,10 +33,27 @@ export interface PaidRequestLimit {
   readonly usedToday: number;
 }
 
+/** How many requests of one kind the shell lets through in a day, and how many it has today. */
+export type DailyRequestLimit = PaidRequestLimit;
+
+/**
+ * How the page looks things up for the documentation. It says what kind of search and gives a term
+ * or a point: the shell decides where that goes, and counts each one against the day's limit.
+ */
+export interface ResearchShell {
+  readonly transport: ResearchTransport;
+  searchLimit(): Promise<DailyRequestLimit>;
+  /** Zero turns the searches off. */
+  setSearchLimit(dailyRequests: number): Promise<DailyRequestLimit>;
+}
+
 /** Everything the interface needs from outside the page. Replaced by a fake in tests. */
 export interface Shell {
   readonly driver: SqlDriver;
   readonly ai: AiShell;
+  readonly research: ResearchShell;
+  /** Opens a web address in the author's browser. */
+  openLink(url: string): Promise<void>;
   /** Saves a file where the author chooses. False if they cancel. */
   exportFile(suggestedName: string, extension: "docx" | "md", data: Uint8Array): Promise<boolean>;
   /**

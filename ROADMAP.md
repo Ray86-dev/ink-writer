@@ -71,6 +71,8 @@ Temas, época, fuentes, caché, tope diario, lugares reales o inventados.
 
 **Salida:** ninguna sugerencia sin fuente. Las pruebas confirman que no sale ni texto ni nombres de personajes.
 
+**Cerrado, sin la búsqueda web del modelo.** Se documenta con cuatro servicios públicos y gratuitos: OpenStreetMap para situar lugares y ver sus calles y locales, Open-Meteo para el clima y Wikipedia para lo demás. Un lugar no se busca hasta que el autor dice si existe, y uno inventado no se busca nunca. Lo encontrado se guarda con su fuente y solo se ve en las fichas. El tope diario lo vigila Rust. Fuera: la tarjeta del Dashboard, que llega en M8, los temas propuestos por la app para oficios y objetos, y contrastar los datos de la novela con las fuentes. La app no ha hecho ninguna búsqueda real: las consultas a los servicios se comprobaron a mano. Decisiones y límites en `docs/adr/0019-documentacion-con-fuentes-abiertas.md`.
+
 ## M8 · Dashboard Tinta viva
 
 Llevar la demo a la app, conectada a datos reales. Cumplir `DESIGN.md`.

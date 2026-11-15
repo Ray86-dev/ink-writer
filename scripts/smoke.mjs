@@ -38,6 +38,25 @@ const ai = createServer((request, response) => {
     response.end(JSON.stringify({ models: [{ name: "smoke-model" }] }));
     return;
   }
+  // Stands in for Wikipedia too: one article about whatever was searched for.
+  if (request.method === "GET" && request.url.startsWith("/w/api.php?")) {
+    const term = new URL(request.url, "http://localhost").searchParams.get("gsrsearch");
+    response.end(
+      JSON.stringify({
+        query: {
+          pages: [
+            {
+              title: term,
+              index: 1,
+              extract: `Sobre ${term}.`,
+              canonicalurl: `https://es.wikipedia.org/wiki/${encodeURIComponent(term)}`,
+            },
+          ],
+        },
+      }),
+    );
+    return;
+  }
   if (request.method !== "POST" || request.url !== "/api/chat") {
     response.writeHead(404).end();
     return;

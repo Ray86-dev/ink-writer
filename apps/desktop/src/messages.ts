@@ -149,7 +149,73 @@ export interface Messages {
     readonly relations: string;
     readonly chapters: string;
     readonly names: string;
+    readonly docs: string;
   };
+
+  readonly docsIntro: string;
+  readonly docsPrivacy: string;
+  readonly docsManualOnly: string;
+  readonly docsOf: (name: string) => string;
+  readonly docsEra: string;
+  readonly docsEraPresent: string;
+  readonly docsEraPast: string;
+  readonly docsPlaces: string;
+  readonly docsPlaceQuestion: (name: string) => string;
+  readonly docsPlaceQuestionHint: string;
+  readonly docsRealityChoice: {
+    readonly real: string;
+    readonly based: string;
+    readonly invented: string;
+  };
+  readonly docsRealityIs: {
+    readonly real: string;
+    readonly based: string;
+    readonly invented: string;
+  };
+  readonly docsRealName: string;
+  readonly docsRealNameHint: string;
+  readonly docsFind: string;
+  readonly docsSaveAnswer: string;
+  readonly docsChoose: string;
+  readonly docsNoCandidates: string;
+  readonly docsUseWithoutMap: string;
+  readonly docsSearchedAs: (term: string) => string;
+  readonly docsInventedNote: string;
+  readonly docsChangeAnswer: string;
+  readonly docsPending: string;
+  readonly docsFailed: string;
+  readonly docsNothingFound: string;
+  readonly docsSearchNow: string;
+  readonly docsSearchAgain: string;
+  readonly docsSearching: string;
+  readonly docsCategories: {
+    readonly article: string;
+    readonly climate: string;
+    readonly streets: string;
+    readonly premises: string;
+  };
+  readonly docsSource: string;
+  readonly docsToNotes: string;
+  readonly docsInNotes: string;
+  readonly docsOutOfNotes: string;
+  readonly docsDiscard: string;
+  readonly docsTopics: string;
+  readonly docsTopicsHint: string;
+  readonly docsTopicLabel: string;
+  readonly docsAddTopic: string;
+  readonly docsRemoveTopic: (name: string) => string;
+  readonly docsLimitTitle: string;
+  readonly docsLimitHint: string;
+  readonly docsLimitUsed: (used: number, allowed: number) => string;
+  readonly docsLimitSave: string;
+  readonly docsStopped: { readonly limit: string; readonly wait: string };
+  readonly docsTermProblems: {
+    readonly empty: string;
+    readonly too_long: string;
+    readonly character: (name: string) => string;
+  };
+  readonly docsSearchFailed: (detail: string) => string;
+  readonly docsAttribution: string;
   readonly cardsTypes: { readonly person: string; readonly place: string; readonly lore: string };
   readonly cardsRelationKind: string;
   readonly cardsChapterKind: string;
@@ -462,7 +528,82 @@ const es: Messages = {
     relations: "Relaciones",
     chapters: "Capítulos",
     names: "Nombres",
+    docs: "Documentación",
   },
+  docsIntro:
+    "Lo que la app encuentra sobre los lugares y los temas de tu novela, siempre con su fuente. No forma parte de la novela hasta que lo lleves a tus notas.",
+  docsPrivacy: "Solo sale el tema que se busca: nunca tu texto ni el nombre de un personaje.",
+  docsManualOnly:
+    "Con las pistas apagadas, o sin el tipo Documentación, solo se busca cuando pulsas «Buscar ahora».",
+  docsOf: (name) => `Documentación de ${name}`,
+  docsEra: "Época",
+  docsEraPresent:
+    "La historia transcurre en el presente: de los lugares reales se consultan también las calles y los locales de hoy.",
+  docsEraPast:
+    "La historia no transcurre en el presente, o la época no lo deja claro: no se consultan las calles ni los locales de hoy, que no serían los de entonces.",
+  docsPlaces: "Lugares",
+  docsPlaceQuestion: (name) => `¿Existe «${name}»?`,
+  docsPlaceQuestionHint: "Antes de buscar nada sobre un lugar, la app necesita saberlo.",
+  docsRealityChoice: {
+    real: "Existe",
+    based: "Está basado en un lugar real",
+    invented: "Es inventado",
+  },
+  docsRealityIs: {
+    real: "Existe",
+    based: "Basado en un lugar real",
+    invented: "Inventado",
+  },
+  docsRealName: "Nombre del lugar real",
+  docsRealNameHint: "Añade la ciudad o el país si hay varios con ese nombre.",
+  docsFind: "Buscar en el mapa",
+  docsSaveAnswer: "Guardar",
+  docsChoose: "¿Cuál es?",
+  docsNoCandidates: "El mapa no conoce ningún lugar con ese nombre.",
+  docsUseWithoutMap: "Ninguno: buscar solo por el nombre",
+  docsSearchedAs: (term) => `Se busca como «${term}».`,
+  docsInventedNote: "No se busca nada sobre él. Lo que haya que saber de este lugar lo decides tú.",
+  docsChangeAnswer: "Cambiar la respuesta",
+  docsPending: "Pendiente de buscar.",
+  docsFailed: "Alguna fuente no respondió.",
+  docsNothingFound: "No se encontró nada.",
+  docsSearchNow: "Buscar ahora",
+  docsSearchAgain: "Buscar de nuevo",
+  docsSearching: "Buscando…",
+  docsCategories: {
+    article: "Artículos",
+    climate: "Clima",
+    streets: "Calles cercanas",
+    premises: "Locales cercanos",
+  },
+  docsSource: "Fuente",
+  docsToNotes: "A mis notas",
+  docsInNotes: "En mis notas",
+  docsOutOfNotes: "Quitar de mis notas",
+  docsDiscard: "Descartar",
+  docsTopics: "Otros temas",
+  docsTopicsHint: "Un oficio, un objeto, una costumbre",
+  docsTopicLabel: "Tema",
+  docsAddTopic: "Añadir tema",
+  docsRemoveTopic: (name) => `Quitar «${name}»`,
+  docsLimitTitle: "Búsquedas al día",
+  docsLimitHint: "Con cero no se busca nada.",
+  docsLimitUsed: (used, allowed) => `Hoy van ${used} de ${allowed}.`,
+  docsLimitSave: "Guardar tope",
+  docsStopped: {
+    limit:
+      "Se han agotado las búsquedas de hoy. Lo pendiente se buscará mañana, o antes si subes el tope.",
+    wait: "Un servicio ha pedido una pausa. Vuelve a intentarlo dentro de un minuto.",
+  },
+  docsTermProblems: {
+    empty: "Escribe qué buscar.",
+    too_long: "Demasiado largo: se busca un tema, no un pasaje.",
+    character: (name) =>
+      `No se busca: contiene el nombre de un personaje («${name}»). Los nombres de tus personajes nunca salen de la app.`,
+  },
+  docsSearchFailed: (detail) => `No se pudo buscar: ${detail}`,
+  docsAttribution:
+    "Datos de OpenStreetMap (ODbL), Open-Meteo (CC BY 4.0) y Wikipedia (CC BY-SA 4.0).",
   cardsTypes: { person: "Personaje", place: "Lugar", lore: "Lore" },
   cardsRelationKind: "Relación",
   cardsChapterKind: "Capítulo",
@@ -789,7 +930,83 @@ const en: Messages = {
     relations: "Relationships",
     chapters: "Chapters",
     names: "Names",
+    docs: "Research",
   },
+  docsIntro:
+    "What the app finds about the places and topics of your novel, always with its source. It's no part of the novel until you take it to your notes.",
+  docsPrivacy: "Only the topic being searched leaves: never your text or a character's name.",
+  docsManualOnly:
+    "With hints off, or without the Research kind, it only searches when you press “Search now”.",
+  docsOf: (name) => `Research on ${name}`,
+  docsEra: "Era",
+  docsEraPresent:
+    "The story is set in the present: for real places, today's streets and premises are looked up too.",
+  docsEraPast:
+    "The story isn't set in the present, or the era doesn't make it clear: today's streets and premises aren't looked up, as they wouldn't be the ones of that time.",
+  docsPlaces: "Places",
+  docsPlaceQuestion: (name) => `Does “${name}” exist?`,
+  docsPlaceQuestionHint: "Before looking anything up about a place, the app needs to know.",
+  docsRealityChoice: {
+    real: "It exists",
+    based: "It's based on a real place",
+    invented: "It's invented",
+  },
+  docsRealityIs: {
+    real: "It exists",
+    based: "Based on a real place",
+    invented: "Invented",
+  },
+  docsRealName: "Name of the real place",
+  docsRealNameHint: "Add the city or the country if several share that name.",
+  docsFind: "Find on the map",
+  docsSaveAnswer: "Save",
+  docsChoose: "Which one is it?",
+  docsNoCandidates: "The map knows no place by that name.",
+  docsUseWithoutMap: "None of them: search by the name alone",
+  docsSearchedAs: (term) => `Searched as “${term}”.`,
+  docsInventedNote:
+    "Nothing is looked up about it. What there is to know about this place is yours to decide.",
+  docsChangeAnswer: "Change the answer",
+  docsPending: "Waiting to be searched.",
+  docsFailed: "A source didn't answer.",
+  docsNothingFound: "Nothing was found.",
+  docsSearchNow: "Search now",
+  docsSearchAgain: "Search again",
+  docsSearching: "Searching…",
+  docsCategories: {
+    article: "Articles",
+    climate: "Climate",
+    streets: "Nearby streets",
+    premises: "Nearby premises",
+  },
+  docsSource: "Source",
+  docsToNotes: "To my notes",
+  docsInNotes: "In my notes",
+  docsOutOfNotes: "Take out of my notes",
+  docsDiscard: "Discard",
+  docsTopics: "Other topics",
+  docsTopicsHint: "A trade, an object, a custom",
+  docsTopicLabel: "Topic",
+  docsAddTopic: "Add topic",
+  docsRemoveTopic: (name) => `Remove “${name}”`,
+  docsLimitTitle: "Searches a day",
+  docsLimitHint: "With zero, nothing is searched.",
+  docsLimitUsed: (used, allowed) => `${used} of ${allowed} today.`,
+  docsLimitSave: "Save limit",
+  docsStopped: {
+    limit:
+      "Today's searches are used up. What's waiting will be searched tomorrow, or sooner if you raise the limit.",
+    wait: "A service asked for a pause. Try again in a minute.",
+  },
+  docsTermProblems: {
+    empty: "Type what to search for.",
+    too_long: "Too long: a topic is searched for, not a passage.",
+    character: (name) =>
+      `Not searched: it contains the name of a character (“${name}”). Your characters' names never leave the app.`,
+  },
+  docsSearchFailed: (detail) => `The search failed: ${detail}`,
+  docsAttribution:
+    "Data from OpenStreetMap (ODbL), Open-Meteo (CC BY 4.0) and Wikipedia (CC BY-SA 4.0).",
   cardsTypes: { person: "Character", place: "Place", lore: "Lore" },
   cardsRelationKind: "Relationship",
   cardsChapterKind: "Chapter",

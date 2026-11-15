@@ -1055,3 +1055,55 @@ button.quiet {
   min-height: var(--touch-target);
   margin-bottom: 12px;
 }
+
+/* Documentation: what was looked up, each piece with its source. */
+.docs-items {
+  list-style: none;
+  padding: 0;
+}
+
+.docs-items li {
+  border-left: 2px solid var(--line, currentColor);
+  padding-left: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.docs-items li.docs-noted {
+  border-left-width: 4px;
+}
+
+.docs-source,
+.docs-state {
+  font-size: 0.9em;
+}
+
+.docs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.docs-question fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 0.5rem;
+}
+
+.docs-question legend {
+  font-weight: 600;
+  padding: 0;
+}
+
+.docs-question label {
+  display: block;
+}
+
+.docs-candidates ul {
+  list-style: none;
+  padding: 0;
+}
+
+.docs-candidates button {
+  text-align: left;
+}

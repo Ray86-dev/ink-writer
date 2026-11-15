@@ -7,10 +7,12 @@ import { App } from "../src/App";
 import type { Shell } from "../src/shell";
 import { stubLayout } from "./support/environment";
 import { fakeAi } from "./support/fake-ai";
+import { fakeResearch } from "./support/fake-research";
 
 const shellOver = (driver: Shell["driver"]): Shell => ({
   driver,
   ai: fakeAi().ai,
+  ...fakeResearch().shell,
   exportFile: vi.fn(async () => true),
   onCloseRequested: () => () => {},
   forceClose: vi.fn(),

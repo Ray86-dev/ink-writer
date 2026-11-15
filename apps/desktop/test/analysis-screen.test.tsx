@@ -21,6 +21,7 @@ import { ProjectScreen } from "../src/project/ProjectScreen";
 import type { Shell } from "../src/shell";
 import { stubLayout } from "./support/environment";
 import { fakeAi, fakeModels } from "./support/fake-ai";
+import { fakeResearch } from "./support/fake-research";
 
 function currentEditor(): Editor {
   const element = document.querySelector(".prose") as (HTMLElement & { editor?: Editor }) | null;
@@ -42,6 +43,7 @@ describe("analysis on the project screen", () => {
     const shell: Shell = {
       driver: {} as Shell["driver"],
       ai: shellAi.ai,
+      ...fakeResearch().shell,
       exportFile: vi.fn(async () => true),
       onCloseRequested: () => () => {},
       forceClose: vi.fn(),
