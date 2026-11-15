@@ -12,6 +12,9 @@ export interface Messages {
   readonly title: string;
   readonly language: string;
   readonly languageNames: Readonly<Record<string, string>>;
+  readonly settingsTitle: string;
+  readonly interfaceLanguage: string;
+  readonly interfaceLanguageSystem: string;
   readonly era: string;
   readonly eraHint: string;
   readonly create: string;
@@ -415,6 +418,9 @@ const es: Messages = {
   title: "Título",
   language: "Idioma",
   languageNames: { es: "Español", en: "Inglés" },
+  settingsTitle: "Ajustes",
+  interfaceLanguage: "Idioma de la aplicación",
+  interfaceLanguageSystem: "El del sistema",
   era: "Época de la historia",
   eraHint: "Por ejemplo: actualidad, años cincuenta",
   create: "Crear novela",
@@ -868,6 +874,9 @@ const en: Messages = {
   title: "Title",
   language: "Language",
   languageNames: { es: "Spanish", en: "English" },
+  settingsTitle: "Settings",
+  interfaceLanguage: "Language of the app",
+  interfaceLanguageSystem: "The system's",
   era: "When the story takes place",
   eraHint: "For example: present day, the 1950s",
   create: "Create novel",
@@ -1305,6 +1314,14 @@ const en: Messages = {
 };
 
 export type Locale = "es" | "en";
+
+/** Each language by its own name, for choosing the app's: the reader may not know the current one. */
+export const LOCALE_NAMES: Readonly<Record<Locale, string>> = { es: "Español", en: "English" };
+
+/** Where the author's choice of language for the app is kept. Nothing stored: the system's. */
+export const LOCALE_SETTING = "interface-language";
+
+export const isLocale = (value: unknown): value is Locale => value === "es" || value === "en";
 
 /** Spanish and English from the start (SPEC §10). Anything else falls back to English. */
 export function pickLocale(language: string): Locale {

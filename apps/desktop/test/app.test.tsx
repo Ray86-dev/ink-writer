@@ -93,6 +93,29 @@ describe("App", () => {
     driver.close();
   });
 
+  it("lets the author choose the app's language, and remembers it", async () => {
+    const driver = createNodeSqliteDriver();
+    render(<App shell={shellOver(driver)} language="es" />);
+    await screen.findByText("Todavía no hay ninguna novela.");
+
+    fireEvent.change(screen.getByLabelText("Idioma de la aplicación"), {
+      target: { value: "en" },
+    });
+
+    await screen.findByText("There are no novels yet.");
+    expect(document.documentElement.lang).toBe("en");
+    cleanup();
+
+    // The next time the app starts, whatever the system says.
+    render(<App shell={shellOver(driver)} language="es" />);
+    await screen.findByText("There are no novels yet.");
+    expect(screen.queryByText("Todavía no hay ninguna novela.")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Language of the app"), { target: { value: "" } });
+    await screen.findByText("Todavía no hay ninguna novela.");
+    driver.close();
+  });
+
   it("explains when another copy of the app holds the database", async () => {
     const driver = createNodeSqliteDriver();
     const locked: Shell["driver"] = {
