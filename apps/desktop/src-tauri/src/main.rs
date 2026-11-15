@@ -9,9 +9,10 @@ use std::time::Duration;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
-use ink_writer::ai::{AiClient, AiEvent, AiRequest, Bases, Cancellations, Route};
+use ink_writer::ai::{AiClient, AiEvent, AiRequest, Bases, Cancellations, Route, is_paid};
 use ink_writer::db::{Database, ExecResult, Statement};
 use ink_writer::files::write_atomically;
+use ink_writer::limits::{LimitsView, PaidLimits, today};
 use ink_writer::openrouter_login::Login;
 use ink_writer::secrets::{Keys, MemoryStore, SystemStore};
 use ink_writer::test_mode::TestMode;
@@ -23,7 +24,10 @@ use tauri_plugin_dialog::DialogExt;
 
 const DB_FILE: &str = "ink-writer.db";
 const SINGLE_INSTANCE_TEST: &str = "single-instance";
-const KEY_FILE: &str = "openrouter-key";
+/// The names of the keys, both in the system's store and as the files that stand in for it.
+const OPENROUTER_KEY: &str = "openrouter-key";
+const DEEPSEEK_KEY: &str = "deepseek-key";
+const LIMITS_FILE: &str = "ai-limits.json";
 const LOGIN_ID: &str = "openrouter-login";
 /// How long the author has to come back from the browser. They can also cancel at any time.
 const LOGIN_TIMEOUT: Duration = Duration::from_secs(5 * 60);
@@ -34,6 +38,9 @@ struct Shell {
     ai: Result<AiClient, String>,
     ai_calls: Cancellations,
     keys: Arc<Keys>,
+    deepseek_keys: Arc<Keys>,
+    /// What the author allows to be spent. Kept here so that the page can't go past it.
+    limits: PaidLimits,
     test: Option<TestMode>,
     /// In a test, where exports go. A test can't answer a dialog.
     test_dir: Option<PathBuf>,
@@ -142,21 +149,30 @@ async fn ai_send(
     let cancelled = shell.ai_calls.register(&id);
     let result = async {
         let client = shell.ai.as_ref().map_err(Clone::clone)?;
-        // Read only for the service it belongs to. The system's store can be slow to answer.
-        let key = if request.route == Route::Openrouter {
-            let keys = shell.keys.clone();
-            tauri::async_runtime::spawn_blocking(move || keys.openrouter())
+        // Each service gets its own key and no other. The system's store can be slow to answer.
+        let keys = match request.route {
+            Route::Openrouter => Some(shell.keys.clone()),
+            Route::Deepseek => Some(shell.deepseek_keys.clone()),
+            Route::Ollama => None,
+        };
+        let key = match keys {
+            Some(keys) => tauri::async_runtime::spawn_blocking(move || keys.get())
                 .await
                 .map_err(|error| error.to_string())?
-                .map_err(|error| format!("key: {error}"))?
-        } else {
-            None
+                .map_err(|error| format!("key: {error}"))?,
+            None => None,
         };
+        // A request that costs money is counted before it leaves, and refused past the day's limit.
+        let paid = is_paid(&request);
+        if paid {
+            ink_writer::ai::check(&request, shell.limits.allows_paid())?;
+            shell.limits.spend(today())?;
+        }
         let sink = |event| {
             // The page going away is no reason to stop here: cancelling is how it says so.
             let _ = on_event.send(event);
         };
-        client.run(&request, key.as_deref(), sink).await
+        client.run(&request, key.as_deref(), paid, sink).await
     };
     let result = tokio::select! {
         result = result => {
@@ -185,7 +201,7 @@ struct OpenrouterStatus {
 #[tauri::command(async)]
 fn openrouter_status(shell: State<'_, Shell>) -> Result<OpenrouterStatus, String> {
     Ok(OpenrouterStatus {
-        connected: shell.keys.openrouter()?.is_some(),
+        connected: shell.keys.get()?.is_some(),
     })
 }
 
@@ -211,7 +227,7 @@ async fn openrouter_connect(shell: State<'_, Shell>) -> Result<(), String> {
             .map_err(|_| "timeout".to_string())?
             .map_err(|error| error.to_string())?;
         let keys = shell.keys.clone();
-        tauri::async_runtime::spawn_blocking(move || keys.set_openrouter(&key))
+        tauri::async_runtime::spawn_blocking(move || keys.set(&key))
             .await
             .map_err(|error| error.to_string())?
             .map_err(|error| format!("store: {error}"))
@@ -233,7 +249,51 @@ fn openrouter_cancel_connect(shell: State<'_, Shell>) {
 /// Forgets the key on this machine. It doesn't delete it from the author's OpenRouter account.
 #[tauri::command(async)]
 fn openrouter_disconnect(shell: State<'_, Shell>) -> Result<(), String> {
-    shell.keys.clear_openrouter()
+    shell.keys.clear()
+}
+
+#[derive(Serialize)]
+struct KeyStatus {
+    present: bool,
+}
+
+/// Whether there's a DeepSeek key. The key itself never goes back to the page (rule 9).
+#[tauri::command(async)]
+fn deepseek_key_status(shell: State<'_, Shell>) -> Result<KeyStatus, String> {
+    Ok(KeyStatus {
+        present: shell.deepseek_keys.get()?.is_some(),
+    })
+}
+
+/// Keeps the key the author typed. It crosses the page once, on its way in, and never comes back.
+#[tauri::command(async)]
+fn deepseek_key_set(shell: State<'_, Shell>, key: String) -> Result<(), String> {
+    let key = key.trim();
+    if key.is_empty() || key.chars().any(char::is_whitespace) {
+        return Err("key: that doesn't look like a key".into());
+    }
+    shell
+        .deepseek_keys
+        .set(key)
+        .map_err(|error| format!("store: {error}"))
+}
+
+#[tauri::command(async)]
+fn deepseek_key_clear(shell: State<'_, Shell>) -> Result<(), String> {
+    shell.deepseek_keys.clear()
+}
+
+/// How many paid requests a day the author allows, and how many were made today.
+#[tauri::command(async)]
+fn ai_limits_get(shell: State<'_, Shell>) -> LimitsView {
+    shell.limits.view(today())
+}
+
+/// Zero turns paid requests off.
+#[tauri::command(async)]
+fn ai_limits_set(shell: State<'_, Shell>, daily_requests: u32) -> Result<LimitsView, String> {
+    shell.limits.set_daily_requests(daily_requests)?;
+    Ok(shell.limits.view(today()))
 }
 
 /// One line to whoever started the test. Sent only after what it reports has really happened.
@@ -323,8 +383,13 @@ fn main() {
                 // A test never touches the author's real credentials.
                 keys: Arc::new(Keys::new(match &test {
                     Some(_) => Box::new(MemoryStore::default()),
-                    None => Box::new(SystemStore::new(dir.join(KEY_FILE))),
+                    None => Box::new(SystemStore::new(OPENROUTER_KEY, dir.join(OPENROUTER_KEY))),
                 })),
+                deepseek_keys: Arc::new(Keys::new(match &test {
+                    Some(_) => Box::new(MemoryStore::default()),
+                    None => Box::new(SystemStore::new(DEEPSEEK_KEY, dir.join(DEEPSEEK_KEY))),
+                })),
+                limits: PaidLimits::open(dir.join(LIMITS_FILE)),
                 test_dir: test.is_some().then(|| dir.clone()),
                 test,
             });
@@ -342,6 +407,11 @@ fn main() {
             openrouter_connect,
             openrouter_cancel_connect,
             openrouter_disconnect,
+            deepseek_key_status,
+            deepseek_key_set,
+            deepseek_key_clear,
+            ai_limits_get,
+            ai_limits_set,
             test_log,
             test_close_window,
             test_finish,

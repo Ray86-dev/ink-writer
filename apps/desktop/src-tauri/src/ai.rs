@@ -1,8 +1,9 @@
 //! How the page reaches a model. The page says which service and what to send; this adds the
 //! credential and passes the answer back as it arrives, so no key ever reaches the WebView (rule 9).
 //!
-//! The page can only ask for what's listed in `check`. Through OpenRouter that means free models and
-//! nothing that's billed apart, so a fault in the page can't spend the author's money (ADR 0012).
+//! The page can only ask for what's listed in `check`. A request that costs money is only let
+//! through while the author allows paid requests, and each one is counted against a daily limit
+//! kept here, so a fault in the page can't spend past it (ADR 0012 and 0018).
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -24,6 +25,7 @@ const READ_TIMEOUT: Duration = Duration::from_secs(600);
 pub enum Route {
     Openrouter,
     Ollama,
+    Deepseek,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -70,6 +72,7 @@ pub enum AiEvent {
 pub struct Bases {
     pub openrouter: String,
     pub ollama: String,
+    pub deepseek: String,
 }
 
 impl Default for Bases {
@@ -77,6 +80,7 @@ impl Default for Bases {
         Self {
             openrouter: "https://openrouter.ai".into(),
             ollama: "http://127.0.0.1:11434".into(),
+            deepseek: "https://api.deepseek.com".into(),
         }
     }
 }
@@ -87,16 +91,38 @@ impl Bases {
         Self {
             openrouter: base.into(),
             ollama: base.into(),
+            deepseek: base.into(),
         }
     }
 }
 
-/// Fields of an OpenRouter request that can cost money even with a free model, or route it to
-/// another one.
+/// Fields of an OpenRouter request that are billed apart from the model, or that route it to
+/// another one. Never allowed: the app has no use for them, and no limit that covers them.
 const OPENROUTER_REFUSED_FIELDS: [&str; 4] = ["plugins", "tools", "web_search_options", "models"];
 
-/// Refuses anything but the few requests the app makes.
-pub fn check(request: &AiRequest) -> Result<(), String> {
+fn openrouter_model(request: &AiRequest) -> &str {
+    request
+        .body
+        .as_ref()
+        .and_then(|body| body.get("model"))
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+}
+
+/// True for a request that costs the author money: a model on OpenRouter that isn't free, or
+/// anything asked of a service paid by key.
+pub fn is_paid(request: &AiRequest) -> bool {
+    match (request.route, request.method, request.path.as_str()) {
+        (Route::Openrouter, Method::Post, "/api/v1/chat/completions") => {
+            !openrouter_model(request).ends_with(":free")
+        }
+        (Route::Deepseek, Method::Post, "/chat/completions") => true,
+        _ => false,
+    }
+}
+
+/// Refuses anything but the few requests the app makes, and a paid one unless paid is allowed.
+pub fn check(request: &AiRequest, paid_allowed: bool) -> Result<(), String> {
     let AiRequest {
         route,
         method,
@@ -116,16 +142,24 @@ pub fn check(request: &AiRequest) -> Result<(), String> {
     match (route, method, path.as_str()) {
         (Route::Ollama, Method::Get, "/api/tags")
         | (Route::Ollama, Method::Post, "/api/chat")
-        | (Route::Openrouter, Method::Get, "/api/v1/models" | "/api/v1/key") => Ok(()),
-        (Route::Openrouter, Method::Post, "/api/v1/chat/completions") => {
-            let body = body.as_ref().and_then(Value::as_object);
-            let model = body
-                .and_then(|body| body.get("model"))
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            if !model.ends_with(":free") {
-                return Err(format!("\"{model}\" isn't a free model"));
+        | (Route::Openrouter, Method::Get, "/api/v1/models" | "/api/v1/key")
+        | (Route::Deepseek, Method::Get, "/models" | "/user/balance") => Ok(()),
+        (Route::Deepseek, Method::Post, "/chat/completions") => {
+            if paid_allowed {
+                Ok(())
+            } else {
+                Err("paid: paid requests are off".into())
             }
+        }
+        (Route::Openrouter, Method::Post, "/api/v1/chat/completions") => {
+            let model = openrouter_model(request);
+            if model.is_empty() {
+                return Err("the request names no model".into());
+            }
+            if is_paid(request) && !paid_allowed {
+                return Err(format!("paid: \"{model}\" isn't a free model"));
+            }
+            let body = body.as_ref().and_then(Value::as_object);
             match OPENROUTER_REFUSED_FIELDS
                 .iter()
                 .find(|field| body.is_some_and(|body| body.contains_key(**field)))
@@ -171,13 +205,15 @@ impl AiClient {
     pub async fn run(
         &self,
         request: &AiRequest,
-        openrouter_key: Option<&str>,
+        key: Option<&str>,
+        paid_allowed: bool,
         mut sink: impl FnMut(AiEvent),
     ) -> Result<(), String> {
-        check(request)?;
+        check(request, paid_allowed)?;
         let base = match request.route {
             Route::Openrouter => &self.bases.openrouter,
             Route::Ollama => &self.bases.ollama,
+            Route::Deepseek => &self.bases.deepseek,
         };
         let url = format!("{base}{}", request.path);
         let mut builder = match request.method {
@@ -187,9 +223,10 @@ impl AiClient {
         if let Some(body) = &request.body {
             builder = builder.json(body);
         }
-        // The key goes to its own service and nowhere else.
-        if request.route == Route::Openrouter
-            && let Some(key) = openrouter_key
+        // A key goes to its own service and nowhere else: whoever calls passes the one for this
+        // route, and a local model never gets any.
+        if request.route != Route::Ollama
+            && let Some(key) = key
         {
             builder = builder.bearer_auth(key);
         }
@@ -343,7 +380,9 @@ mod tests {
     ) -> (Vec<AiEvent>, Result<(), String>) {
         let client = AiClient::new(Bases::all_at(base)).unwrap();
         let mut events = Vec::new();
-        let result = client.run(request, key, |event| events.push(event)).await;
+        let result = client
+            .run(request, key, false, |event| events.push(event))
+            .await;
         (events, result)
     }
 
@@ -368,7 +407,7 @@ mod tests {
             request(Route::Openrouter, Method::Get, "/api/v1/key", None),
             free_chat(),
         ] {
-            assert_eq!(check(&allowed), Ok(()), "{allowed:?}");
+            assert_eq!(check(&allowed, false), Ok(()), "{allowed:?}");
         }
         for refused in [
             request(Route::Ollama, Method::Post, "/api/pull", Some(json!({}))),
@@ -391,19 +430,22 @@ mod tests {
             request(Route::Ollama, Method::Post, "/api/chat", None),
             request(Route::Ollama, Method::Post, "/api/chat", Some(json!([1]))),
         ] {
-            assert!(check(&refused).is_err(), "{refused:?}");
+            assert!(check(&refused, true).is_err(), "{refused:?}");
         }
     }
 
     #[test]
     fn through_openrouter_only_a_free_model_and_nothing_billed_apart() {
         let chat = |body: Value| {
-            check(&request(
-                Route::Openrouter,
-                Method::Post,
-                "/api/v1/chat/completions",
-                Some(body),
-            ))
+            check(
+                &request(
+                    Route::Openrouter,
+                    Method::Post,
+                    "/api/v1/chat/completions",
+                    Some(body),
+                ),
+                false,
+            )
         };
 
         assert!(chat(json!({ "model": "some/model" })).is_err());
@@ -414,6 +456,81 @@ mod tests {
             body[field] = json!([]);
             assert!(chat(body).is_err(), "{field}");
         }
+    }
+
+    #[test]
+    fn a_paid_request_is_let_through_only_while_paid_is_allowed() {
+        let paid_model = request(
+            Route::Openrouter,
+            Method::Post,
+            "/api/v1/chat/completions",
+            Some(json!({ "model": "some/model", "messages": [] })),
+        );
+        let by_key = request(
+            Route::Deepseek,
+            Method::Post,
+            "/chat/completions",
+            Some(json!({ "model": "deepseek-flash", "messages": [] })),
+        );
+
+        for paid in [&paid_model, &by_key] {
+            assert!(is_paid(paid), "{paid:?}");
+            assert!(check(paid, false).unwrap_err().starts_with("paid: "));
+            assert_eq!(check(paid, true), Ok(()));
+        }
+        assert!(!is_paid(&free_chat()));
+        assert_eq!(check(&free_chat(), false), Ok(()));
+        // Looking at models or at the balance costs nothing.
+        for free in [
+            request(Route::Deepseek, Method::Get, "/models", None),
+            request(Route::Deepseek, Method::Get, "/user/balance", None),
+            request(Route::Openrouter, Method::Get, "/api/v1/models", None),
+        ] {
+            assert!(!is_paid(&free));
+            assert_eq!(check(&free, false), Ok(()));
+        }
+    }
+
+    #[test]
+    fn what_is_billed_apart_is_refused_even_with_paid_allowed() {
+        for field in OPENROUTER_REFUSED_FIELDS {
+            let mut body = json!({ "model": "some/model" });
+            body[field] = json!([]);
+            let asked = request(
+                Route::Openrouter,
+                Method::Post,
+                "/api/v1/chat/completions",
+                Some(body),
+            );
+            assert!(check(&asked, true).is_err(), "{field}");
+        }
+        let elsewhere = request(
+            Route::Deepseek,
+            Method::Post,
+            "/beta/completions",
+            Some(json!({})),
+        );
+        assert!(check(&elsewhere, true).is_err());
+    }
+
+    #[tokio::test]
+    async fn a_key_by_route_goes_to_its_own_service() {
+        let ok: &[u8] = b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n{}";
+        let (base, server) = serve_once(vec![ok]).await;
+        let client = AiClient::new(Bases::all_at(&base)).unwrap();
+        let asked = request(
+            Route::Deepseek,
+            Method::Post,
+            "/chat/completions",
+            Some(json!({ "model": "deepseek-flash", "messages": [] })),
+        );
+
+        let result = client.run(&asked, Some("sk-deep"), true, |_| {}).await;
+
+        assert_eq!(result, Ok(()));
+        let sent = server.await.unwrap().to_ascii_lowercase();
+        assert!(sent.starts_with("post /chat/completions http/1.1\r\n"));
+        assert!(sent.contains("authorization: bearer sk-deep\r\n"));
     }
 
     #[tokio::test]
@@ -428,7 +545,7 @@ mod tests {
 
         let (events, result) = run(&base, &paid, Some("sk-secret")).await;
 
-        assert!(result.unwrap_err().contains("free"));
+        assert!(result.unwrap_err().starts_with("paid: "));
         assert_eq!(events, []);
         assert!(!server.is_finished());
         server.abort();
@@ -602,8 +719,8 @@ mod tests {
         assert_eq!(request.method, Method::Get);
         assert_eq!(request.body, None);
 
-        // A route the shell doesn't serve, as the evaluation's own.
-        let unknown = json!({ "route": "deepseek", "method": "GET", "path": "/models" });
+        // A route the shell doesn't serve.
+        let unknown = json!({ "route": "chatgpt", "method": "GET", "path": "/models" });
         assert!(serde_json::from_value::<AiRequest>(unknown).is_err());
     }
 }
