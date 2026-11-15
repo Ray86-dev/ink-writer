@@ -481,6 +481,55 @@ describe("cards on the project screen", () => {
       );
     });
 
+    it("keeps the links right through splitting, joining and deleting paragraphs", async () => {
+      show("live");
+      await waitFor(() => expect(linked()).toEqual(["Marta Rey", "Puerto Viejo", "Tomás"]));
+      const editor = currentEditor();
+      /** Every link must sit exactly on its name, wherever the text has moved to. */
+      const expectLinks = (names: string[]) => {
+        expect(linked()).toEqual(names);
+        for (const link of document.querySelectorAll(".prose .name-link")) {
+          const card = link.getAttribute("data-entity");
+          expect([link.textContent, card]).toEqual(
+            link.textContent === "Marta Rey" || link.textContent === "Marta"
+              ? [link.textContent, "marta"]
+              : link.textContent === "Puerto Viejo"
+                ? ["Puerto Viejo", "puerto"]
+                : [link.textContent, link.textContent === "Tomás" ? "tomas" : "thomas"],
+          );
+        }
+      };
+
+      // A name cut in two by a new paragraph is no longer a name.
+      editor.commands.setTextSelection(7);
+      editor.commands.splitBlock();
+      expectLinks(["Marta", "Puerto Viejo", "Tomás"]);
+
+      // Joined back, it's whole again.
+      editor.commands.joinBackward();
+      expectLinks(["Marta Rey", "Puerto Viejo", "Tomás"]);
+
+      // A paragraph typed before the others pushes them along.
+      editor.commands.insertContentAt(0, {
+        type: "paragraph",
+        content: [{ type: "text", text: "Thomas llegó." }],
+      });
+      expectLinks(["Thomas", "Marta Rey", "Puerto Viejo", "Tomás"]);
+
+      // And deleting the first two leaves only what the rest says.
+      const first = editor.state.doc.child(0).nodeSize;
+      const second = editor.state.doc.child(1).nodeSize;
+      editor.commands.deleteRange({ from: 0, to: first + second });
+      expectLinks(["Tomás"]);
+
+      // Undoing brings text back in one piece, however many steps it takes back at once: whatever
+      // the text says then is what's linked.
+      editor.commands.undo();
+      const names = /Marta Rey|Marta|Puerto Viejo|Tomás|Thomas/g;
+      expectLinks(editor.getText({ blockSeparator: "\n" }).match(names) ?? []);
+      expect(linked().length).toBeGreaterThan(1);
+    });
+
     it("while writing, a plain click stays in the text and Ctrl or Cmd with it opens the card", async () => {
       show("live");
       const link = await waitFor(() => {

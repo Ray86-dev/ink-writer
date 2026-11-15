@@ -1,7 +1,7 @@
 import type { NameMatch } from "@ink-writer/core";
 import { type Editor, Extension } from "@tiptap/core";
 import type { Node as ProseNode } from "@tiptap/pm/model";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Plugin, PluginKey, type Transaction } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 /** What the plugin reads each time, so that the names can change without rebuilding the editor. */
@@ -34,40 +34,67 @@ export const NameLinks = Extension.create<{ source: NameLinkSource | null }>({
     if (source === null) {
       return [];
     }
-    // Paragraphs are immutable, so one that didn't change is never searched again.
-    let cachedFor: ((text: string) => NameMatch[]) | null = null;
-    let cache = new WeakMap<ProseNode, NameMatch[]>();
+    type Find = (text: string) => NameMatch[];
+    /** What the links on screen were found with, to tell a change of names from a keystroke. */
+    let foundWith: Find | null = null;
+
+    const linksIn = (node: ProseNode, position: number, find: Find): Decoration[] =>
+      find(node.textBetween(0, node.content.size, undefined, LEAF)).map((match) =>
+        Decoration.inline(position + 1 + match.from, position + 1 + match.to, {
+          class: "name-link",
+          "data-entity": match.entityId,
+        }),
+      );
 
     const build = (doc: ProseNode): DecorationSet => {
       const find = source.find();
+      foundWith = find;
       if (find === null) {
         return DecorationSet.empty;
-      }
-      if (find !== cachedFor) {
-        cachedFor = find;
-        cache = new WeakMap();
       }
       const decorations: Decoration[] = [];
       doc.descendants((node, position) => {
         if (!node.isTextblock) {
           return true;
         }
-        let matches = cache.get(node);
-        if (matches === undefined) {
-          matches = find(node.textBetween(0, node.content.size, undefined, LEAF));
-          cache.set(node, matches);
-        }
-        for (const match of matches) {
-          decorations.push(
-            Decoration.inline(position + 1 + match.from, position + 1 + match.to, {
-              class: "name-link",
-              "data-entity": match.entityId,
-            }),
-          );
-        }
+        decorations.push(...linksIn(node, position, find));
         return false;
       });
       return DecorationSet.create(doc, decorations);
+    };
+
+    /**
+     * After a keystroke, only the paragraphs it touched are searched again: the rest keep their
+     * links, moved along with the text. Typing costs the same however long the scene is.
+     */
+    const update = (
+      transaction: Transaction,
+      previous: DecorationSet,
+      doc: ProseNode,
+    ): DecorationSet => {
+      const find = source.find();
+      if (find === null || find !== foundWith) {
+        return build(doc);
+      }
+      let links = previous.map(transaction.mapping, doc);
+      const { maps } = transaction.mapping;
+      maps.forEach((map, index) => {
+        map.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
+          const rest = transaction.mapping.slice(index + 1);
+          const from = Math.max(0, rest.map(newStart, -1));
+          const to = Math.min(doc.content.size, rest.map(newEnd, 1));
+          doc.nodesBetween(from, to, (node, position) => {
+            if (!node.isTextblock) {
+              return true;
+            }
+            links = links
+              .remove(links.find(position, position + node.nodeSize))
+              .add(doc, linksIn(node, position, find));
+            return false;
+          });
+        });
+      });
+      return links;
     };
 
     return [
@@ -76,9 +103,11 @@ export const NameLinks = Extension.create<{ source: NameLinkSource | null }>({
         state: {
           init: (_config, state) => build(state.doc),
           apply: (transaction, previous, _old, next) =>
-            transaction.docChanged || transaction.getMeta(key) === true
+            transaction.getMeta(key) === true
               ? build(next.doc)
-              : previous,
+              : transaction.docChanged
+                ? update(transaction, previous, next.doc)
+                : previous,
         },
         props: {
           decorations: (state) => key.getState(state),
