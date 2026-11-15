@@ -84,6 +84,52 @@ export interface StoredUsage {
   readonly cost: number;
 }
 
+/** Something to look up for the documentation, as stored. `research/research.ts` gives it meaning. */
+export interface StoredResearchTopic {
+  readonly id: string;
+  readonly projectId: string;
+  readonly kind: string;
+  /** What it's called in the novel. With the kind, it says which topic this is. */
+  readonly name: string;
+  /** For a place: whether the author said it exists. */
+  readonly reality: string | null;
+  /** What's searched for. Null if nothing is to be searched. */
+  readonly term: string | null;
+  /** JSON: the real place the author chose. */
+  readonly place: string | null;
+  readonly status: string;
+  readonly searchedAt: number | null;
+}
+
+export interface NewResearchTopic {
+  readonly projectId: string;
+  readonly kind: string;
+  readonly name: string;
+  readonly reality: string | null;
+  readonly term: string | null;
+  readonly place: string | null;
+  readonly status: string;
+}
+
+/** One thing found, always with where it comes from. */
+export interface StoredResearchItem {
+  readonly id: string;
+  readonly topicId: string;
+  readonly category: string;
+  readonly text: string;
+  readonly sourceUrl: string;
+  readonly sourceTitle: string;
+  readonly retrievedAt: number;
+  readonly status: string;
+}
+
+export interface NewResearchItem {
+  readonly category: string;
+  readonly text: string;
+  readonly sourceUrl: string;
+  readonly sourceTitle: string;
+}
+
 export type MoveDirection = "up" | "down";
 
 export class InvalidInputError extends Error {
@@ -168,6 +214,27 @@ export interface Storage {
   /** Counts one more request to a service on a day, and what it cost in dollars. */
   addUsage(day: string, route: string, cost: number): Promise<void>;
   listUsage(day: string): Promise<StoredUsage[]>;
+
+  /**
+   * Keeps a topic, in place of the one with the same kind and name. What had been found for the old
+   * one goes, except what the author took to their notes.
+   */
+  saveResearchTopic(topic: NewResearchTopic): Promise<StoredResearchTopic>;
+  /** Oldest first. */
+  listResearchTopics(projectId: string): Promise<StoredResearchTopic[]>;
+  /** With everything found for it, the author's notes included. Only the author removes one. */
+  removeResearchTopic(id: string): Promise<void>;
+  /**
+   * Stores what a search found and how it went, all or nothing. It replaces what the last search
+   * left, and leaves what the author already took to their notes or discarded as it is.
+   */
+  saveResearchResult(
+    topicId: string,
+    status: string,
+    items: readonly NewResearchItem[],
+  ): Promise<void>;
+  listResearchItems(projectId: string): Promise<StoredResearchItem[]>;
+  setResearchItemStatus(id: string, status: string): Promise<void>;
 
   /** A choice the author made for the whole app. Null if they haven't. Never a credential. */
   getSetting(key: string): Promise<string | null>;

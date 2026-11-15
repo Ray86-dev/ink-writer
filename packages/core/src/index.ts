@@ -152,6 +152,53 @@ export type {
   TransportResponse,
 } from "./provider/transport";
 export { readAll, readLines, readSseData } from "./provider/transport";
+export type {
+  PendingOutcome,
+  PlaceAnswer,
+  PlaceView,
+  Reality,
+  ResearchDeps,
+  ResearchItem,
+  ResearchTopic,
+  ResearchView,
+  ResearchViewInput,
+  StoredResearch,
+  TopicKind,
+  TopicStatus,
+  TopicView,
+} from "./research/research";
+export {
+  addEraTopic,
+  addTopic,
+  answerPlace,
+  buildResearchView,
+  findPlaces,
+  isPresentEra,
+  loadResearch,
+  NO_RESEARCH,
+  peopleNames,
+  ResearchStoppedError,
+  searchPending,
+  searchTopic,
+} from "./research/research";
+export type {
+  FoundItem,
+  ItemCategory,
+  PlaceCandidate,
+  ResearchAnswer,
+  ResearchRequest,
+  ResearchTransport,
+} from "./research/sources";
+export {
+  ITEM_CATEGORIES,
+  isSourceUrl,
+  parseClimate,
+  parseGeocode,
+  parseNearby,
+  parseWiki,
+} from "./research/sources";
+export type { TermProblem } from "./research/terms";
+export { checkTerm, MAX_TERM_CHARS, requireTerm, TermRefusedError } from "./research/terms";
 export type { SqlDriver, SqlResult, SqlRow, SqlStatement, SqlValue } from "./storage/driver";
 export type { Migration, MigrationResult } from "./storage/migrate";
 export { DatabaseTooNewError, migrate } from "./storage/migrate";
@@ -169,6 +216,8 @@ export type {
   Storage,
   StoredHintState,
   StoredOverride,
+  StoredResearchItem,
+  StoredResearchTopic,
   StoredSceneProse,
   StoredUsage,
   Trash,

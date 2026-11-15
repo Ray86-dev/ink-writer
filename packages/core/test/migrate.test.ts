@@ -48,6 +48,8 @@ describe("migrate", () => {
       "mentions",
       "projects",
       "relations",
+      "research_items",
+      "research_topics",
       "scene_notes",
       "scene_prompts",
       "scene_snapshots",

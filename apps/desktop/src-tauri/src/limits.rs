@@ -1,6 +1,6 @@
-//! How many paid requests the app may make in a day. It's counted here, in the shell, so that a
-//! fault in the page can't spend past what the author allowed (rule 10). Zero, the default, means
-//! that nothing paid is ever sent.
+//! How many requests of one kind the app may make in a day: the paid ones to a model, and the
+//! searches for documentation. It's counted here, in the shell, so that a fault in the page can't go
+//! past what the author allowed (rule 10). Zero means that nothing of that kind is ever sent.
 
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, PoisonError};
@@ -12,7 +12,7 @@ use crate::files::write_atomically;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 struct Stored {
-    /// The most paid requests in one day. Zero turns paid requests off.
+    /// The most requests in one day. Zero turns them off.
     daily_requests: u32,
     /// The day `used` belongs to, as days since 1970 in UTC.
     day: u64,
@@ -26,10 +26,16 @@ pub struct LimitsView {
     pub used_today: u32,
 }
 
-pub struct PaidLimits {
+pub struct DailyLimit {
     path: PathBuf,
+    /// What's counted, as the refusals name it.
+    what: &'static str,
     state: Mutex<Stored>,
 }
+
+/// How many searches a day until the author says otherwise. The public services ask for restraint:
+/// Overpass, some hundred queries a day from one user.
+pub const DEFAULT_DAILY_SEARCHES: u32 = 60;
 
 /// Days since 1970 in UTC: all a daily count needs to tell one day from the next.
 pub fn today() -> u64 {
@@ -39,15 +45,31 @@ pub fn today() -> u64 {
         .unwrap_or(0)
 }
 
-impl PaidLimits {
-    /// What's stored and can't be read counts as nothing allowed, never as no limit.
-    pub fn open(path: PathBuf) -> Self {
-        let stored = std::fs::read(&path)
-            .ok()
-            .and_then(|bytes| serde_json::from_slice(&bytes).ok())
-            .unwrap_or_default();
+impl DailyLimit {
+    /// Paid requests to a model. Off until the author sets a limit.
+    pub fn paid(path: PathBuf) -> Self {
+        Self::open(path, "paid requests", 0)
+    }
+
+    /// Searches for documentation. They cost nothing, so they start with a modest limit.
+    pub fn searches(path: PathBuf) -> Self {
+        Self::open(path, "searches", DEFAULT_DAILY_SEARCHES)
+    }
+
+    /// Without a file, `default_daily`. What's stored and can't be read counts as nothing allowed,
+    /// never as no limit.
+    fn open(path: PathBuf, what: &'static str, default_daily: u32) -> Self {
+        let stored = match std::fs::read(&path) {
+            Ok(bytes) => serde_json::from_slice(&bytes).unwrap_or_default(),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Stored {
+                daily_requests: default_daily,
+                ..Stored::default()
+            },
+            Err(_) => Stored::default(),
+        };
         Self {
             path,
+            what,
             state: Mutex::new(stored),
         }
     }
@@ -60,7 +82,7 @@ impl PaidLimits {
         }
     }
 
-    pub fn allows_paid(&self) -> bool {
+    pub fn is_on(&self) -> bool {
         self.lock().daily_requests > 0
     }
 
@@ -76,7 +98,7 @@ impl PaidLimits {
         Ok(())
     }
 
-    /// Counts one paid request, before it's sent. Refuses, counting nothing, once the day's limit
+    /// Counts one request, before it's sent. Refuses, counting nothing, once the day's limit
     /// is reached, and also if the count can't be saved: an uncounted request could be the first
     /// of many.
     pub fn spend(&self, today: u64) -> Result<(), String> {
@@ -84,11 +106,11 @@ impl PaidLimits {
         let used = if state.day == today { state.used } else { 0 };
         if used >= state.daily_requests {
             return Err(if state.daily_requests == 0 {
-                "limit: paid requests are off".to_string()
+                format!("limit: {} are off", self.what)
             } else {
                 format!(
-                    "limit: the {} paid requests allowed today are used up",
-                    state.daily_requests
+                    "limit: the {} {} allowed today are used up",
+                    state.daily_requests, self.what
                 )
             });
         }
@@ -120,9 +142,9 @@ impl PaidLimits {
 mod tests {
     use super::*;
 
-    fn limits() -> (tempfile::TempDir, PaidLimits) {
+    fn limits() -> (tempfile::TempDir, DailyLimit) {
         let dir = tempfile::tempdir().unwrap();
-        let limits = PaidLimits::open(dir.path().join("ai-limits.json"));
+        let limits = DailyLimit::paid(dir.path().join("ai-limits.json"));
         (dir, limits)
     }
 
@@ -130,7 +152,7 @@ mod tests {
     fn nothing_paid_is_allowed_until_the_author_says_so() {
         let (_dir, limits) = limits();
 
-        assert!(!limits.allows_paid());
+        assert!(!limits.is_on());
         assert_eq!(
             limits.spend(100),
             Err("limit: paid requests are off".into())
@@ -180,7 +202,7 @@ mod tests {
         limits.spend(100).unwrap();
         drop(limits);
 
-        let reopened = PaidLimits::open(dir.path().join("ai-limits.json"));
+        let reopened = DailyLimit::paid(dir.path().join("ai-limits.json"));
 
         assert_eq!(
             reopened.view(100),
@@ -204,7 +226,7 @@ mod tests {
         assert!(limits.spend(100).is_err());
 
         limits.set_daily_requests(0).unwrap();
-        assert!(!limits.allows_paid());
+        assert!(!limits.is_on());
         assert_eq!(
             limits.spend(101),
             Err("limit: paid requests are off".into())
@@ -217,9 +239,9 @@ mod tests {
         let path = dir.path().join("ai-limits.json");
         std::fs::write(&path, b"{ not json").unwrap();
 
-        let limits = PaidLimits::open(path);
+        let limits = DailyLimit::paid(path);
 
-        assert!(!limits.allows_paid());
+        assert!(!limits.is_on());
     }
 
     #[test]
@@ -228,7 +250,7 @@ mod tests {
         // A folder where the file should be: saving fails.
         let path = dir.path().join("ai-limits.json");
         std::fs::create_dir(&path).unwrap();
-        let limits = PaidLimits::open(path);
+        let limits = DailyLimit::paid(path);
         // The limit itself can't be saved either, so it's set as a restart would have left it.
         *limits.lock() = Stored {
             daily_requests: 5,
@@ -238,5 +260,29 @@ mod tests {
 
         assert!(limits.spend(100).is_err());
         assert_eq!(limits.view(100).used_today, 0);
+    }
+
+    #[test]
+    fn searches_start_with_a_limit_of_their_own_and_say_what_ran_out() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("search-limits.json");
+        let searches = DailyLimit::searches(path.clone());
+
+        assert_eq!(searches.view(100).daily_requests, DEFAULT_DAILY_SEARCHES);
+        assert_eq!(searches.spend(100), Ok(()));
+
+        searches.set_daily_requests(1).unwrap();
+        let refused = searches.spend(100).unwrap_err();
+        assert!(refused.starts_with("limit: the 1 searches"), "{refused}");
+
+        // Turned off by the author, it stays off after a restart: the default is only for no file.
+        searches.set_daily_requests(0).unwrap();
+        drop(searches);
+        let reopened = DailyLimit::searches(path.clone());
+        assert!(!reopened.is_on());
+        assert_eq!(reopened.spend(101), Err("limit: searches are off".into()));
+
+        std::fs::write(&path, b"{ not json").unwrap();
+        assert!(!DailyLimit::searches(path).is_on());
     }
 }

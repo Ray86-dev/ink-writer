@@ -18,6 +18,7 @@ import { ProjectScreen } from "../src/project/ProjectScreen";
 import type { Shell } from "../src/shell";
 import { stubLayout } from "./support/environment";
 import { fakeAi, fakeModels } from "./support/fake-ai";
+import { fakeResearch } from "./support/fake-research";
 
 const FIRST = [
   "Marta Rey bajó del autobús en Puerto Viejo.",
@@ -110,6 +111,7 @@ describe("cards on the project screen", () => {
     const shell: Shell = {
       driver: {} as Shell["driver"],
       ai: fakeAi().ai,
+      ...fakeResearch().shell,
       exportFile: vi.fn(async () => true),
       onCloseRequested: () => () => {},
       forceClose: vi.fn(),

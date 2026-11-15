@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use crate::ai::Bases;
+use crate::research::ResearchBases;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(120);
 
@@ -56,6 +57,11 @@ impl TestMode {
     /// The stand-in if there's one. Otherwise an address where nothing listens.
     pub fn ai_bases(&self) -> Bases {
         Bases::all_at(self.ai_base.as_deref().unwrap_or("http://127.0.0.1:1"))
+    }
+
+    /// The same stand-in answers the searches for documentation, each at its own path.
+    pub fn research_bases(&self) -> ResearchBases {
+        ResearchBases::all_at(self.ai_base.as_deref().unwrap_or("http://127.0.0.1:1"))
     }
 
     /// Where this run's database folder is. It can never be the user's own data folder.
@@ -115,6 +121,9 @@ mod tests {
         let bases = parse(&["--test-mode=smoke"]).unwrap().ai_bases();
         assert_eq!(bases.openrouter, "http://127.0.0.1:1");
         assert_eq!(bases.ollama, "http://127.0.0.1:1");
+        let research = parse(&["--test-mode=smoke"]).unwrap().research_bases();
+        assert_eq!(research.overpass, "http://127.0.0.1:1");
+        assert_eq!(research.wikipedia.as_deref(), Some("http://127.0.0.1:1"));
     }
 
     #[test]

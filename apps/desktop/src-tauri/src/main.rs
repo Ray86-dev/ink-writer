@@ -12,8 +12,9 @@ use base64::engine::general_purpose::STANDARD;
 use ink_writer::ai::{AiClient, AiEvent, AiRequest, Bases, Cancellations, Route, is_paid};
 use ink_writer::db::{Database, ExecResult, Statement};
 use ink_writer::files::write_atomically;
-use ink_writer::limits::{LimitsView, PaidLimits, today};
+use ink_writer::limits::{DailyLimit, LimitsView, today};
 use ink_writer::openrouter_login::Login;
+use ink_writer::research::{ResearchAnswer, ResearchBases, ResearchClient, ResearchRequest};
 use ink_writer::secrets::{Keys, MemoryStore, SystemStore};
 use ink_writer::test_mode::TestMode;
 use serde::Serialize;
@@ -28,6 +29,7 @@ const SINGLE_INSTANCE_TEST: &str = "single-instance";
 const OPENROUTER_KEY: &str = "openrouter-key";
 const DEEPSEEK_KEY: &str = "deepseek-key";
 const LIMITS_FILE: &str = "ai-limits.json";
+const SEARCH_LIMITS_FILE: &str = "search-limits.json";
 const LOGIN_ID: &str = "openrouter-login";
 /// How long the author has to come back from the browser. They can also cancel at any time.
 const LOGIN_TIMEOUT: Duration = Duration::from_secs(5 * 60);
@@ -40,7 +42,10 @@ struct Shell {
     keys: Arc<Keys>,
     deepseek_keys: Arc<Keys>,
     /// What the author allows to be spent. Kept here so that the page can't go past it.
-    limits: PaidLimits,
+    limits: DailyLimit,
+    research: Result<ResearchClient, String>,
+    /// How many searches for documentation a day.
+    searches: DailyLimit,
     test: Option<TestMode>,
     /// In a test, where exports go. A test can't answer a dialog.
     test_dir: Option<PathBuf>,
@@ -165,7 +170,7 @@ async fn ai_send(
         // A request that costs money is counted before it leaves, and refused past the day's limit.
         let paid = is_paid(&request);
         if paid {
-            ink_writer::ai::check(&request, shell.limits.allows_paid())?;
+            ink_writer::ai::check(&request, shell.limits.is_on())?;
             shell.limits.spend(today())?;
         }
         let sink = |event| {
@@ -296,6 +301,46 @@ fn ai_limits_set(shell: State<'_, Shell>, daily_requests: u32) -> Result<LimitsV
     Ok(shell.limits.view(today()))
 }
 
+/// Looks something up for the documentation. The page says what kind of search and gives a term
+/// or a point: where it goes is decided here. Each one counts against the day's searches.
+#[tauri::command]
+async fn research_fetch(
+    shell: State<'_, Shell>,
+    request: ResearchRequest,
+) -> Result<ResearchAnswer, String> {
+    let client = shell.research.as_ref().map_err(Clone::clone)?;
+    // Checked first, so that a search that can't be sent doesn't use up the day's count.
+    client.check(&request)?;
+    shell.searches.spend(today())?;
+    client.run(&request).await
+}
+
+#[tauri::command(async)]
+fn research_limits_get(shell: State<'_, Shell>) -> LimitsView {
+    shell.searches.view(today())
+}
+
+/// Zero turns the searches off.
+#[tauri::command(async)]
+fn research_limits_set(shell: State<'_, Shell>, daily_requests: u32) -> Result<LimitsView, String> {
+    shell.searches.set_daily_requests(daily_requests)?;
+    Ok(shell.searches.view(today()))
+}
+
+/// Opens the source of something found in the author's browser. Only a web address: the page can't
+/// use this to start anything else.
+#[tauri::command(async)]
+fn open_link(shell: State<'_, Shell>, url: String) -> Result<(), String> {
+    let parsed = url::Url::parse(&url).map_err(|error| error.to_string())?;
+    if !matches!(parsed.scheme(), "http" | "https") || parsed.host_str().is_none() {
+        return Err("only a web address can be opened".into());
+    }
+    if shell.test.is_some() {
+        return Err("browser: a test can't open a link".into());
+    }
+    open::that_detached(parsed.as_str()).map_err(|error| format!("browser: {error}"))
+}
+
 /// One line to whoever started the test. Sent only after what it reports has really happened.
 #[tauri::command]
 fn test_log(shell: State<'_, Shell>, line: String) -> Result<(), String> {
@@ -389,7 +434,12 @@ fn main() {
                     Some(_) => Box::new(MemoryStore::default()),
                     None => Box::new(SystemStore::new(DEEPSEEK_KEY, dir.join(DEEPSEEK_KEY))),
                 })),
-                limits: PaidLimits::open(dir.join(LIMITS_FILE)),
+                limits: DailyLimit::paid(dir.join(LIMITS_FILE)),
+                research: ResearchClient::new(match &test {
+                    Some(test) => test.research_bases(),
+                    None => ResearchBases::default(),
+                }),
+                searches: DailyLimit::searches(dir.join(SEARCH_LIMITS_FILE)),
                 test_dir: test.is_some().then(|| dir.clone()),
                 test,
             });
@@ -412,6 +462,10 @@ fn main() {
             deepseek_key_clear,
             ai_limits_get,
             ai_limits_set,
+            research_fetch,
+            research_limits_get,
+            research_limits_set,
+            open_link,
             test_log,
             test_close_window,
             test_finish,

@@ -8,7 +8,10 @@ import {
   knownNames,
   loadNovelView,
   openSqlStorage,
+  parseWiki,
   plainText,
+  type ResearchAnswer,
+  type ResearchRequest,
   readParagraphs,
   SceneSession,
   type SqlDriver,
@@ -158,6 +161,37 @@ export async function runSmokeChecks(
       const limits = (await context.invoke("ai_limits_get")) as { usedToday: number };
       assert(limits.usedToday === 1, "The shell didn't count the paid request");
       await context.invoke("ai_limits_set", { dailyRequests: 0 });
+
+      // A search for documentation: the page gives a term, the shell builds the address, and what
+      // comes back can be read. A passage isn't a term, and the day's limit holds here too.
+      const invoke = context.invoke;
+      const search = (request: ResearchRequest) =>
+        invoke("research_fetch", { request }).then(
+          (answer) => answer as ResearchAnswer,
+          (error: unknown) => String(error),
+        );
+      await invoke("research_limits_set", { dailyRequests: 2 });
+      const found = await search({ kind: "wiki", term: "Ñandú común", language: "es" });
+      assert(typeof found !== "string", `The shell didn't search: ${String(found)}`);
+      const [article] = parseWiki(found.body);
+      assert(
+        article?.text === "Sobre Ñandú común." &&
+          article.sourceUrl === "https://es.wikipedia.org/wiki/%C3%91and%C3%BA%20com%C3%BAn",
+        `The search term changed on its way out: ${JSON.stringify(article)}`,
+      );
+      const passage = await search({ kind: "wiki", term: `${prose} ${prose}`, language: "es" });
+      assert(
+        typeof passage === "string" && passage.includes("term:"),
+        "The shell sent a passage as a search term",
+      );
+      const within = await search({ kind: "wiki", term: "relojero", language: "es" });
+      const past = await search({ kind: "wiki", term: "tranvía", language: "es" });
+      assert(typeof within !== "string", "A refused search used up the day's count");
+      assert(
+        typeof past === "string" && past.includes("limit:"),
+        `The shell went past the day's searches: ${JSON.stringify(past)}`,
+      );
+      await invoke("research_limits_set", { dailyRequests: 60 });
     }
     answer = `${draft.text.length} characters`;
 

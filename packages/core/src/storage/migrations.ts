@@ -209,4 +209,39 @@ export const MIGRATIONS: readonly Migration[] = [
       ) STRICT`,
     ],
   },
+  {
+    version: 9,
+    name: "research",
+    // What was looked up for the documentation (SPEC §7), kept so that it's searched once and can
+    // be read offline. A topic is known by its name in the novel, not by an id of the analysis, so
+    // that what the author said about a place outlives every reanalysis. An item can't be stored
+    // without a link to where it comes from.
+    statements: [
+      `CREATE TABLE research_topics (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL REFERENCES projects (id) ON DELETE RESTRICT,
+        kind TEXT NOT NULL CHECK (kind IN ('place', 'era', 'topic')),
+        name TEXT NOT NULL,
+        reality TEXT CHECK (reality IN ('real', 'based', 'invented')),
+        term TEXT,
+        place TEXT,
+        status TEXT NOT NULL CHECK (status IN ('pending', 'done', 'failed')),
+        searched_at INTEGER,
+        created_at INTEGER NOT NULL,
+        UNIQUE (project_id, kind, name)
+      ) STRICT`,
+      `CREATE TABLE research_items (
+        id TEXT PRIMARY KEY,
+        topic_id TEXT NOT NULL REFERENCES research_topics (id) ON DELETE RESTRICT,
+        category TEXT NOT NULL,
+        text TEXT NOT NULL,
+        source_url TEXT NOT NULL CHECK (source_url LIKE 'http://%' OR source_url LIKE 'https://%'),
+        source_title TEXT NOT NULL CHECK (source_title <> ''),
+        retrieved_at INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'suggested'
+          CHECK (status IN ('suggested', 'noted', 'dismissed'))
+      ) STRICT`,
+      "CREATE INDEX research_items_by_topic ON research_items (topic_id)",
+    ],
+  },
 ];

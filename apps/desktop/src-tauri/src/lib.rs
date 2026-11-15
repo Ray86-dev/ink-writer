@@ -5,5 +5,6 @@ pub mod db;
 pub mod files;
 pub mod limits;
 pub mod openrouter_login;
+pub mod research;
 pub mod secrets;
 pub mod test_mode;

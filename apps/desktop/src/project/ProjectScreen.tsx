@@ -26,6 +26,7 @@ import { Companion, HintsPanel } from "../hints/HintsPanel";
 import { useHints } from "../hints/useHints";
 import { useLanguage } from "../i18n";
 import { describeError } from "../messages";
+import { useResearch } from "../research/useResearch";
 import type { Shell } from "../shell";
 import { AiPanel } from "./AiPanel";
 import { HistoryPanel } from "./HistoryPanel";
@@ -170,6 +171,22 @@ export function ProjectScreen({
   const reportProblem = useCallback((error: unknown) => setNotice(describeError(error)), []);
   const hinting = useHints(storage, project.id, novel, sceneTexts, reportProblem);
   const hintLevel = hinting.settings?.level ?? "off";
+  // Only with the cards open: nothing is looked up, and nothing found is shown, while writing.
+  const research = useResearch(
+    storage,
+    project,
+    novel,
+    hinting.settings,
+    shell.research,
+    cards !== null,
+    reportProblem,
+  );
+  const openLink = useCallback(
+    (url: string) => {
+      shell.openLink(url).catch(reportProblem);
+    },
+    [shell, reportProblem],
+  );
 
   const openCards = useCallback(
     (selection: CardSelection) => {
@@ -527,6 +544,8 @@ export function ProjectScreen({
           onSelect={setCards}
           onOpenPassage={openPassage}
           onOpenScene={openScene}
+          research={research}
+          onOpenLink={openLink}
           onChanged={reloadCards}
           onClose={() => setCards(null)}
         />
