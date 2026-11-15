@@ -182,8 +182,9 @@ export function createInkNetwork(options: InkNetworkOptions): InkNetwork {
     } else {
       const bottom = Math.min(options.textBottom?.() ?? 0, height * 0.6);
       centreX = width * 0.5;
-      centreY = (bottom + height) / 2;
-      scale = Math.min(width * 0.34, (height - bottom) * 0.38);
+      // A little above the middle of the room there is, and small enough for the lowest names.
+      centreY = bottom + (height - bottom) * 0.46;
+      scale = Math.min(width * 0.34, (height - bottom) * 0.31);
       fade = [-1, -0.5, (bottom - 20) / height, (bottom + 40) / height];
     }
     for (const item of nodes) {

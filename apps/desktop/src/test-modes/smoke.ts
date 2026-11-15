@@ -2,11 +2,13 @@ import {
   type AiTransport,
   AnalysisQueue,
   buildManuscript,
+  buildNetwork,
   collectDraft,
   createNameFinder,
   createOllamaProvider,
   knownNames,
   loadNovelView,
+  type NovelView,
   openSqlStorage,
   parseWiki,
   plainText,
@@ -19,6 +21,8 @@ import {
   toMarkdown,
 } from "@ink-writer/core";
 import { Editor } from "@tiptap/core";
+import { createInkNetwork } from "../dashboard/ink-network";
+import { loadThreePainter, supportsWebGl } from "../dashboard/three-painter";
 import { proseExtensions } from "../editor/extensions";
 import { bytesToBase64, type Invoke } from "../tauri-driver";
 
@@ -32,6 +36,55 @@ export interface SmokeContext {
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
+  }
+}
+
+/**
+ * The Dashboard's network in this WebView. Where there's WebGL, three.js loads, the shader builds
+ * and frames get painted. Where there isn't, the page must say so and go on with its cards alone.
+ */
+async function checkInkNetwork(host: HTMLElement, view: NovelView): Promise<string> {
+  const hero = document.createElement("div");
+  hero.style.cssText = "position:relative;width:960px;height:600px";
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "width:100%;height:100%";
+  const labels = document.createElement("div");
+  hero.append(canvas, labels);
+  host.append(hero);
+  try {
+    let lost = false;
+    const painter = await loadThreePainter(canvas, () => {
+      lost = true;
+    });
+    if (painter === null) {
+      assert(!supportsWebGl(), "This WebView has WebGL, and the network didn't load");
+      return "no WebGL here: the Dashboard shows its cards alone";
+    }
+    const network = buildNetwork(view);
+    assert(network.nodes.length > 0, "The novel has cards and its network is empty");
+    const ink = createInkNetwork({
+      hero,
+      labels,
+      painter,
+      reducedMotion: false,
+      // By the clock, since a window that isn't in front may get no frames of its own.
+      environment: {
+        requestFrame: (callback) => window.setTimeout(() => callback(performance.now()), 16),
+        cancelFrame: (handle) => window.clearTimeout(handle),
+        hidden: () => false,
+      },
+    });
+    ink.setNetwork(network);
+    const started = performance.now();
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const { frames, pixelRatio } = ink.stats();
+    const seconds = (performance.now() - started) / 1000;
+    ink.dispose();
+    assert(!lost, "The ink shader didn't build in this WebView");
+    assert(frames > 0, "The network painted nothing");
+    return `ink network of ${network.nodes.length} nodes painted with WebGL, ${Math.round(frames / seconds)} frames a second at ${pixelRatio.toFixed(2)} of the pixels`;
+  } finally {
+    hero.remove();
   }
 }
 
@@ -238,6 +291,7 @@ export async function runSmokeChecks(
       linkEditor.destroy();
       await linked.close();
       answer += ", 1 card with its name linked";
+      answer += `, ${await checkInkNetwork(context.host, novel)}`;
     }
   }
 

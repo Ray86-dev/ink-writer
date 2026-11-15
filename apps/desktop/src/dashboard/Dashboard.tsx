@@ -348,7 +348,20 @@ export function Dashboard({
     {
       id: "names",
       count: view.names.length,
-      items: similarNames,
+      // Names that may be one and the same first: that's what the index is for. Otherwise, the
+      // most used.
+      items:
+        similarNames.length > 0
+          ? similarNames
+          : [...view.names]
+              .sort((a, b) => b.uses - a.uses)
+              .map(
+                (entry): TileItem => ({
+                  key: `${entry.entity.id}-${entry.name}`,
+                  label: entry.name,
+                  open: () => onOpenCards({ tab: entry.entity.type, id: entry.entity.id }),
+                }),
+              ),
       empty: messages.dashNothingYet,
       all: () => onOpenCards({ tab: "names", id: null }),
     },

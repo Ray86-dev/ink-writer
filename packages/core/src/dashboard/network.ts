@@ -264,7 +264,8 @@ export function buildNetwork(view: NovelView, limits: NetworkLimits = NETWORK_LI
         id: chapter.id,
         name: chapter.title,
         label: shorten(chapter.title),
-        conflict: chapter.issues.length > 0,
+        // A chapter keeps its black ink: what's unresolved in it shows on the cards it's about.
+        conflict: false,
         position: positions.get(chapterKey(chapter.id)) as Vec,
         radius: 0.03,
         depth: depthOf(chapterKey(chapter.id)),

@@ -1476,3 +1476,15 @@ button.quiet {
     transform: none;
   }
 }
+
+/* The modes are of the text: at the Dashboard they aren't offered. */
+.modes[hidden] {
+  display: none;
+}
+
+.chrome > button[aria-pressed="true"],
+.chrome-actions > button[aria-pressed="true"] {
+  color: var(--sheet);
+  background: var(--ink);
+  border-color: var(--ink);
+}
