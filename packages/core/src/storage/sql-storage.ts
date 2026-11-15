@@ -328,18 +328,32 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
     },
 
     async loadSceneProse(sceneId: string) {
-      const [scene] = await driver.query("SELECT ydoc, ydoc_version FROM scenes WHERE id = ?", [
-        sceneId,
-      ]);
-      const rows = await driver.query(
-        "SELECT id, update_data FROM scene_updates WHERE scene_id = ? ORDER BY id",
-        [sceneId],
-      );
-      return {
-        base: scene === undefined || scene.ydoc === null ? null : blob(scene, "ydoc"),
-        baseVersion: scene === undefined ? 0 : integer(scene, "ydoc_version"),
-        updates: rows.map((row) => ({ id: integer(row, "id"), data: blob(row, "update_data") })),
-      };
+      // The base and the updates are two reads. A compaction between them moves text from the
+      // updates into a base this read wouldn't have, and the scene would come out with text
+      // missing. The version says whether that happened, and then it's read again.
+      for (;;) {
+        const [scene] = await driver.query("SELECT ydoc, ydoc_version FROM scenes WHERE id = ?", [
+          sceneId,
+        ]);
+        const rows = await driver.query(
+          "SELECT id, update_data FROM scene_updates WHERE scene_id = ? ORDER BY id",
+          [sceneId],
+        );
+        const baseVersion = scene === undefined ? 0 : integer(scene, "ydoc_version");
+        const [after] = await driver.query("SELECT ydoc_version FROM scenes WHERE id = ?", [
+          sceneId,
+        ]);
+        if (after === undefined || integer(after, "ydoc_version") === baseVersion) {
+          return {
+            base: scene === undefined || scene.ydoc === null ? null : blob(scene, "ydoc"),
+            baseVersion,
+            updates: rows.map((row) => ({
+              id: integer(row, "id"),
+              data: blob(row, "update_data"),
+            })),
+          };
+        }
+      }
     },
 
     async compactSceneProse(

@@ -177,6 +177,66 @@ export interface Messages {
   readonly cardsPassageGone: string;
   readonly linkHint: string;
 
+  readonly hints: string;
+  readonly hintsShortOff: string;
+  readonly hintsOpen: string;
+  readonly hintsCount: (count: number) => string;
+  readonly hintsAsk: string;
+  readonly hintsAskAnother: string;
+  readonly hintsNone: string;
+  readonly hintsOffNote: string;
+  readonly hintsSettings: string;
+  readonly hintsLevel: string;
+  readonly hintLevels: {
+    readonly off: string;
+    readonly on_demand: string;
+    readonly discreet: string;
+    readonly companion: string;
+  };
+  readonly hintLevelNotes: {
+    readonly off: string;
+    readonly on_demand: string;
+    readonly discreet: string;
+    readonly companion: string;
+  };
+  readonly hintsKinds: string;
+  readonly hintTypes: {
+    readonly coherence: string;
+    readonly corrections: string;
+    readonly questions: string;
+    readonly suggestions: string;
+    readonly documentation: string;
+  };
+  readonly hintVague: { readonly coherence: string; readonly corrections: string };
+  readonly hintPointed: (where: string) => string;
+  readonly hintGoThere: string;
+  readonly hintFix: (quote: string, fix: string) => string;
+  readonly hintMore: string;
+  readonly hintApply: string;
+  readonly hintLeave: string;
+  readonly hintFixMyself: string;
+  readonly hintIntentional: string;
+  readonly hintLater: string;
+  readonly companionOpen: string;
+  readonly taskTitle: string;
+  readonly taskKinds: {
+    readonly define: string;
+    readonly write: string;
+    readonly resolve: string;
+    readonly complete: string;
+  };
+  readonly taskResolve: string;
+  readonly taskResolveReason: (here: string, there: string | null) => string;
+  readonly taskResolveGo: string;
+  readonly taskDefine: (name: string) => string;
+  readonly taskDefineReason: (name: string, scenes: number) => string;
+  readonly taskDefineGo: string;
+  readonly taskComplete: (title: string) => string;
+  readonly taskCompleteReason: string;
+  readonly taskCompleteGo: string;
+  readonly taskNotUseful: string;
+  readonly taskQuietToday: string;
+
   readonly analysisOff: string;
   readonly analysisReady: string;
   readonly analysisWorking: string;
@@ -383,6 +443,74 @@ const es: Messages = {
   cardsInScene: "Fichas de esta escena",
   cardsPassageGone: "Ese pasaje ya no está en el texto.",
   linkHint: "Ctrl o Cmd y clic en un nombre subrayado abre su ficha.",
+
+  hints: "Pistas",
+  hintsShortOff: "apagadas",
+  hintsOpen: "Por revisar",
+  hintsCount: (count) =>
+    count === 0
+      ? "No hay nada por revisar."
+      : count === 1
+        ? "Hay 1 pista."
+        : `Hay ${count} pistas.`,
+  hintsAsk: "Dame una pista",
+  hintsAskAnother: "Dame otra",
+  hintsNone: "No hay nada por revisar.",
+  hintsOffNote:
+    "Las pistas están apagadas: no hay tareas ni marcas. Las fichas se siguen actualizando.",
+  hintsSettings: "Cuánta ayuda quieres",
+  hintsLevel: "Nivel",
+  hintLevels: {
+    off: "Apagadas",
+    on_demand: "Si las pido",
+    discreet: "Discretas",
+    companion: "Compañera",
+  },
+  hintLevelNotes: {
+    off: "Sin tareas ni marcas.",
+    on_demand: "Solo cuando pulses «Dame una pista».",
+    discreet: "Subrayados al leer y un contador.",
+    companion: "Una gota de tinta te propone la pista al leer.",
+  },
+  hintsKinds: "Tipos de pista",
+  hintTypes: {
+    coherence: "Coherencia",
+    corrections: "Correcciones",
+    questions: "Preguntas",
+    suggestions: "Sugerencias",
+    documentation: "Documentación",
+  },
+  hintVague: {
+    coherence: "Algo no encaja aquí.",
+    corrections: "Hay algo que revisar en cómo está escrito esto.",
+  },
+  hintPointed: (where) => `Compáralo con ${where}.`,
+  hintGoThere: "Ir al pasaje",
+  hintFix: (quote, fix) => `«${quote}» pasaría a ser «${fix}».`,
+  hintMore: "Dame otra pista",
+  hintApply: "Aplicar",
+  hintLeave: "Déjalo así",
+  hintFixMyself: "Lo corrijo yo",
+  hintIntentional: "Es intencionado",
+  hintLater: "Ahora no",
+  companionOpen: "Ver la pista",
+  taskTitle: "Siguiente paso",
+  taskKinds: { define: "Definir", write: "Escribir", resolve: "Resolver", complete: "Completar" },
+  taskResolve: "Hay dos pasajes que no encajan entre sí.",
+  taskResolveReason: (here, there) =>
+    there === null
+      ? `Te lo propongo porque en ${here} hay algo por resolver.`
+      : `Te lo propongo porque ${there} y ${here} dicen cosas distintas.`,
+  taskResolveGo: "Ir al pasaje",
+  taskDefine: (name) => `¿Quién o qué es ${name}?`,
+  taskDefineReason: (name, scenes) =>
+    `Te lo propongo porque ${name} aparece en ${scenes} escenas y el texto aún no dice nada concreto.`,
+  taskDefineGo: "Abrir su ficha",
+  taskComplete: (title) => `La escena «${title}» está vacía.`,
+  taskCompleteReason: "Te lo propongo porque hay escenas escritas después de ella.",
+  taskCompleteGo: "Ir a la escena",
+  taskNotUseful: "Esta no me sirve",
+  taskQuietToday: "Hoy solo quiero escribir",
 
   analysisOff: "El análisis está apagado.",
   analysisReady: "Leerá lo nuevo cuando hagas una pausa.",
@@ -594,6 +722,73 @@ const en: Messages = {
   cardsInScene: "Cards of this scene",
   cardsPassageGone: "That passage is no longer in the text.",
   linkHint: "Ctrl or Cmd and click on an underlined name opens its card.",
+
+  hints: "Hints",
+  hintsShortOff: "off",
+  hintsOpen: "To review",
+  hintsCount: (count) =>
+    count === 0
+      ? "There's nothing to review."
+      : count === 1
+        ? "There's 1 hint."
+        : `There are ${count} hints.`,
+  hintsAsk: "Give me a hint",
+  hintsAskAnother: "Give me another",
+  hintsNone: "There's nothing to review.",
+  hintsOffNote: "Hints are off: no tasks and no marks. The cards keep being updated.",
+  hintsSettings: "How much help you want",
+  hintsLevel: "Level",
+  hintLevels: {
+    off: "Off",
+    on_demand: "If I ask",
+    discreet: "Discreet",
+    companion: "Companion",
+  },
+  hintLevelNotes: {
+    off: "No tasks and no marks.",
+    on_demand: "Only when you press “Give me a hint”.",
+    discreet: "Underlines when reading, and a counter.",
+    companion: "A drop of ink offers you the hint when reading.",
+  },
+  hintsKinds: "Kinds of hint",
+  hintTypes: {
+    coherence: "Consistency",
+    corrections: "Corrections",
+    questions: "Questions",
+    suggestions: "Suggestions",
+    documentation: "Research",
+  },
+  hintVague: {
+    coherence: "Something doesn't fit here.",
+    corrections: "There's something to check in how this is written.",
+  },
+  hintPointed: (where) => `Compare it with ${where}.`,
+  hintGoThere: "Go to the passage",
+  hintFix: (quote, fix) => `“${quote}” would become “${fix}”.`,
+  hintMore: "Give me another hint",
+  hintApply: "Apply",
+  hintLeave: "Leave it as it is",
+  hintFixMyself: "I'll fix it myself",
+  hintIntentional: "It's intentional",
+  hintLater: "Not now",
+  companionOpen: "See the hint",
+  taskTitle: "Next step",
+  taskKinds: { define: "Define", write: "Write", resolve: "Resolve", complete: "Complete" },
+  taskResolve: "Two passages don't fit together.",
+  taskResolveReason: (here, there) =>
+    there === null
+      ? `I'm suggesting it because there's something to resolve in ${here}.`
+      : `I'm suggesting it because ${there} and ${here} say different things.`,
+  taskResolveGo: "Go to the passage",
+  taskDefine: (name) => `Who or what is ${name}?`,
+  taskDefineReason: (name, scenes) =>
+    `I'm suggesting it because ${name} appears in ${scenes} scenes and the text doesn't say anything specific yet.`,
+  taskDefineGo: "Open its card",
+  taskComplete: (title) => `The scene “${title}” is empty.`,
+  taskCompleteReason: "I'm suggesting it because there are scenes written after it.",
+  taskCompleteGo: "Go to the scene",
+  taskNotUseful: "This one isn't useful",
+  taskQuietToday: "Today I only want to write",
 
   analysisOff: "The analysis is off.",
   analysisReady: "It'll read what's new when you pause.",

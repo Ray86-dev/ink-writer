@@ -134,6 +134,34 @@ describe("SQL storage", () => {
     expect(threw).toBe(false);
     await expect(promise).rejects.toBeInstanceOf(InvalidInputError);
   });
+
+  it("reads a scene whole even if it's compacted halfway through the read", async () => {
+    const project = await storage.createProject(newProject);
+    const chapter = await storage.createChapter(project.id, "C");
+    const scene = await storage.createScene(chapter.id, "S");
+    await storage.appendSceneUpdate(scene.id, new Uint8Array([1, 2, 3]));
+    const [update] = (await storage.loadSceneProse(scene.id)).updates;
+    const compacted = new Uint8Array([9, 9, 9]);
+
+    // Someone else compacts between this read's two queries: the update moves into the base.
+    let raced = false;
+    const racing = createSqlStorage({
+      ...driver,
+      query: async (sql, params) => {
+        if (!raced && sql.includes("FROM scene_updates")) {
+          raced = true;
+          await storage.compactSceneProse(scene.id, compacted, update?.id ?? 0, 0);
+        }
+        return driver.query(sql, params);
+      },
+    });
+
+    const prose = await racing.loadSceneProse(scene.id);
+
+    // Either the old picture or the new one, never the base of one with the updates of the other.
+    expect(raced).toBe(true);
+    expect(prose).toEqual({ base: compacted, baseVersion: 1, updates: [] });
+  });
 });
 
 describe("SQL storage: structure", () => {

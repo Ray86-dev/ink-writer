@@ -26,7 +26,8 @@ export type {
   SceneText,
 } from "./cards/cards";
 export { buildNovelView, knownNames, withoutStale } from "./cards/cards";
-export { loadNovelView, loadSceneTexts } from "./cards/load";
+export type { Novel } from "./cards/load";
+export { loadNovel, loadNovelView, loadSceneTexts } from "./cards/load";
 export type { KnownName, NameMatch } from "./cards/name-finder";
 export { createNameFinder } from "./cards/name-finder";
 export type { Applied, AuthorOverride, Override } from "./cards/overrides";

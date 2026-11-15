@@ -7,15 +7,20 @@ import Italic from "@tiptap/extension-italic";
 import Paragraph from "@tiptap/extension-paragraph";
 import Text from "@tiptap/extension-text";
 import type * as Y from "yjs";
-import { type NameLinkSource, NameLinks } from "./name-links";
+import { HintMarks, type NameLinkSource, NameLinks, type PassageMark } from "./name-links";
 
 /**
  * The prose schema: paragraphs, line breaks, bold and italics. Chapters and scenes are structure, so
  * they don't need headings here. Undo comes from the collaboration extension and works per session.
  */
-export function proseExtensions(doc: Y.Doc, links: NameLinkSource | null = null) {
+export function proseExtensions(
+  doc: Y.Doc,
+  links: NameLinkSource | null = null,
+  marks: (() => readonly PassageMark[]) | null = null,
+) {
   return [
     NameLinks.configure({ source: links }),
+    HintMarks.configure({ marks }),
     Document,
     Paragraph,
     Text,

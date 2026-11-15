@@ -3,7 +3,12 @@ import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useEffect, useRef } from "react";
 import { proseExtensions } from "./extensions";
-import { type NameLinkSource, refreshNameLinks } from "./name-links";
+import {
+  type NameLinkSource,
+  type PassageMark,
+  refreshHintMarks,
+  refreshNameLinks,
+} from "./name-links";
 
 /** Names to underline as links, and what opening one does. */
 export interface SceneLinks {
@@ -24,7 +29,11 @@ export interface SceneEditorProps {
   readonly onInput?: () => void;
   /** Without it, as in the plain writing mode, nothing is underlined. */
   readonly links?: SceneLinks | null;
+  /** Passages that hints are about. Only the reading mode passes any. */
+  readonly marks?: readonly PassageMark[];
 }
+
+const NO_MARKS: readonly PassageMark[] = [];
 
 /**
  * The text itself. `shouldRerenderOnTransaction: false` keeps it out of React's rendering, so that
@@ -40,7 +49,11 @@ export function SceneEditor({
   onEditor,
   onInput,
   links = null,
+  marks = NO_MARKS,
 }: SceneEditorProps) {
+  const marksRef = useRef(marks);
+  marksRef.current = marks;
+  const readMarks = useRef(() => marksRef.current);
   // Read by the editor each time, so that new names or another mode don't rebuild it.
   const linksRef = useRef(links);
   linksRef.current = links;
@@ -53,7 +66,7 @@ export function SceneEditor({
   });
 
   const editor = useEditor({
-    extensions: proseExtensions(session.doc, source.current),
+    extensions: proseExtensions(session.doc, source.current, readMarks.current),
     autofocus: autofocus ? "end" : false,
     editable,
     shouldRerenderOnTransaction: false,
@@ -86,6 +99,11 @@ export function SceneEditor({
   useEffect(() => {
     refreshNameLinks(editor);
   }, [editor, find]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `marks` is what the editor marks
+  useEffect(() => {
+    refreshHintMarks(editor);
+  }, [editor, marks]);
 
   return <EditorContent editor={editor} />;
 }
