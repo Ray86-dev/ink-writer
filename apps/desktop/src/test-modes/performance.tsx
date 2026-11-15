@@ -1,5 +1,7 @@
 import {
   countWords,
+  createNameFinder,
+  loadNovelView,
   openSqlStorage,
   PROSE_FIELD,
   SceneSession,
@@ -9,7 +11,7 @@ import {
 import type { Editor } from "@tiptap/core";
 import { createRoot } from "react-dom/client";
 import * as Y from "yjs";
-import { SceneEditor } from "../editor/SceneEditor";
+import { SceneEditor, type SceneLinks } from "../editor/SceneEditor";
 import type { TestContext } from "./run";
 
 /**
@@ -109,9 +111,24 @@ function editAllOver(doc: Y.Doc, edits: number): void {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Names that the made-up prose is full of, as the cards of a real novel would know: every paragraph
+ * has several, so this is "Write with links" at its busiest.
+ */
+const LINKS: SceneLinks = {
+  find: createNameFinder(
+    ["marta", "puerto viejo", "calle de la sal", "maleta", "carta"].map((name) => ({
+      name,
+      entityId: name,
+    })),
+  ),
+  onOpen: () => {},
+};
+
 async function mount(
   host: HTMLElement,
   session: SceneSession,
+  links: SceneLinks | null,
 ): Promise<{ editor: Editor; ms: number; unmount: () => void }> {
   const started = performance.now();
   const container = document.createElement("div");
@@ -124,6 +141,7 @@ async function mount(
         label="prueba"
         language="es"
         autofocus={false}
+        links={links}
         onEditor={(ready) => {
           if (ready !== null) {
             resolve(ready);
@@ -164,6 +182,7 @@ async function measureScene(
   sceneId: string,
   paragraphs: readonly string[],
   edits = 0,
+  links: SceneLinks | null = null,
 ) {
   const writing = await SceneSession.open(storage, sceneId, { autoSnapshotMs: 0 });
   const writeStarted = performance.now();
@@ -175,7 +194,12 @@ async function measureScene(
   const loadStarted = performance.now();
   const session = await SceneSession.open(storage, sceneId, { autoSnapshotMs: 0 });
   const loadMs = performance.now() - loadStarted;
-  const { editor, ms: mountMs, unmount } = await mount(host, session);
+  const { editor, ms: mountMs, unmount } = await mount(host, session, links);
+  const linked = host.querySelectorAll(".name-link").length;
+  // Measuring links that aren't there would look wonderful too.
+  if (links !== null && linked < paragraphs.length) {
+    throw new Error(`Only ${linked} names are linked in ${paragraphs.length} paragraphs`);
+  }
   const words = countWords(editor.getText());
   const expected = paragraphs.join(" ").split(" ").length;
   // A test that measured an empty editor would look wonderful, so it checks what's really shown.
@@ -199,6 +223,7 @@ async function measureScene(
 
   return {
     words,
+    linked,
     saveMs: Math.round(saveMs),
     loadMs: Math.round(loadMs),
     mountMs: Math.round(mountMs),
@@ -229,6 +254,25 @@ export async function runPerformance(driver: SqlDriver, context: TestContext): P
   const realistic = await storage.createScene(chapter.id, "Una escena normal");
   const usual = await measureScene(storage, context.host, realistic.id, paragraphsOf(WORDS / 300));
   await context.log(`PERF ${JSON.stringify({ case: "one scene of 500 words", ...usual })}`);
+
+  const withLinks = await storage.createScene(chapter.id, "El libro entero, con enlaces");
+  const busiest = await measureScene(
+    storage,
+    context.host,
+    withLinks.id,
+    paragraphsOf(WORDS),
+    0,
+    LINKS,
+  );
+  await context.log(
+    `PERF ${JSON.stringify({ case: "150k words in one scene, names linked", ...busiest })}`,
+  );
+
+  // Working the cards out reads every scene: here, four times the novel.
+  const cardsStarted = performance.now();
+  await loadNovelView(storage, project.id);
+  const cardsMs = Math.round(performance.now() - cardsStarted);
+  await context.log(`CARDS ${JSON.stringify({ ms: cardsMs, words: WORDS * 3 + WORDS / 300 })}`);
 
   return "measured";
 }

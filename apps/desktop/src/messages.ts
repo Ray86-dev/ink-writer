@@ -110,6 +110,73 @@ export interface Messages {
     readonly store: string;
   };
 
+  readonly cards: string;
+  readonly cardsIndex: string;
+  readonly cardsBack: string;
+  readonly cardsTabs: {
+    readonly person: string;
+    readonly place: string;
+    readonly lore: string;
+    readonly relations: string;
+    readonly chapters: string;
+    readonly names: string;
+  };
+  readonly cardsTypes: { readonly person: string; readonly place: string; readonly lore: string };
+  readonly cardsRelationKind: string;
+  readonly cardsChapterKind: string;
+  readonly cardsNoneYet: string;
+  readonly cardsNone: string;
+  readonly cardsAlsoCalled: (names: string) => string;
+  readonly cardsWithin: string;
+  readonly cardsContains: string;
+  readonly cardsWritten: string;
+  readonly cardsNoFacts: string;
+  readonly cardsOpenPassage: string;
+  readonly cardsInDialogue: string;
+  readonly cardsDismiss: string;
+  readonly cardsDismissFact: (quote: string) => string;
+  readonly cardsRelations: string;
+  readonly cardsRelationOut: (label: string) => string;
+  readonly cardsRelationIn: (label: string) => string;
+  readonly cardsOpenIssues: string;
+  readonly cardsIssueKinds: {
+    readonly contradiction: string;
+    readonly name_variant: string;
+    readonly correction: string;
+  };
+  readonly cardsLinkedFrom: string;
+  readonly cardsMyNote: string;
+  readonly cardsSaveNote: string;
+  readonly cardsCorrect: string;
+  readonly cardsCorrectHint: string;
+  readonly cardsName: string;
+  readonly cardsRename: string;
+  readonly cardsType: string;
+  readonly cardsParent: string;
+  readonly cardsNoParent: string;
+  readonly cardsMerge: string;
+  readonly cardsMergePick: string;
+  readonly cardsMergeDo: string;
+  readonly cardsMergedWith: (name: string) => string;
+  readonly cardsUndoMerge: (name: string) => string;
+  readonly cardsSplit: (name: string) => string;
+  readonly cardsWasSplit: string;
+  readonly cardsUndoSplit: string;
+  readonly cardsDismissCard: string;
+  readonly cardsScenes: string;
+  readonly cardsWho: string;
+  readonly cardsWhere: string;
+  readonly cardsWhen: string;
+  readonly cardsChapterEmpty: string;
+  readonly cardsNamesHint: string;
+  readonly cardsNameCard: string;
+  readonly cardsNameUses: string;
+  readonly cardsSimilar: (name: string) => string;
+  readonly cardsMergeNames: (from: string, into: string) => string;
+  readonly cardsInScene: string;
+  readonly cardsPassageGone: string;
+  readonly linkHint: string;
+
   readonly analysisOff: string;
   readonly analysisReady: string;
   readonly analysisWorking: string;
@@ -156,7 +223,7 @@ const es: Messages = {
   modes: { write: "Escribir", live: "Escribir con enlaces", read: "Ver enlaces y pistas" },
   readingPanelTitle: "Enlaces y pistas",
   readingPanelEmpty:
-    "Aún no hay enlaces ni pistas. Aparecerán aquí cuando la app analice tu texto.",
+    "Aún no hay enlaces en esta escena. Aparecerán aquí cuando la app analice tu texto.",
 
   saving: "Guardando…",
   saved: "Guardado",
@@ -248,6 +315,75 @@ const es: Messages = {
     store: "No se pudo guardar la clave en este equipo, así que no se ha conectado.",
   },
 
+  cards: "Fichas",
+  cardsIndex: "Índice de fichas",
+  cardsBack: "Volver al texto",
+  cardsTabs: {
+    person: "Personajes",
+    place: "Lugares",
+    lore: "Lore",
+    relations: "Relaciones",
+    chapters: "Capítulos",
+    names: "Nombres",
+  },
+  cardsTypes: { person: "Personaje", place: "Lugar", lore: "Lore" },
+  cardsRelationKind: "Relación",
+  cardsChapterKind: "Capítulo",
+  cardsNoneYet:
+    "Aún no hay fichas. Se crean solas cuando la IA lee tu texto: elige quién analiza en «IA».",
+  cardsNone: "No hay ninguna ficha de este tipo.",
+  cardsAlsoCalled: (names) => `También: ${names}`,
+  cardsWithin: "Está en:",
+  cardsContains: "Contiene:",
+  cardsWritten: "Lo que has escrito",
+  cardsNoFacts: "El texto la nombra, pero todavía no dice nada de ella.",
+  cardsOpenPassage: "Ir a este pasaje en el texto",
+  cardsInDialogue: "Lo dice un personaje",
+  cardsDismiss: "No es correcto",
+  cardsDismissFact: (quote) => `Quitar de la ficha: ${quote}`,
+  cardsRelations: "Relaciones",
+  cardsRelationOut: (label) => `${label}:`,
+  cardsRelationIn: (label) => `${label}, según:`,
+  cardsOpenIssues: "Por resolver",
+  cardsIssueKinds: {
+    contradiction: "Posible contradicción",
+    name_variant: "Nombres parecidos",
+    correction: "Posible errata",
+  },
+  cardsLinkedFrom: "Enlazan aquí",
+  cardsMyNote: "Mi nota",
+  cardsSaveNote: "Guardar nota",
+  cardsCorrect: "Corregir la ficha",
+  cardsCorrectHint: "Lo que cambies aquí se mantiene aunque la IA vuelva a leer el texto.",
+  cardsName: "Nombre",
+  cardsRename: "Cambiar nombre",
+  cardsType: "Tipo",
+  cardsParent: "Está dentro de",
+  cardsNoParent: "Ningún otro lugar",
+  cardsMerge: "Es lo mismo que",
+  cardsMergePick: "Elige una ficha",
+  cardsMergeDo: "Fusionar",
+  cardsMergedWith: (name) => `Fusionada con «${name}».`,
+  cardsUndoMerge: (name) => `Deshacer la fusión con ${name}`,
+  cardsSplit: (name) => `Separar «${name}» en su propia ficha`,
+  cardsWasSplit: "Separaste esta ficha de otra.",
+  cardsUndoSplit: "Deshacer la separación",
+  cardsDismissCard: "Esta ficha no es correcta: quitarla",
+  cardsScenes: "Escenas",
+  cardsWho: "Quién aparece",
+  cardsWhere: "Dónde",
+  cardsWhen: "Cuándo",
+  cardsChapterEmpty: "Todavía no hay datos de este capítulo.",
+  cardsNamesHint:
+    "Todos los nombres propios de la novela. Sirve para ver si un mismo nombre está escrito de dos formas.",
+  cardsNameCard: "Ficha",
+  cardsNameUses: "Veces",
+  cardsSimilar: (name) => `Se parece a «${name}».`,
+  cardsMergeNames: (from, into) => `Fusionar ${from} con ${into}`,
+  cardsInScene: "Fichas de esta escena",
+  cardsPassageGone: "Ese pasaje ya no está en el texto.",
+  linkHint: "Ctrl o Cmd y clic en un nombre subrayado abre su ficha.",
+
   analysisOff: "El análisis está apagado.",
   analysisReady: "Leerá lo nuevo cuando hagas una pausa.",
   analysisWorking: "Analizando…",
@@ -298,7 +434,8 @@ const en: Messages = {
   modesLabel: "Editor mode",
   modes: { write: "Write", live: "Write with links", read: "View links and hints" },
   readingPanelTitle: "Links and hints",
-  readingPanelEmpty: "No links or hints yet. They'll appear here once the app analyzes your text.",
+  readingPanelEmpty:
+    "No links in this scene yet. They'll appear here once the app analyzes your text.",
 
   saving: "Saving…",
   saved: "Saved",
@@ -388,6 +525,75 @@ const en: Messages = {
     refused: "OpenRouter didn't accept the connection. Try again.",
     store: "The key couldn't be saved on this computer, so it isn't connected.",
   },
+
+  cards: "Cards",
+  cardsIndex: "Index of cards",
+  cardsBack: "Back to the text",
+  cardsTabs: {
+    person: "Characters",
+    place: "Places",
+    lore: "Lore",
+    relations: "Relationships",
+    chapters: "Chapters",
+    names: "Names",
+  },
+  cardsTypes: { person: "Character", place: "Place", lore: "Lore" },
+  cardsRelationKind: "Relationship",
+  cardsChapterKind: "Chapter",
+  cardsNoneYet:
+    "There are no cards yet. They're made by themselves when the AI reads your text: choose who analyzes under “AI”.",
+  cardsNone: "There are no cards of this kind.",
+  cardsAlsoCalled: (names) => `Also: ${names}`,
+  cardsWithin: "It's in:",
+  cardsContains: "Contains:",
+  cardsWritten: "What you've written",
+  cardsNoFacts: "The text names it, but doesn't say anything about it yet.",
+  cardsOpenPassage: "Go to this passage in the text",
+  cardsInDialogue: "Said by a character",
+  cardsDismiss: "Not right",
+  cardsDismissFact: (quote) => `Remove from the card: ${quote}`,
+  cardsRelations: "Relationships",
+  cardsRelationOut: (label) => `${label}:`,
+  cardsRelationIn: (label) => `${label}, according to:`,
+  cardsOpenIssues: "To resolve",
+  cardsIssueKinds: {
+    contradiction: "Possible contradiction",
+    name_variant: "Similar names",
+    correction: "Possible typo",
+  },
+  cardsLinkedFrom: "Linked from",
+  cardsMyNote: "My note",
+  cardsSaveNote: "Save note",
+  cardsCorrect: "Correct the card",
+  cardsCorrectHint: "What you change here stays even when the AI reads the text again.",
+  cardsName: "Name",
+  cardsRename: "Rename",
+  cardsType: "Kind",
+  cardsParent: "It's inside",
+  cardsNoParent: "No other place",
+  cardsMerge: "It's the same as",
+  cardsMergePick: "Choose a card",
+  cardsMergeDo: "Merge",
+  cardsMergedWith: (name) => `Merged with “${name}”.`,
+  cardsUndoMerge: (name) => `Undo the merge with ${name}`,
+  cardsSplit: (name) => `Split “${name}” into its own card`,
+  cardsWasSplit: "You split this card off another.",
+  cardsUndoSplit: "Undo the split",
+  cardsDismissCard: "This card isn't right: remove it",
+  cardsScenes: "Scenes",
+  cardsWho: "Who appears",
+  cardsWhere: "Where",
+  cardsWhen: "When",
+  cardsChapterEmpty: "There's no data about this chapter yet.",
+  cardsNamesHint:
+    "Every proper name in the novel. It helps to see whether one name is written in two ways.",
+  cardsNameCard: "Card",
+  cardsNameUses: "Uses",
+  cardsSimilar: (name) => `It looks like “${name}”.`,
+  cardsMergeNames: (from, into) => `Merge ${from} with ${into}`,
+  cardsInScene: "Cards of this scene",
+  cardsPassageGone: "That passage is no longer in the text.",
+  linkHint: "Ctrl or Cmd and click on an underlined name opens its card.",
 
   analysisOff: "The analysis is off.",
   analysisReady: "It'll read what's new when you pause.",

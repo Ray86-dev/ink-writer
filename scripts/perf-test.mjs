@@ -14,12 +14,15 @@ const LIMIT_P95_MS = 100;
 assertBuilt();
 const dir = mkdtempSync(join(tmpdir(), "ink-writer-perf-"));
 const results = [];
+let cards = null;
 
 const app = startApp(
   ["--test-mode=performance", "--test-timeout=900", `--test-dir=${dir}`],
   (line) => {
     if (line.startsWith("PERF ")) {
       results.push(JSON.parse(line.slice(5)));
+    } else if (line.startsWith("CARDS ")) {
+      cards = JSON.parse(line.slice(6));
     } else {
       console.log(line);
     }
@@ -35,7 +38,8 @@ if (code !== 0) {
 
 let failed = false;
 for (const result of results) {
-  console.log(`\n${result.case} (${result.words} words on screen)`);
+  const linked = result.linked > 0 ? `, ${result.linked} names linked` : "";
+  console.log(`\n${result.case} (${result.words} words on screen${linked})`);
   console.log(`  save ${result.saveMs} ms, load ${result.loadMs} ms, show ${result.mountMs} ms`);
   console.log(`  version ${result.snapshotMs} ms, close ${result.closeMs} ms`);
   for (const [name, typing] of [
@@ -51,4 +55,8 @@ for (const result of results) {
   }
 }
 
-process.exit(failed || results.length === 0 ? 1 : 0);
+if (cards !== null) {
+  console.log(`\nworking out the cards over ${cards.words} words: ${cards.ms} ms`);
+}
+
+process.exit(failed || results.length === 0 || cards === null ? 1 : 0);

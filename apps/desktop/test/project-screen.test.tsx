@@ -229,7 +229,7 @@ describe("ProjectScreen", () => {
 
       await waitFor(() => expect(editor.isEditable).toBe(false));
       const panel = screen.getByRole("complementary", { name: "Enlaces y pistas" });
-      expect(within(panel).getByText(/Aún no hay enlaces ni pistas/)).toBeTruthy();
+      expect(within(panel).getByText(/Aún no hay enlaces en esta escena/)).toBeTruthy();
     });
 
     it("remembers the choice", async () => {

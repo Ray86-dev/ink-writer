@@ -50,6 +50,7 @@ describe("migrate", () => {
       "scenes",
       "settings",
       "sqlite_sequence",
+      "user_overrides",
     ]);
   });
 

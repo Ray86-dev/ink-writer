@@ -20,6 +20,7 @@ import {
   type Scene,
   type SnapshotInfo,
   type Storage,
+  type StoredOverride,
 } from "./storage";
 
 export interface SqlStorageOptions {
@@ -383,6 +384,47 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
     async loadSnapshot(id: string) {
       const [row] = await driver.query("SELECT ydoc FROM scene_snapshots WHERE id = ?", [id]);
       return row === undefined ? null : blob(row, "ydoc");
+    },
+
+    async addOverride(projectId: string, kind: string, payload: string) {
+      // Never earlier than the last one, so that the order they were made in is the order kept.
+      const [last] = await driver.query(
+        "SELECT MAX(created_at) AS latest FROM user_overrides WHERE project_id = ?",
+        [projectId],
+      );
+      const latest = typeof last?.latest === "number" ? last.latest : 0;
+      const override: StoredOverride = {
+        id: newId(),
+        projectId,
+        kind,
+        payload,
+        createdAt: Math.max(now(), latest + 1),
+      };
+      await driver.execute(
+        "INSERT INTO user_overrides (id, project_id, kind, payload, created_at) VALUES (?, ?, ?, ?, ?)",
+        [override.id, projectId, kind, payload, override.createdAt],
+      );
+      return override;
+    },
+
+    async listOverrides(projectId: string) {
+      const rows = await driver.query(
+        "SELECT * FROM user_overrides WHERE project_id = ? ORDER BY created_at, rowid",
+        [projectId],
+      );
+      return rows.map(
+        (row): StoredOverride => ({
+          id: text(row, "id"),
+          projectId: text(row, "project_id"),
+          kind: text(row, "kind"),
+          payload: text(row, "payload"),
+          createdAt: integer(row, "created_at"),
+        }),
+      );
+    },
+
+    async removeOverride(id: string) {
+      await driver.execute("DELETE FROM user_overrides WHERE id = ?", [id]);
     },
 
     async getSetting(key: string) {
