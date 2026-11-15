@@ -3,6 +3,8 @@ import { InvalidInputError } from "@ink-writer/core";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { useLanguage } from "../i18n";
 import { describeError, isLocale, LOCALE_NAMES, type Locale } from "../messages";
+import type { UpdateShell } from "../shell";
+import { Updates } from "./Updates";
 
 export interface ProjectsScreenProps {
   readonly storage: Storage;
@@ -11,6 +13,9 @@ export interface ProjectsScreenProps {
   /** The language the author chose for the app, or null for the system's. */
   readonly chosenLocale?: Locale | null;
   readonly onLocale?: (locale: Locale | null) => void;
+  /** With both, the settings offer to look for a newer version of the app. */
+  readonly updates?: UpdateShell;
+  readonly onOpenLink?: (url: string) => void;
 }
 
 /** Lists the novels, and asks for title, language and period to start a new one (SPEC §3.8). */
@@ -19,6 +24,8 @@ export function ProjectsScreen({
   onOpen,
   chosenLocale = null,
   onLocale,
+  updates,
+  onOpenLink,
 }: ProjectsScreenProps) {
   const { locale, messages } = useLanguage();
   const [projects, setProjects] = useState<readonly Project[] | null>(null);
@@ -145,6 +152,9 @@ export function ProjectsScreen({
               ))}
             </select>
           </div>
+          {updates !== undefined && onOpenLink !== undefined && (
+            <Updates storage={storage} updates={updates} onOpenLink={onOpenLink} />
+          )}
         </section>
       )}
     </main>

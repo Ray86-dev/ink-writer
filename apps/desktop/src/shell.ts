@@ -47,11 +47,31 @@ export interface ResearchShell {
   setSearchLimit(dailyRequests: number): Promise<DailyRequestLimit>;
 }
 
+/** A newer version of the app, as its release announces it. */
+export interface AvailableUpdate {
+  readonly version: string;
+  readonly notes: string | null;
+}
+
+/**
+ * Updates. The shell knows where the releases are and checks their signature: the page can only
+ * ask whether there's one and say to install it.
+ */
+export interface UpdateShell {
+  /** The version that's running. */
+  version(): Promise<string>;
+  /** Asks the releases, over the network. Null if this is the latest. */
+  check(): Promise<AvailableUpdate | null>;
+  /** Downloads, verifies and installs the newer version, and starts the app again. */
+  install(): Promise<void>;
+}
+
 /** Everything the interface needs from outside the page. Replaced by a fake in tests. */
 export interface Shell {
   readonly driver: SqlDriver;
   readonly ai: AiShell;
   readonly research: ResearchShell;
+  readonly updates: UpdateShell;
   /** Opens a web address in the author's browser. */
   openLink(url: string): Promise<void>;
   /** Saves a file where the author chooses. False if they cancel. */

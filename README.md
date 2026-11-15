@@ -2,7 +2,7 @@
 
 App de escritura de novelas, de escritorio y sin conexión. **Tú escribes todo.** La IA construye las fichas de tu historia, vigila la coherencia, te propone pequeños pasos y documenta lo que necesites.
 
-Estado: en desarrollo, sin ninguna versión publicada todavía. Nombre provisional.
+Estado: versión 0.1.0, sin publicar todavía. Los instaladores no llevan aún la firma de Windows ni la de Apple, así que al instalar sale un aviso de seguridad: ver la [guía](docs/guia.md#avisos-al-instalar).
 
 ## Qué hace
 

@@ -87,7 +87,7 @@ Firma de instaladores, actualizaciones, accesibilidad, inglés y español, docum
 
 **Salida:** instalar y escribir sin ver ningún aviso de seguridad.
 
-**En curso. La condición de salida no se cumple todavía.** Hecho: instaladores para los tres sistemas, el flujo que los construye y los deja en un borrador, los avisos de licencias de terceros, el idioma de la app a elegir, un repaso de accesibilidad, la guía de uso y las plantillas de contribución. Falta lo que depende de una decisión del autor: la firma en Windows, la cuenta de Apple para firmar en macOS, y las actualizaciones. Sin firma, quien instala ve un aviso. Nadie ha instalado aún la app. Decisiones y pendientes en `docs/adr/0021-distribucion.md`.
+**Hecho, sin cumplir la condición de salida.** El autor decidió publicar sin firma de Windows ni de Apple por ahora, así que quien instale verá un aviso de seguridad. Hecho: instaladores para los tres sistemas, el flujo que los construye y los deja en un borrador, actualizaciones que solo se buscan cuando el autor lo pulsa y van firmadas con una clave del proyecto, los avisos de licencias de terceros, el idioma de la app a elegir, un repaso de accesibilidad, la guía de uso y las plantillas de contribución. La versión es la 0.1.0 y el nombre y el identificador son definitivos. Sin comprobar: nadie ha instalado la app, el flujo de publicación no se ha lanzado y ninguna actualización se ha instalado de verdad. Decisiones y pendientes en `docs/adr/0021-distribucion.md`.
 
 ## Después
 

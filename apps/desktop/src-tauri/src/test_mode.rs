@@ -64,6 +64,14 @@ impl TestMode {
         ResearchBases::all_at(self.ai_base.as_deref().unwrap_or("http://127.0.0.1:1"))
     }
 
+    /// Where a test asks whether there's a newer version: the same stand-in, never GitHub.
+    pub fn update_endpoint(&self) -> String {
+        format!(
+            "{}/update/latest.json",
+            self.ai_base.as_deref().unwrap_or("http://127.0.0.1:1")
+        )
+    }
+
     /// Where this run's database folder is. It can never be the user's own data folder.
     pub fn data_dir(&self) -> PathBuf {
         match &self.dir {

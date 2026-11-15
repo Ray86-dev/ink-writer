@@ -77,6 +77,10 @@ export function App({ shell, language = navigator.language }: AppProps) {
           <ProjectsScreen
             storage={boot.storage}
             chosenLocale={chosen}
+            updates={shell.updates}
+            onOpenLink={(url) => {
+              shell.openLink(url).catch(() => {});
+            }}
             onLocale={(next) => {
               setChosen(next);
               boot.storage.setSetting(LOCALE_SETTING, next).catch(() => {});

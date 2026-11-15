@@ -107,9 +107,25 @@ Las búsquedas van a OpenStreetMap, Open-Meteo y Wikipedia. **Solo se envía el 
 
 La app se muestra en español o en inglés, según tu sistema. Puedes cambiarlo en **Ajustes**, en la pantalla de tus novelas. El idioma de cada novela se elige al crearla y es independiente.
 
+## Actualizaciones
+
+En **Ajustes**, en la pantalla de tus novelas, ves la versión que tienes y el botón **Buscar actualizaciones**. Si hay una versión nueva, la app te enseña sus notas y la instala cuando pulsas **Instalar y reiniciar**.
+
+La app no busca actualizaciones por su cuenta, salvo que marques **Buscar al abrir la app**. Buscar consulta GitHub y no envía nada sobre ti ni sobre tus novelas.
+
+### Avisos al instalar
+
+Los instaladores todavía no llevan la firma de Windows ni la de Apple. Al instalar verás un aviso de seguridad:
+
+- **Windows:** «Windows protegió su PC». Pulsa «Más información» y luego «Ejecutar de todas formas».
+- **macOS:** la app «no se puede abrir». Ábrela desde Ajustes del Sistema, en Privacidad y seguridad, con «Abrir igualmente».
+
+Puedes comprobar que la descarga es la buena con el archivo `SHA256SUMS.txt` de cada versión.
+
 ## Privacidad
 
 - Sin telemetría: la app no envía datos de uso a nadie.
+- La app solo se conecta cuando tú lo pides: al usar un modelo en la nube, al buscar documentación y al buscar actualizaciones.
 - Tus novelas están en una base de datos en tu equipo.
 - Las claves se guardan en el almacén de credenciales del sistema.
 

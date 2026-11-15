@@ -114,6 +114,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | cc | 1.11.1 | MIT OR Apache-2.0 | <https://crates.io/crates/cc/1.11.1> |
 | cesu8 | 1.1.0 | Apache-2.0/MIT | <https://crates.io/crates/cesu8/1.1.0> |
 | cfb | 0.14.0 | MIT | <https://crates.io/crates/cfb/0.14.0> |
+| cfg_aliases | 0.2.2 | MIT | <https://crates.io/crates/cfg_aliases/0.2.2> |
 | cfg-expr | 0.15.8 | MIT OR Apache-2.0 | <https://crates.io/crates/cfg-expr/0.15.8> |
 | cfg-if | 1.0.5 | MIT OR Apache-2.0 | <https://crates.io/crates/cfg-if/1.0.5> |
 | chrono | 0.4.45 | MIT OR Apache-2.0 | <https://crates.io/crates/chrono/0.4.45> |
@@ -122,8 +123,10 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | combine | 4.6.9 | MIT | <https://crates.io/crates/combine/4.6.9> |
 | concurrent-queue | 2.5.0 | Apache-2.0 OR MIT | <https://crates.io/crates/concurrent-queue/2.5.0> |
 | const-oid | 0.10.3 | Apache-2.0 OR MIT | <https://crates.io/crates/const-oid/0.10.3> |
+| constant_time_eq | 0.6.1 | CC0-1.0 OR MIT-0 OR Apache-2.0 | <https://crates.io/crates/constant_time_eq/0.6.1> |
 | cookie | 0.18.2 | MIT OR Apache-2.0 | <https://crates.io/crates/cookie/0.18.2> |
 | core-foundation | 0.10.1 | MIT OR Apache-2.0 | <https://crates.io/crates/core-foundation/0.10.1> |
+| core-foundation | 0.9.4 | MIT OR Apache-2.0 | <https://crates.io/crates/core-foundation/0.9.4> |
 | core-foundation-sys | 0.8.7 | MIT OR Apache-2.0 | <https://crates.io/crates/core-foundation-sys/0.8.7> |
 | core-graphics | 0.25.0 | MIT OR Apache-2.0 | <https://crates.io/crates/core-graphics/0.25.0> |
 | core-graphics-types | 0.2.0 | MIT OR Apache-2.0 | <https://crates.io/crates/core-graphics-types/0.2.0> |
@@ -175,6 +178,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | fastrand | 2.5.0 | Apache-2.0 OR MIT | <https://crates.io/crates/fastrand/2.5.0> |
 | fdeflate | 0.3.7 | MIT OR Apache-2.0 | <https://crates.io/crates/fdeflate/0.3.7> |
 | field-offset | 0.3.6 | MIT OR Apache-2.0 | <https://crates.io/crates/field-offset/0.3.6> |
+| filetime | 0.2.29 | MIT/Apache-2.0 | <https://crates.io/crates/filetime/0.2.29> |
 | find-msvc-tools | 0.1.15 | MIT OR Apache-2.0 | <https://crates.io/crates/find-msvc-tools/0.1.15> |
 | flate2 | 1.1.11 | MIT OR Apache-2.0 | <https://crates.io/crates/flate2/1.1.11> |
 | fnv | 1.0.7 | Apache-2.0 / MIT | <https://crates.io/crates/fnv/1.0.7> |
@@ -288,6 +292,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | memchr | 2.8.3 | Unlicense OR MIT | <https://crates.io/crates/memchr/2.8.3> |
 | memoffset | 0.9.1 | MIT | <https://crates.io/crates/memoffset/0.9.1> |
 | mime | 0.3.18 | MIT OR Apache-2.0 | <https://crates.io/crates/mime/0.3.18> |
+| minisign-verify | 0.3.0 | MIT | <https://crates.io/crates/minisign-verify/0.3.0> |
 | miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0 | <https://crates.io/crates/miniz_oxide/0.8.9> |
 | miniz_oxide | 0.9.1 | MIT OR Zlib OR Apache-2.0 | <https://crates.io/crates/miniz_oxide/0.9.1> |
 | mio | 1.2.4 | MIT | <https://crates.io/crates/mio/1.2.4> |
@@ -297,6 +302,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | ndk-context | 0.1.1 | MIT OR Apache-2.0 | <https://crates.io/crates/ndk-context/0.1.1> |
 | ndk-sys | 0.6.0+11769913 | MIT OR Apache-2.0 | <https://crates.io/crates/ndk-sys/0.6.0+11769913> |
 | new_debug_unreachable | 1.0.6 | MIT | <https://crates.io/crates/new_debug_unreachable/1.0.6> |
+| nix | 0.32.0 | MIT | <https://crates.io/crates/nix/0.32.0> |
 | num | 0.4.3 | MIT OR Apache-2.0 | <https://crates.io/crates/num/0.4.3> |
 | num_enum | 0.7.6 | BSD-3-Clause OR MIT OR Apache-2.0 | <https://crates.io/crates/num_enum/0.7.6> |
 | num_enum_derive | 0.7.6 | BSD-3-Clause OR MIT OR Apache-2.0 | <https://crates.io/crates/num_enum_derive/0.7.6> |
@@ -320,6 +326,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | objc2-exception-helper | 0.1.1 | Zlib OR Apache-2.0 OR MIT | <https://crates.io/crates/objc2-exception-helper/0.1.1> |
 | objc2-foundation | 0.3.2 | MIT | <https://crates.io/crates/objc2-foundation/0.3.2> |
 | objc2-io-surface | 0.3.2 | Zlib OR Apache-2.0 OR MIT | <https://crates.io/crates/objc2-io-surface/0.3.2> |
+| objc2-osa-kit | 0.3.2 | Zlib OR Apache-2.0 OR MIT | <https://crates.io/crates/objc2-osa-kit/0.3.2> |
 | objc2-quartz-core | 0.3.2 | Zlib OR Apache-2.0 OR MIT | <https://crates.io/crates/objc2-quartz-core/0.3.2> |
 | objc2-ui-kit | 0.3.2 | Zlib OR Apache-2.0 OR MIT | <https://crates.io/crates/objc2-ui-kit/0.3.2> |
 | objc2-user-notifications | 0.3.2 | Zlib OR Apache-2.0 OR MIT | <https://crates.io/crates/objc2-user-notifications/0.3.2> |
@@ -332,6 +339,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | openssl-sys | 0.9.118 | MIT | <https://crates.io/crates/openssl-sys/0.9.118> |
 | option-ext | 0.2.0 | MPL-2.0 | <https://crates.io/crates/option-ext/0.2.0> |
 | ordered-stream | 0.2.0 | MIT OR Apache-2.0 | <https://crates.io/crates/ordered-stream/0.2.0> |
+| osakit | 0.3.1 | MIT OR Apache-2.0 | <https://crates.io/crates/osakit/0.3.1> |
 | pango | 0.18.3 | MIT | <https://crates.io/crates/pango/0.18.3> |
 | pango-sys | 0.18.0 | MIT | <https://crates.io/crates/pango-sys/0.18.0> |
 | parking | 2.2.1 | Apache-2.0 OR MIT | <https://crates.io/crates/parking/2.2.1> |
@@ -435,9 +443,12 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | syn | 3.0.9 | MIT OR Apache-2.0 | <https://crates.io/crates/syn/3.0.9> |
 | sync_wrapper | 1.0.2 | Apache-2.0 | <https://crates.io/crates/sync_wrapper/1.0.2> |
 | synstructure | 0.14.0 | MIT | <https://crates.io/crates/synstructure/0.14.0> |
+| system-configuration | 0.7.0 | MIT OR Apache-2.0 | <https://crates.io/crates/system-configuration/0.7.0> |
+| system-configuration-sys | 0.6.0 | MIT OR Apache-2.0 | <https://crates.io/crates/system-configuration-sys/0.6.0> |
 | system-deps | 6.2.2 | MIT OR Apache-2.0 | <https://crates.io/crates/system-deps/6.2.2> |
 | tao | 0.37.2 | Apache-2.0 | <https://crates.io/crates/tao/0.37.2> |
 | tao-macros | 0.1.4 | MIT OR Apache-2.0 | <https://crates.io/crates/tao-macros/0.1.4> |
+| tar | 0.4.46 | MIT OR Apache-2.0 | <https://crates.io/crates/tar/0.4.46> |
 | target-lexicon | 0.12.16 | Apache-2.0 WITH LLVM-exception | <https://crates.io/crates/target-lexicon/0.12.16> |
 | tauri | 2.12.5 | Apache-2.0 OR MIT | <https://crates.io/crates/tauri/2.12.5> |
 | tauri-build | 2.7.4 | Apache-2.0 OR MIT | <https://crates.io/crates/tauri-build/2.7.4> |
@@ -447,6 +458,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | tauri-plugin-dialog | 2.8.4 | Apache-2.0 OR MIT | <https://crates.io/crates/tauri-plugin-dialog/2.8.4> |
 | tauri-plugin-fs | 2.7.1 | Apache-2.0 OR MIT | <https://crates.io/crates/tauri-plugin-fs/2.7.1> |
 | tauri-plugin-single-instance | 2.5.5 | Apache-2.0 OR MIT | <https://crates.io/crates/tauri-plugin-single-instance/2.5.5> |
+| tauri-plugin-updater | 2.14.1 | Apache-2.0 OR MIT | <https://crates.io/crates/tauri-plugin-updater/2.14.1> |
 | tauri-runtime | 2.12.2 | Apache-2.0 OR MIT | <https://crates.io/crates/tauri-runtime/2.12.2> |
 | tauri-runtime-wry | 2.12.3 | Apache-2.0 OR MIT | <https://crates.io/crates/tauri-runtime-wry/2.12.3> |
 | tauri-utils | 2.10.2 | Apache-2.0 OR MIT | <https://crates.io/crates/tauri-utils/2.10.2> |
@@ -485,6 +497,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | tracing-core | 0.1.36 | MIT | <https://crates.io/crates/tracing-core/0.1.36> |
 | tray-icon | 0.25.1 | MIT OR Apache-2.0 | <https://crates.io/crates/tray-icon/0.25.1> |
 | try-lock | 0.2.5 | MIT | <https://crates.io/crates/try-lock/0.2.5> |
+| typed-path | 0.13.0 | MIT OR Apache-2.0 | <https://crates.io/crates/typed-path/0.13.0> |
 | typeid | 1.0.3 | MIT OR Apache-2.0 | <https://crates.io/crates/typeid/1.0.3> |
 | typenum | 1.20.1 | MIT OR Apache-2.0 | <https://crates.io/crates/typenum/1.20.1> |
 | uds_windows | 1.2.1 | MIT | <https://crates.io/crates/uds_windows/1.2.1> |
@@ -548,6 +561,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | windows-link | 0.2.1 | MIT OR Apache-2.0 | <https://crates.io/crates/windows-link/0.2.1> |
 | windows-native-keyring-store | 1.1.0 | MIT OR Apache-2.0 | <https://crates.io/crates/windows-native-keyring-store/1.1.0> |
 | windows-numerics | 0.3.1 | MIT OR Apache-2.0 | <https://crates.io/crates/windows-numerics/0.3.1> |
+| windows-registry | 0.6.1 | MIT OR Apache-2.0 | <https://crates.io/crates/windows-registry/0.6.1> |
 | windows-result | 0.4.1 | MIT OR Apache-2.0 | <https://crates.io/crates/windows-result/0.4.1> |
 | windows-strings | 0.5.1 | MIT OR Apache-2.0 | <https://crates.io/crates/windows-strings/0.5.1> |
 | windows-sys | 0.45.0 | MIT OR Apache-2.0 | <https://crates.io/crates/windows-sys/0.45.0> |
@@ -565,6 +579,7 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | wry | 0.57.1 | Apache-2.0 OR MIT | <https://crates.io/crates/wry/0.57.1> |
 | x11 | 2.21.0 | MIT | <https://crates.io/crates/x11/2.21.0> |
 | x11-dl | 2.21.0 | MIT | <https://crates.io/crates/x11-dl/2.21.0> |
+| xattr | 1.7.0 | MIT OR Apache-2.0 | <https://crates.io/crates/xattr/1.7.0> |
 | yoke | 0.8.4 | Unicode-3.0 | <https://crates.io/crates/yoke/0.8.4> |
 | yoke-derive | 0.8.4 | Unicode-3.0 | <https://crates.io/crates/yoke-derive/0.8.4> |
 | zbus | 5.19.0 | MIT | <https://crates.io/crates/zbus/5.19.0> |
@@ -575,9 +590,11 @@ Ink Writer no modifica ninguno de estos paquetes. Los que tienen licencia MPL-2.
 | zerofrom | 0.1.8 | Unicode-3.0 | <https://crates.io/crates/zerofrom/0.1.8> |
 | zerofrom-derive | 0.1.8 | Unicode-3.0 | <https://crates.io/crates/zerofrom-derive/0.1.8> |
 | zeroize | 1.9.1 | Apache-2.0 OR MIT | <https://crates.io/crates/zeroize/1.9.1> |
+| zeroize_derive | 1.5.0 | Apache-2.0 OR MIT | <https://crates.io/crates/zeroize_derive/1.5.0> |
 | zerotrie | 0.2.5 | Unicode-3.0 | <https://crates.io/crates/zerotrie/0.2.5> |
 | zerovec | 0.11.9 | Unicode-3.0 | <https://crates.io/crates/zerovec/0.11.9> |
 | zerovec-derive | 0.11.7 | Unicode-3.0 | <https://crates.io/crates/zerovec-derive/0.11.7> |
+| zip | 9.6.0 | MIT | <https://crates.io/crates/zip/9.6.0> |
 | zlib-rs | 0.6.8 | Zlib | <https://crates.io/crates/zlib-rs/0.6.8> |
 | zmij | 1.0.23 | MIT | <https://crates.io/crates/zmij/1.0.23> |
 | zvariant | 5.15.1 | MIT | <https://crates.io/crates/zvariant/5.15.1> |
