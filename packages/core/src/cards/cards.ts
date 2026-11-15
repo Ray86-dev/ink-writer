@@ -118,6 +118,11 @@ export interface NovelView {
   readonly relations: readonly RelationCard[];
   readonly chapters: readonly ChapterCard[];
   readonly names: readonly NameEntry[];
+  /**
+   * Everything that's open in the novel, in reading order of where it's noticed. In each, `a` is
+   * the earlier passage and `b` the later one.
+   */
+  readonly issues: readonly CardIssue[];
 }
 
 /**
@@ -188,13 +193,17 @@ export function buildNovelView(input: {
   );
   const ref = (id: string) => refs.get(id);
 
-  const toIssue = (issue: Issue): CardIssue => ({
-    kind: issue.kind,
-    reason: issue.reason,
-    a: passage(issue.a),
-    b: "b" in issue ? passage(issue.b) : null,
-    fix: "fix" in issue ? issue.fix : null,
-  });
+  const toIssue = (issue: Issue): CardIssue => {
+    const [a, b] =
+      "b" in issue ? inOrder([issue.a, issue.b]).map(passage) : [passage(issue.a), null];
+    return {
+      kind: issue.kind,
+      reason: issue.reason,
+      a: a as Passage,
+      b: b ?? null,
+      fix: "fix" in issue ? issue.fix : null,
+    };
+  };
   const quotesOf = (issue: Issue) => ("b" in issue ? [issue.a, issue.b] : [issue.a]);
 
   const cards: EntityCard[] = entities.map((entity) => {
@@ -352,7 +361,11 @@ export function buildNovelView(input: {
     }))
     .sort(byName);
 
-  return { cards, relations, chapters, names };
+  const issues = state.issues
+    .map(toIssue)
+    .sort((x, y) => position(x.b ?? x.a) - position(y.b ?? y.a));
+
+  return { cards, relations, chapters, names, issues };
 }
 
 /** The names the editor can link as the author types: proper names only, never a description. */

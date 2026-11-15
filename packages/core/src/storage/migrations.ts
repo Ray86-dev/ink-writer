@@ -152,4 +152,20 @@ export const MIGRATIONS: readonly Migration[] = [
       "CREATE INDEX user_overrides_by_project ON user_overrides (project_id, created_at)",
     ],
   },
+  {
+    version: 6,
+    name: "hint_states",
+    // What the author did with each hint: how far they revealed it and how they closed it. Keyed by
+    // the passages it cites, not by an id of the analysis, so that it outlives every reanalysis.
+    statements: [
+      `CREATE TABLE hint_states (
+        project_id TEXT NOT NULL REFERENCES projects (id) ON DELETE RESTRICT,
+        hint_key TEXT NOT NULL,
+        step INTEGER NOT NULL DEFAULT 1,
+        decision TEXT,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (project_id, hint_key)
+      ) STRICT`,
+    ],
+  },
 ];

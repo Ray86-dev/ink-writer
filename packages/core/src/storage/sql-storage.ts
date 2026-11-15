@@ -20,6 +20,7 @@ import {
   type Scene,
   type SnapshotInfo,
   type Storage,
+  type StoredHintState,
   type StoredOverride,
 } from "./storage";
 
@@ -425,6 +426,38 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
 
     async removeOverride(id: string) {
       await driver.execute("DELETE FROM user_overrides WHERE id = ?", [id]);
+    },
+
+    async listHintStates(projectId: string) {
+      const rows = await driver.query(
+        "SELECT hint_key, step, decision FROM hint_states WHERE project_id = ? ORDER BY rowid",
+        [projectId],
+      );
+      return rows.map(
+        (row): StoredHintState => ({
+          key: text(row, "hint_key"),
+          step: integer(row, "step"),
+          decision: textOrNull(row, "decision"),
+        }),
+      );
+    },
+
+    async revealHint(projectId: string, key: string, step: number) {
+      await driver.execute(
+        `INSERT INTO hint_states (project_id, hint_key, step, updated_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT (project_id, hint_key)
+         DO UPDATE SET step = MAX(step, excluded.step), updated_at = excluded.updated_at`,
+        [projectId, key, step, now()],
+      );
+    },
+
+    async decideHint(projectId: string, key: string, decision: string | null) {
+      await driver.execute(
+        `INSERT INTO hint_states (project_id, hint_key, decision, updated_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT (project_id, hint_key)
+         DO UPDATE SET decision = excluded.decision, updated_at = excluded.updated_at`,
+        [projectId, key, decision, now()],
+      );
     },
 
     async getSetting(key: string) {

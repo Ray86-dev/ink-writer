@@ -45,7 +45,7 @@ Conexión mínima con Ollama y OpenRouter, para que la app analice de verdad (`d
 
 **Salida:** borrar un párrafo elimina sus datos. Las correcciones del autor sobreviven al reanálisis.
 
-**Cerrado.** La app analiza con el modelo que elige el autor, por Ollama o por OpenRouter, y las dos condiciones de salida tienen su prueba de pantalla. Quedan fuera el resumen de cada ficha y el «qué cambia» de cada capítulo, que redacta la IA y pasan a M5. Falta además probar a mano el login de OpenRouter y un análisis con un modelo real en la app. Decisiones y límites en `docs/adr/0014-conexion-minima-en-la-app.md` y `docs/adr/0015-fichas-enlaces-y-correcciones-del-autor.md`.
+**Cerrado.** La app analiza con el modelo que elige el autor, por Ollama o por OpenRouter, y las dos condiciones de salida tienen su prueba de pantalla. Quedan fuera el resumen de cada ficha y el «qué cambia» de cada capítulo, que redacta la IA y pasan a M5. El autor probó a mano el login de OpenRouter. Falta un análisis con un modelo real en la app. Decisiones y límites en `docs/adr/0014-conexion-minima-en-la-app.md` y `docs/adr/0015-fichas-enlaces-y-correcciones-del-autor.md`.
 
 ## M5 · Pistas y tareas
 

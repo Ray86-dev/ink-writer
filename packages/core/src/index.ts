@@ -35,6 +35,33 @@ export { toDocx } from "./export/docx";
 export type { Manuscript, ManuscriptChapter } from "./export/manuscript";
 export { buildManuscript } from "./export/manuscript";
 export { toMarkdown } from "./export/markdown";
+export type {
+  Hint,
+  HintDecision,
+  HintLevel,
+  HintSettings,
+  HintStates,
+  HintStep,
+  HintType,
+  Task,
+  TaskInput,
+  TaskKind,
+} from "./hints/hints";
+export {
+  buildHints,
+  DEFAULT_HINT_SETTINGS,
+  dayOf,
+  HINT_LEVELS,
+  HINT_TYPES,
+  hintKey,
+  loadHintSettings,
+  loadHintStates,
+  NO_HINT_STATES,
+  nextTask,
+  saveHintSettings,
+  TASK_KINDS,
+  toHintStates,
+} from "./hints/hints";
 export type { DiffPart } from "./prose/diff";
 export { compareTexts } from "./prose/diff";
 export type { SaveState, SceneSessionOptions } from "./prose/scene-session";
@@ -109,6 +136,7 @@ export type {
   Scene,
   SnapshotInfo,
   Storage,
+  StoredHintState,
   StoredOverride,
   StoredSceneProse,
   Trash,

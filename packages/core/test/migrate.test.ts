@@ -41,6 +41,7 @@ describe("migrate", () => {
       "entities",
       "entity_aliases",
       "facts",
+      "hint_states",
       "issues",
       "mentions",
       "projects",

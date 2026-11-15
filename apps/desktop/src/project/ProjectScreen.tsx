@@ -34,7 +34,7 @@ type Panel = "structure" | "history" | "ai" | null;
 
 const MODES: readonly EditorMode[] = ["write", "live", "read"];
 
-const NO_CARDS: NovelView = { cards: [], relations: [], chapters: [], names: [] };
+const NO_CARDS: NovelView = { cards: [], relations: [], chapters: [], names: [], issues: [] };
 
 export interface ProjectScreenProps {
   readonly storage: Storage;
