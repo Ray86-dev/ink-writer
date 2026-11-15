@@ -13,7 +13,7 @@ App de escritura de novelas, de escritorio, sin conexión y MIT. El autor escrib
 - `fixtures/`: novela de prueba y resultado esperado del análisis.
 - `packages/core/`: dominio en TypeScript, sin dependencias de Tauri ni de Node.
 - `apps/desktop/`: la página y, en `src-tauri/`, el shell en Rust.
-- `prototypes/m0/`: prototipo desechable. Se conserva hasta la comprobación pendiente de `docs/adr/0008-resultado-m0-vias-de-ia.md`. No reutilices su código.
+- `prototypes/m0/`: prototipo desechable. Se conserva para la comprobación de ChatGPT, aplazada sin fecha (`docs/adr/0018-conexiones-sin-chatgpt.md`). No reutilices su código.
 
 ## Reglas innegociables
 

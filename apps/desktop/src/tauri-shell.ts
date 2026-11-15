@@ -1,7 +1,7 @@
 import type { AiTransport } from "@ink-writer/core";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import type { Shell } from "./shell";
+import type { PaidRequestLimit, Shell } from "./shell";
 import { bytesToBase64, createTauriDriver } from "./tauri-driver";
 import { type AiEvent, createTauriTransport } from "./tauri-transport";
 
@@ -35,6 +35,19 @@ export function createTauriShell(): Shell {
       async disconnectOpenrouter() {
         await invoke("openrouter_disconnect");
       },
+      async deepseekKeyPresent() {
+        const { present } = await invoke<{ present: boolean }>("deepseek_key_status");
+        return present;
+      },
+      async setDeepseekKey(key) {
+        await invoke("deepseek_key_set", { key });
+      },
+      async clearDeepseekKey() {
+        await invoke("deepseek_key_clear");
+      },
+      paidRequestLimit: () => invoke<PaidRequestLimit>("ai_limits_get"),
+      setPaidRequestLimit: (dailyRequests) =>
+        invoke<PaidRequestLimit>("ai_limits_set", { dailyRequests }),
     },
     async exportFile(suggestedName, extension, data) {
       const saved = await invoke<boolean>("export_file", {

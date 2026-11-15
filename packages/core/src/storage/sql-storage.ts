@@ -23,6 +23,7 @@ import {
   type Storage,
   type StoredHintState,
   type StoredOverride,
+  type StoredUsage,
 } from "./storage";
 
 export interface SqlStorageOptions {
@@ -500,6 +501,29 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
          ON CONFLICT (project_id, hint_key)
          DO UPDATE SET decision = excluded.decision, updated_at = excluded.updated_at`,
         [projectId, key, decision, now()],
+      );
+    },
+
+    async addUsage(day: string, route: string, cost: number) {
+      await driver.execute(
+        `INSERT INTO ai_usage (day, route, requests, cost) VALUES (?, ?, 1, ?)
+         ON CONFLICT (day, route)
+         DO UPDATE SET requests = requests + 1, cost = cost + excluded.cost`,
+        [day, route, cost],
+      );
+    },
+
+    async listUsage(day: string) {
+      const rows = await driver.query(
+        "SELECT route, requests, cost FROM ai_usage WHERE day = ? ORDER BY route",
+        [day],
+      );
+      return rows.map(
+        (row): StoredUsage => ({
+          route: text(row, "route"),
+          requests: integer(row, "requests"),
+          cost: typeof row.cost === "number" ? row.cost : 0,
+        }),
       );
     },
 

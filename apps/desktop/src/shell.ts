@@ -16,6 +16,21 @@ export interface AiShell {
   cancelConnectOpenrouter(): void;
   /** Forgets the key on this machine. */
   disconnectOpenrouter(): Promise<void>;
+
+  deepseekKeyPresent(): Promise<boolean>;
+  /** Hands the shell the key the author typed. It's never handed back. */
+  setDeepseekKey(key: string): Promise<void>;
+  clearDeepseekKey(): Promise<void>;
+
+  /** How many paid requests a day the shell lets through, and how many it has today. */
+  paidRequestLimit(): Promise<PaidRequestLimit>;
+  /** Zero turns paid requests off. */
+  setPaidRequestLimit(dailyRequests: number): Promise<PaidRequestLimit>;
+}
+
+export interface PaidRequestLimit {
+  readonly dailyRequests: number;
+  readonly usedToday: number;
 }
 
 /** Everything the interface needs from outside the page. Replaced by a fake in tests. */

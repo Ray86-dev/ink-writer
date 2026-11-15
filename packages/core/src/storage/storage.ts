@@ -76,6 +76,14 @@ export interface StoredHintState {
   readonly decision: string | null;
 }
 
+/** What was asked of one service on one day. */
+export interface StoredUsage {
+  readonly route: string;
+  readonly requests: number;
+  /** In dollars. */
+  readonly cost: number;
+}
+
 export type MoveDirection = "up" | "down";
 
 export class InvalidInputError extends Error {
@@ -156,6 +164,10 @@ export interface Storage {
   revealHint(projectId: string, key: string, step: number): Promise<void>;
   /** Keeps how the author closed a hint or a task. Null opens it again. */
   decideHint(projectId: string, key: string, decision: string | null): Promise<void>;
+
+  /** Counts one more request to a service on a day, and what it cost in dollars. */
+  addUsage(day: string, route: string, cost: number): Promise<void>;
+  listUsage(day: string): Promise<StoredUsage[]>;
 
   /** A choice the author made for the whole app. Null if they haven't. Never a credential. */
   getSetting(key: string): Promise<string | null>;

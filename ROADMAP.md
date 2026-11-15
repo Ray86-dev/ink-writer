@@ -63,6 +63,8 @@ Niveles, interruptores por tipo, pistas graduales, Siguiente paso, cierre autom�
 
 **Salida:** cada error de `SPEC.md` §6 tiene su prueba. Nunca se cambia de vía en silencio.
 
+**Cerrado sin ChatGPT,** por decisión del autor: la comprobación necesita un plan de pago que no hay. Hecho: modelos de pago de OpenRouter y DeepSeek con clave propia, siempre con dos topes diarios que pone el autor, y un texto con su prueba para cada error de las vías que existen. Fuera: «Continue with ChatGPT» con sus errores, otras claves de API y el borrador en streaming. Sin comprobar con un modelo de pago real. Decisiones y límites en `docs/adr/0018-conexiones-sin-chatgpt.md`.
+
 ## M7 · Documentación y verificación real
 
 Temas, época, fuentes, caché, tope diario, lugares reales o inventados.

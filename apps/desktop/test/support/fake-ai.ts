@@ -24,6 +24,10 @@ export function fakeAi() {
     /** What the next sign-in does. A string makes it fail with that message. */
     connect: "ok" as "ok" | "wait" | string,
     cancelled: 0,
+    /** The DeepSeek key the shell holds, which the page can never read back. */
+    deepseekKey: null as string | null,
+    dailyRequests: 0,
+    usedToday: 0,
   };
   let release: ((error: Error) => void) | null = null;
   const ai: AiShell = {
@@ -52,6 +56,21 @@ export function fakeAi() {
     disconnectOpenrouter: async () => {
       state.connected = false;
     },
+    deepseekKeyPresent: async () => state.deepseekKey !== null,
+    setDeepseekKey: async (key) => {
+      state.deepseekKey = key;
+    },
+    clearDeepseekKey: async () => {
+      state.deepseekKey = null;
+    },
+    paidRequestLimit: async () => ({
+      dailyRequests: state.dailyRequests,
+      usedToday: state.usedToday,
+    }),
+    setPaidRequestLimit: async (dailyRequests) => {
+      state.dailyRequests = dailyRequests;
+      return { dailyRequests, usedToday: state.usedToday };
+    },
   };
   return { ai, state };
 }
@@ -69,12 +88,15 @@ export function fakeModels() {
     models: {
       ollama: [model("gemma4:latest"), model("gemma4:e2b")],
       openrouter: [model("some/model:free", true), model("some/paid-model", false)],
+      deepseek: [model("deepseek-flash"), model("deepseek-unpriced")],
     } as Record<ConnectionRoute, ModelInfo[]>,
+    /** What each answer says it used. */
+    usage: null as { inputTokens: number; outputTokens: number; cost: number | null } | null,
   };
   const createProvider = (route: ConnectionRoute): AiProvider => ({
     id: route,
     displayName: route,
-    billing: route === "ollama" ? "local" : "openrouter_credits",
+    billing: route === "ollama" ? "local" : route === "deepseek" ? "api_key" : "openrouter_credits",
     listModels: async () => {
       if (state.unreachable) {
         throw new Error("unreachable");
@@ -116,7 +138,11 @@ export function fakeModels() {
               ? { findings: [] }
               : { answers: [] };
       yield { type: "text", delta: JSON.stringify(answer) };
-      yield { type: "end", outcome: { status: "completed" } };
+      yield {
+        type: "end",
+        outcome: { status: "completed" },
+        ...(state.usage === null ? {} : { usage: state.usage }),
+      };
     },
   });
   return { createProvider, state };

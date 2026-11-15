@@ -11,7 +11,7 @@ Una app de escritura de novelas de escritorio, ligera y que funciona sin conexi�
 Se diferencia de NovelCrafter y de los proyectos abiertos parecidos en estos puntos:
 - La IA guía y no genera.
 - Funciona sin conexión.
-- Se conecta con una cuenta, sin pegar claves: OpenRouter y, cuando se verifique, ChatGPT (ver §6).
+- Se conecta con una cuenta, sin pegar claves: OpenRouter. ChatGPT está aplazado sin fecha (ver §6).
 - Es MIT.
 
 ## 2. Principios
@@ -153,7 +153,7 @@ SQLite local para estructura. Yjs para la prosa. Esquema orientativo:
 | `scene_prompts` | id, scene_id, kind (question, suggestion), text, quote |
 | `research_topics` | id, entity_id, term, era, status, searched_at |
 | `research_items` | id, topic_id, category, text, source_url, source_title, retrieved_at, status |
-| `ai_usage` | day, provider, requests, searches |
+| `ai_usage` | day, route, requests, cost |
 
 Reglas:
 - Una escena es un documento Yjs: su base compactada (`ydoc`) más las actualizaciones de `scene_updates`, un registro de solo añadir. Ver `docs/adr/0010-editor-y-guardado-de-la-prosa.md`.
@@ -200,7 +200,9 @@ La calidad se mide con `fixtures/`. Ningún cambio de prompt o modelo se da por 
 | Ollama / LM Studio | Sí | No | Local |
 | Clave de API (OpenAI, Anthropic, etc.) | Sí | Sí | Opción avanzada |
 
-**OpenRouter es la vía principal provisional.** «Continue with ChatGPT» sigue siendo el objetivo, pero su inferencia no se ha podido probar. Antes de M6 hay que hacer la comprobación pendiente de `docs/adr/0008-resultado-m0-vias-de-ia.md`.
+**OpenRouter es la vía principal.** «Continue with ChatGPT» está aplazado sin fecha: su inferencia no se ha podido probar sin un plan de pago, y M6 se hizo sin ella (`docs/adr/0018-conexiones-sin-chatgpt.md`). Lo que sigue sobre esa vía se conserva como referencia para cuando se retome.
+
+**Pagar exige dos topes diarios que pone el autor:** gasto y número de peticiones. Sin ellos no se usa ningún modelo de pago, y la app nunca pasa de uno gratuito a uno de pago por su cuenta. Como clave de API propia, por ahora solo DeepSeek.
 
 **Claude solo por clave de API u OpenRouter.** Anthropic no permite ofrecer el login de Claude.ai en apps de terceros. No imitar a Claude Code ni reutilizar sus credenciales.
 

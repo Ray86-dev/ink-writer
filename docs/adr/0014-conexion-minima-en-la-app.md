@@ -17,7 +17,7 @@
 | Ollama | `GET /api/tags`, `POST /api/chat` |
 | OpenRouter | `GET /api/v1/models`, `GET /api/v1/key`, `POST /api/v1/chat/completions` |
 
-**Por OpenRouter, el shell rechaza lo que pueda costar dinero:** un modelo que no acabe en `:free`, y los campos `plugins`, `tools`, `web_search_options` y `models`. Es el límite de la 0012 aplicado donde la página no puede saltárselo. El core sigue comprobando además el precio declarado, porque el sufijo por sí solo no lo garantiza. M6 abrirá esto junto con los topes de uso.
+**Por OpenRouter, el shell rechaza lo que pueda costar dinero:** un modelo que no acabe en `:free`, y los campos `plugins`, `tools`, `web_search_options` y `models`. Es el límite de la 0012 aplicado donde la página no puede saltárselo. El core sigue comprobando además el precio declarado, porque el sufijo por sí solo no lo garantiza. M6 lo abrió junto con los topes de uso: ver la [0018](0018-conexiones-sin-chatgpt.md).
 
 **La clave solo se envía a su servicio.** Nunca a Ollama. No se siguen redirecciones, que podrían llevar el manuscrito a otro sitio.
 

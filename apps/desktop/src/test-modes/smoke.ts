@@ -134,7 +134,31 @@ export async function runSmokeChecks(
         () => "sent",
         (error: unknown) => String(error),
       );
-    assert(paid.includes("free"), `The shell didn't refuse a paid model: ${paid}`);
+    assert(paid.includes("paid:"), `The shell didn't refuse a paid model: ${paid}`);
+
+    // With a limit of one paid request a day, the shell lets one through and refuses the next.
+    if (context.invoke !== undefined) {
+      const sendPaid = () =>
+        (context.transport as AiTransport)
+          .send({
+            route: "deepseek",
+            method: "POST",
+            path: "/chat/completions",
+            body: { model: "deepseek-flash", messages: [] },
+          })
+          .then(
+            () => "sent",
+            (error: unknown) => String(error),
+          );
+      await context.invoke("ai_limits_set", { dailyRequests: 1 });
+      const first = await sendPaid();
+      const second = await sendPaid();
+      assert(first === "sent", `The shell didn't let a paid request through: ${first}`);
+      assert(second.includes("limit:"), `The shell went past the daily limit: ${second}`);
+      const limits = (await context.invoke("ai_limits_get")) as { usedToday: number };
+      assert(limits.usedToday === 1, "The shell didn't count the paid request");
+      await context.invoke("ai_limits_set", { dailyRequests: 0 });
+    }
     answer = `${draft.text.length} characters`;
 
     // The whole way round: the scene saved above is read, sent, and what comes back is stored.

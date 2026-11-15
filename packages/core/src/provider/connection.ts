@@ -1,4 +1,5 @@
 import type { Storage } from "../storage/storage";
+import { createDeepSeekProvider } from "./deepseek";
 import { createOllamaProvider } from "./ollama";
 import { createOpenRouterProvider } from "./openrouter";
 import type { AiProvider, ModelInfo } from "./provider";
@@ -9,9 +10,12 @@ import type { AiTransport } from "./transport";
  * picks one for them or falls back to another (rule 10). See docs/adr/0012.
  */
 
-export type ConnectionRoute = "ollama" | "openrouter";
+export type ConnectionRoute = "ollama" | "openrouter" | "deepseek";
 
-export const CONNECTION_ROUTES: readonly ConnectionRoute[] = ["ollama", "openrouter"];
+export const CONNECTION_ROUTES: readonly ConnectionRoute[] = ["ollama", "openrouter", "deepseek"];
+
+/** The routes where the text leaves the machine, each with its own notice to accept. */
+export type RemoteRoute = Exclude<ConnectionRoute, "ollama">;
 
 export interface AiConnection {
   readonly route: ConnectionRoute;
@@ -19,7 +23,7 @@ export interface AiConnection {
 }
 
 const CONNECTION_KEY = "ai_connection";
-const NOTICE_KEY = "openrouter_notice_accepted";
+const noticeKey = (route: RemoteRoute) => `${route}_notice_accepted`;
 
 const isRoute = (value: unknown): value is ConnectionRoute =>
   CONNECTION_ROUTES.includes(value as ConnectionRoute);
@@ -58,46 +62,71 @@ export async function saveAiConnection(
 }
 
 /**
- * Through OpenRouter the text leaves the machine, and the author must have been told before the
- * first request. This is their answer, kept so that it's asked once.
+ * Through a remote service the text leaves the machine, and the author must have been told before
+ * the first request. This is their answer, kept so that it's asked once for each service.
  */
-export async function hasAcceptedOpenRouterNotice(storage: Storage): Promise<boolean> {
-  return (await storage.getSetting(NOTICE_KEY)) !== null;
+export async function hasAcceptedNotice(storage: Storage, route: RemoteRoute): Promise<boolean> {
+  return (await storage.getSetting(noticeKey(route))) !== null;
 }
 
-export async function acceptOpenRouterNotice(storage: Storage, now = new Date()): Promise<void> {
-  await storage.setSetting(NOTICE_KEY, now.toISOString());
+export async function acceptNotice(
+  storage: Storage,
+  route: RemoteRoute,
+  now = new Date(),
+): Promise<void> {
+  await storage.setSetting(noticeKey(route), now.toISOString());
 }
+
+export const hasAcceptedOpenRouterNotice = (storage: Storage) =>
+  hasAcceptedNotice(storage, "openrouter");
+
+export const acceptOpenRouterNotice = (storage: Storage, now = new Date()) =>
+  acceptNotice(storage, "openrouter", now);
 
 /**
- * The models that can be offered for the analysis: it needs output that follows a schema, and through
- * OpenRouter only the free ones until there are spending limits.
+ * The models that can be offered for the analysis. It needs structured output, and one that costs
+ * money is only offered once the author has allowed paying and set a limit.
  */
 export function analysisModels(
   route: ConnectionRoute,
   models: readonly ModelInfo[],
+  paidAllowed = false,
 ): readonly ModelInfo[] {
-  return models.filter(
-    (model) =>
-      model.capabilities.structuredOutput === "json_schema" &&
-      (route !== "openrouter" || model.free === true),
-  );
+  return models.filter((model) => {
+    const structured =
+      model.capabilities.structuredOutput === "json_schema" ||
+      model.capabilities.structuredOutput === "json_object";
+    if (route === "ollama") {
+      return structured;
+    }
+    if (route === "openrouter") {
+      return structured && (model.free === true || paidAllowed);
+    }
+    return structured && paidAllowed;
+  });
 }
 
 export function createConnectionProvider(
   route: ConnectionRoute,
   transport: AiTransport,
 ): AiProvider {
-  return route === "ollama" ? createOllamaProvider(transport) : createOpenRouterProvider(transport);
+  switch (route) {
+    case "ollama":
+      return createOllamaProvider(transport);
+    case "openrouter":
+      return createOpenRouterProvider(transport);
+    case "deepseek":
+      return createDeepSeekProvider(transport);
+  }
 }
 
 /**
- * Whether the analysis may run with this choice. Local models always can. OpenRouter only once the
- * author has accepted the notice.
+ * Whether the analysis may run with this choice. Local models always can. A remote service only
+ * once the author has accepted its notice.
  */
 export async function connectionAllowed(
   storage: Storage,
   connection: AiConnection,
 ): Promise<boolean> {
-  return connection.route === "ollama" || (await hasAcceptedOpenRouterNotice(storage));
+  return connection.route === "ollama" || (await hasAcceptedNotice(storage, connection.route));
 }

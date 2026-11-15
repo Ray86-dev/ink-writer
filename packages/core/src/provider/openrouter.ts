@@ -70,6 +70,9 @@ export function buildOpenRouterBody(request: GenerateRequest): Json {
     ],
     ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
     ...(request.reasoning === "off" ? { reasoning: { enabled: false } } : {}),
+    // A paid model must say what each answer cost, or nothing could hold a spending limit. Left out
+    // for free models, whose requests stay exactly as they were evaluated.
+    ...(request.model.endsWith(":free") ? {} : { usage: { include: true } }),
     ...(request.structured === undefined
       ? {}
       : {

@@ -1,6 +1,6 @@
 # 0012 · Conexión mínima con Ollama y OpenRouter en M4
 
-**Estado:** aceptada. Cambia el reparto entre M4 y M6 de `ROADMAP.md` y el alcance descrito en la 0011.
+**Estado:** aceptada. Cambia el reparto entre M4 y M6 de `ROADMAP.md` y el alcance descrito en la 0011. El límite de «solo modelos gratuitos» lo levantó la [0018](0018-conexiones-sin-chatgpt.md), con topes de gasto.
 
 **Contexto.** La salida de M4 es que borrar un párrafo elimine sus datos y que las correcciones del autor sobrevivan al reanálisis. Eso solo se prueba de verdad si la app analiza, y la conexión con los modelos estaba en M6. Trabajar M4 con datos de prueba dejaría ese criterio sin comprobar en la app real.
 
