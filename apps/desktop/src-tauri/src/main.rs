@@ -22,6 +22,7 @@ use serde_json::{Map, Value};
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_updater::UpdaterExt;
 
 const DB_FILE: &str = "ink-writer.db";
 const SINGLE_INSTANCE_TEST: &str = "single-instance";
@@ -66,11 +67,13 @@ struct TestInfo {
 #[derive(Serialize)]
 struct AppInfo {
     test: Option<TestInfo>,
+    version: String,
 }
 
 #[tauri::command]
-fn app_info(shell: State<'_, Shell>) -> AppInfo {
+fn app_info(app: AppHandle, shell: State<'_, Shell>) -> AppInfo {
     AppInfo {
+        version: app.package_info().version.to_string(),
         test: shell.test.as_ref().map(|test| TestInfo {
             mode: test.name.clone(),
             arg: test.arg.clone(),
@@ -341,6 +344,65 @@ fn open_link(shell: State<'_, Shell>, url: String) -> Result<(), String> {
     open::that_detached(parsed.as_str()).map_err(|error| format!("browser: {error}"))
 }
 
+/// A newer version of the app, as its release says it.
+#[derive(Serialize)]
+struct AvailableUpdate {
+    version: String,
+    notes: Option<String>,
+}
+
+/// Asks where the releases are whether there's a newer version. The address is fixed in the app's
+/// configuration and the answer must be signed with the project's key: the page chooses neither.
+async fn find_update(
+    app: &AppHandle,
+    shell: &Shell,
+) -> Result<Option<tauri_plugin_updater::Update>, String> {
+    let failed = |error: tauri_plugin_updater::Error| format!("update: {error}");
+    let updater = match &shell.test {
+        Some(test) => {
+            let endpoint = url::Url::parse(&test.update_endpoint())
+                .map_err(|error| format!("update: {error}"))?;
+            app.updater_builder()
+                .endpoints(vec![endpoint])
+                .map_err(failed)?
+                .build()
+        }
+        None => app.updater(),
+    }
+    .map_err(failed)?;
+    updater.check().await.map_err(failed)
+}
+
+/// Only looks. It runs when the author asks, or on starting if they turned that on: never by itself.
+#[tauri::command]
+async fn update_check(
+    app: AppHandle,
+    shell: State<'_, Shell>,
+) -> Result<Option<AvailableUpdate>, String> {
+    Ok(find_update(&app, &shell)
+        .await?
+        .map(|update| AvailableUpdate {
+            version: update.version.clone(),
+            notes: update.body.clone(),
+        }))
+}
+
+/// Downloads the newer version, checks its signature, installs it and starts the app again.
+#[tauri::command]
+async fn update_install(app: AppHandle, shell: State<'_, Shell>) -> Result<(), String> {
+    if shell.test.is_some() {
+        return Err("update: a test can't install anything".into());
+    }
+    let Some(update) = find_update(&app, &shell).await? else {
+        return Err("update: there's no newer version".into());
+    };
+    update
+        .download_and_install(|_, _| {}, || {})
+        .await
+        .map_err(|error| format!("update: {error}"))?;
+    app.restart()
+}
+
 /// One line to whoever started the test. Sent only after what it reports has really happened.
 #[tauri::command]
 fn test_log(shell: State<'_, Shell>, line: String) -> Result<(), String> {
@@ -413,6 +475,7 @@ fn main() {
 
     builder
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(move |app| {
             let dir = match &test {
                 Some(test) => test.data_dir(),
@@ -466,6 +529,8 @@ fn main() {
             research_limits_get,
             research_limits_set,
             open_link,
+            update_check,
+            update_install,
             test_log,
             test_close_window,
             test_finish,

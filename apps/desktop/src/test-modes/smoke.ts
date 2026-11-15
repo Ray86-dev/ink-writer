@@ -245,6 +245,21 @@ export async function runSmokeChecks(
         `The shell went past the day's searches: ${JSON.stringify(past)}`,
       );
       await invoke("research_limits_set", { dailyRequests: 60 });
+
+      // Updates: the shell asks where it's told, reads what's announced, and a test installs
+      // nothing.
+      const update = (await invoke("update_check")) as { version: string; notes: string } | null;
+      assert(
+        update?.version === "99.0.0" && update.notes === "Notas de la versión ñ.",
+        `The shell didn't read the update: ${JSON.stringify(update)}`,
+      );
+      const installing = await invoke("update_install").then(
+        () => "installed",
+        (error: unknown) => String(error),
+      );
+      assert(installing.includes("update:"), `A test installed an update: ${installing}`);
+      const info = (await invoke("app_info")) as { version: string };
+      assert(/^\d+\.\d+\.\d+$/.test(info.version), `The app has no version: ${info.version}`);
     }
     answer = `${draft.text.length} characters`;
 

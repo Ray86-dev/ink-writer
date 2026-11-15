@@ -1,0 +1,127 @@
+name: Release
+
+# Builds the installers of a version and leaves them in a draft release, for a person to look at and
+# publish. Nothing here publishes by itself. See docs/publicar.md.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  installers:
+    name: Installers on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-24.04]
+    env:
+      # macOS signs and notarises only if these are set. Without them the app is built unsigned,
+      # and the step below says so.
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      # The project's own key for updates. Without it the installers are built all the same, but
+      # no installed app will be told of this version.
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - name: Install WebKitGTK
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - run: npm ci
+      - name: The tag is the version of the app
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          version=$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "The tag is $GITHUB_REF_NAME and the app says $version" >&2
+            exit 1
+          fi
+      - run: npm run licenses
+      - run: npm run notices -- --check
+      - name: Build the installers, signed for updates if the key is here
+        shell: bash
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            npm run bundle -- --config '{"bundle":{"createUpdaterArtifacts":true}}'
+          else
+            echo "::warning::No update key: installed apps won't be told of this version."
+            npm run bundle
+          fi
+      - name: Say whether what was built is signed
+        shell: bash
+        run: |
+          signed="no"
+          if [ "$RUNNER_OS" = "macOS" ] && [ -n "$APPLE_CERTIFICATE" ]; then signed="yes"; fi
+          echo "### $RUNNER_OS: signed: $signed" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$signed" = "no" ]; then
+            echo "::warning::The $RUNNER_OS installer is NOT signed. Whoever installs it will see a security warning."
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installers-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+            apps/desktop/src-tauri/target/release/bundle/nsis/*.sig
+            apps/desktop/src-tauri/target/release/bundle/macos/*.app.tar.gz
+            apps/desktop/src-tauri/target/release/bundle/macos/*.sig
+            apps/desktop/src-tauri/target/release/bundle/appimage/*.sig
+            apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
+            apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+            apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+
+  draft:
+    name: Draft release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: installers
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v8
+        with:
+          path: installers
+          merge-multiple: true
+      - name: Name the files as the release will, and announce the version to installed apps
+        run: node scripts/update-manifest.mjs installers "$GITHUB_REF_NAME" "$GITHUB_REPOSITORY"
+      - name: Checksums, so that a download can be checked
+        working-directory: installers
+        run: sha256sum * > SHA256SUMS.txt
+      - name: Create the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" installers/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            --title "Ink Writer ${GITHUB_REF_NAME#v}" \
+            --notes "Borrador creado por el flujo de publicación. Antes de publicar, sigue docs/publicar.md."

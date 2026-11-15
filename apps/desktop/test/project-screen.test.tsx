@@ -450,6 +450,18 @@ describe("ProjectScreen", () => {
   });
 
   describe("export", () => {
+    it("closes its menu with Esc and goes back to what opened it", async () => {
+      show();
+      await typed("Algo.");
+      const menu = document.querySelector("details.menu") as HTMLDetailsElement;
+      menu.open = true;
+
+      fireEvent.keyDown(window, { key: "Escape" });
+
+      expect(menu.open).toBe(false);
+      expect(document.activeElement).toBe(menu.querySelector("summary"));
+    });
+
     it("exports what was just typed to Word, with the novel's title as file name", async () => {
       const { exported } = show();
       await typed("Recién escrito.");
@@ -539,6 +551,11 @@ describe("ProjectScreen", () => {
       const dialog = await screen.findByRole("alertdialog");
       expect(within(dialog).getByText(/perderás lo último/)).toBeTruthy();
       expect(shell.forceClose).not.toHaveBeenCalled();
+      // The dialog takes the keyboard, and nothing behind it can be reached until it's answered.
+      expect(document.activeElement).toBe(within(dialog).getAllByRole("button")[0]);
+      expect(dialog.getAttribute("aria-modal")).toBe("true");
+      expect(document.querySelector(".chrome")?.hasAttribute("inert")).toBe(true);
+      expect(document.querySelector(".workspace")?.hasAttribute("inert")).toBe(true);
 
       fireEvent.click(within(dialog).getByRole("button", { name: "Cerrar y perderlo" }));
       expect(shell.forceClose).toHaveBeenCalled();

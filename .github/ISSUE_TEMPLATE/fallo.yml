@@ -1,0 +1,45 @@
+name: Fallo
+description: Algo no funciona como debería.
+labels: [fallo]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por avisar. **No pegues texto de tu novela ni claves de API.** Si el fallo afecta a la seguridad, no lo cuentes aquí: mira SECURITY.md.
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué pasó
+      description: Qué hiciste, qué esperabas y qué ocurrió.
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para repetirlo
+      placeholder: |
+        1. Abro una novela.
+        2. Pulso…
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Ink Writer
+    validations:
+      required: true
+  - type: dropdown
+    id: sistema
+    attributes:
+      label: Sistema
+      options: [Windows, macOS, Linux]
+    validations:
+      required: true
+  - type: dropdown
+    id: texto
+    attributes:
+      label: ¿Se perdió texto?
+      description: Perder texto es lo más grave que puede pasar. Se atiende antes que nada.
+      options: ["No", "Sí"]
+    validations:
+      required: true

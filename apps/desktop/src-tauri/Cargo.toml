@@ -1,6 +1,6 @@
 [package]
 name = "ink-writer"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2024"
 license = "MIT"
 publish = false
@@ -36,6 +36,8 @@ sha2 = "0.11"
 getrandom = "0.4"
 url = "2"
 open = "5"
+# The same TLS as `reqwest` above, so that the app carries one and not two.
+tauri-plugin-updater = { version = "2.14.1", default-features = false, features = ["native-tls", "system-proxy", "zip"] }
 
 [dev-dependencies]
 tempfile = "3"

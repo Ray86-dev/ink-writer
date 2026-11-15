@@ -1,7 +1,14 @@
 import { openSqlStorage, type Project, type Storage } from "@ink-writer/core";
 import { useEffect, useMemo, useState } from "react";
 import { LanguageContext } from "./i18n";
-import { describeStartupError, MESSAGES, pickLocale } from "./messages";
+import {
+  describeStartupError,
+  isLocale,
+  LOCALE_SETTING,
+  type Locale,
+  MESSAGES,
+  pickLocale,
+} from "./messages";
 import { ProjectScreen } from "./project/ProjectScreen";
 import { ProjectsScreen } from "./projects/ProjectsScreen";
 import type { Shell } from "./shell";
@@ -17,7 +24,9 @@ export interface AppProps {
 }
 
 export function App({ shell, language = navigator.language }: AppProps) {
-  const locale = pickLocale(language);
+  /** The author's choice, over the system's language. Null: the system's. */
+  const [chosen, setChosen] = useState<Locale | null>(null);
+  const locale = chosen ?? pickLocale(language);
   const value = useMemo(() => ({ locale, messages: MESSAGES[locale] }), [locale]);
   const messages = value.messages;
   const [boot, setBoot] = useState<Boot>({ status: "opening" });
@@ -32,8 +41,12 @@ export function App({ shell, language = navigator.language }: AppProps) {
   useEffect(() => {
     let active = true;
     openSqlStorage(shell.driver).then(
-      ({ storage }) => {
-        if (active) setBoot({ status: "ready", storage });
+      async ({ storage }) => {
+        // Read before the first screen, so that it doesn't show in one language and then another.
+        const saved = await storage.getSetting(LOCALE_SETTING).catch(() => null);
+        if (!active) return;
+        setChosen(isLocale(saved) ? saved : null);
+        setBoot({ status: "ready", storage });
       },
       (error: unknown) => {
         if (active) setBoot({ status: "failed", error });
@@ -63,6 +76,15 @@ export function App({ shell, language = navigator.language }: AppProps) {
         (project === null ? (
           <ProjectsScreen
             storage={boot.storage}
+            chosenLocale={chosen}
+            updates={shell.updates}
+            onOpenLink={(url) => {
+              shell.openLink(url).catch(() => {});
+            }}
+            onLocale={(next) => {
+              setChosen(next);
+              boot.storage.setSetting(LOCALE_SETTING, next).catch(() => {});
+            }}
             onOpen={(opened, created) => {
               setFresh(created === true);
               setProject(opened);

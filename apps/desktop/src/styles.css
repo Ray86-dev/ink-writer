@@ -1488,3 +1488,36 @@ button.quiet {
   background: var(--ink);
   border-color: var(--ink);
 }
+
+/* Updates, among the settings on the screen of the novels */
+
+.updates {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-top: 24px;
+}
+
+.updates > * {
+  margin: 0;
+}
+
+.updates-notes {
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.updates-on-start {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: var(--touch-target);
+}
+
+.updates-on-start input {
+  min-height: 0;
+  padding: 0;
+}

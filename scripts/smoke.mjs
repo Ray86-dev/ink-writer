@@ -38,6 +38,24 @@ const ai = createServer((request, response) => {
     response.end(JSON.stringify({ models: [{ name: "smoke-model" }] }));
     return;
   }
+  // And for the releases: a version far ahead, for every system the app runs on.
+  if (request.method === "GET" && request.url === "/update/latest.json") {
+    const asset = { signature: "c21va2U=", url: "https://example.invalid/ink-writer" };
+    response.end(
+      JSON.stringify({
+        version: "99.0.0",
+        notes: "Notas de la versión ñ.",
+        pub_date: "2026-11-15T00:00:00Z",
+        platforms: Object.fromEntries(
+          ["windows-x86_64", "linux-x86_64", "darwin-aarch64", "darwin-x86_64"].map((key) => [
+            key,
+            asset,
+          ]),
+        ),
+      }),
+    );
+    return;
+  }
   // Stands in for Wikipedia too: one article about whatever was searched for.
   if (request.method === "GET" && request.url.startsWith("/w/api.php?")) {
     const term = new URL(request.url, "http://localhost").searchParams.get("gsrsearch");

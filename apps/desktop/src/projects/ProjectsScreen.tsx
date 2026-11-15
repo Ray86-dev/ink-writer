@@ -2,16 +2,31 @@ import type { Project, Storage } from "@ink-writer/core";
 import { InvalidInputError } from "@ink-writer/core";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { useLanguage } from "../i18n";
-import { describeError } from "../messages";
+import { describeError, isLocale, LOCALE_NAMES, type Locale } from "../messages";
+import type { UpdateShell } from "../shell";
+import { Updates } from "./Updates";
 
 export interface ProjectsScreenProps {
   readonly storage: Storage;
   /** `created` is true for a novel made just now. */
   readonly onOpen: (project: Project, created?: boolean) => void;
+  /** The language the author chose for the app, or null for the system's. */
+  readonly chosenLocale?: Locale | null;
+  readonly onLocale?: (locale: Locale | null) => void;
+  /** With both, the settings offer to look for a newer version of the app. */
+  readonly updates?: UpdateShell;
+  readonly onOpenLink?: (url: string) => void;
 }
 
 /** Lists the novels, and asks for title, language and period to start a new one (SPEC §3.8). */
-export function ProjectsScreen({ storage, onOpen }: ProjectsScreenProps) {
+export function ProjectsScreen({
+  storage,
+  onOpen,
+  chosenLocale = null,
+  onLocale,
+  updates,
+  onOpenLink,
+}: ProjectsScreenProps) {
   const { locale, messages } = useLanguage();
   const [projects, setProjects] = useState<readonly Project[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -21,6 +36,7 @@ export function ProjectsScreen({ storage, onOpen }: ProjectsScreenProps) {
   const titleId = useId();
   const languageId = useId();
   const eraId = useId();
+  const localeId = useId();
 
   useEffect(() => {
     let active = true;
@@ -115,6 +131,32 @@ export function ProjectsScreen({ storage, onOpen }: ProjectsScreenProps) {
           </p>
         )}
       </section>
+
+      {onLocale !== undefined && (
+        <section aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{messages.settingsTitle}</h2>
+          <div className="form">
+            <label htmlFor={localeId}>{messages.interfaceLanguage}</label>
+            <select
+              id={localeId}
+              value={chosenLocale ?? ""}
+              onChange={(event) =>
+                onLocale(isLocale(event.target.value) ? event.target.value : null)
+              }
+            >
+              <option value="">{messages.interfaceLanguageSystem}</option>
+              {Object.entries(LOCALE_NAMES).map(([code, name]) => (
+                <option key={code} value={code} lang={code}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {updates !== undefined && onOpenLink !== undefined && (
+            <Updates storage={storage} updates={updates} onOpenLink={onOpenLink} />
+          )}
+        </section>
+      )}
     </main>
   );
 }

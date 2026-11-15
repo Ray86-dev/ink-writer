@@ -29,6 +29,8 @@ jobs:
       - run: npm run fixtures
       - name: Licences (rule 8)
         run: npm run licenses
+      - name: Third-party notices are up to date
+        run: npm run notices -- --check
 
   app:
     name: App on ${{ matrix.os }}

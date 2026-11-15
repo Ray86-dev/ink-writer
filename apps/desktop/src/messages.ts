@@ -12,6 +12,21 @@ export interface Messages {
   readonly title: string;
   readonly language: string;
   readonly languageNames: Readonly<Record<string, string>>;
+  readonly settingsTitle: string;
+  readonly interfaceLanguage: string;
+  readonly interfaceLanguageSystem: string;
+  readonly updatesTitle: string;
+  readonly updatesVersion: (version: string) => string;
+  readonly updatesCheck: string;
+  readonly updatesChecking: string;
+  readonly updatesNone: string;
+  readonly updatesAvailable: (version: string) => string;
+  readonly updatesInstall: string;
+  readonly updatesInstalling: string;
+  readonly updatesFailed: (detail: string) => string;
+  readonly updatesSeeReleases: string;
+  readonly updatesOnStart: string;
+  readonly updatesPrivacy: string;
   readonly era: string;
   readonly eraHint: string;
   readonly create: string;
@@ -415,6 +430,23 @@ const es: Messages = {
   title: "Título",
   language: "Idioma",
   languageNames: { es: "Español", en: "Inglés" },
+  settingsTitle: "Ajustes",
+  interfaceLanguage: "Idioma de la aplicación",
+  interfaceLanguageSystem: "El del sistema",
+  updatesTitle: "Actualizaciones",
+  updatesVersion: (version) => `Tienes la versión ${version}.`,
+  updatesCheck: "Buscar actualizaciones",
+  updatesChecking: "Buscando…",
+  updatesNone: "Tienes la última versión.",
+  updatesAvailable: (version) => `Hay una versión nueva: ${version}.`,
+  updatesInstall: "Instalar y reiniciar",
+  updatesInstalling: "Descargando e instalando. La app se reiniciará sola.",
+  updatesFailed: (detail) =>
+    `No se pudo completar. Puedes descargar la versión nueva a mano. Detalle: ${detail}`,
+  updatesSeeReleases: "Ver las versiones en GitHub",
+  updatesOnStart: "Buscar al abrir la app",
+  updatesPrivacy:
+    "Buscar una actualización consulta GitHub. No se envía nada sobre ti ni sobre tus novelas. Si no marcas la casilla, la app solo busca cuando pulsas el botón.",
   era: "Época de la historia",
   eraHint: "Por ejemplo: actualidad, años cincuenta",
   create: "Crear novela",
@@ -868,6 +900,23 @@ const en: Messages = {
   title: "Title",
   language: "Language",
   languageNames: { es: "Spanish", en: "English" },
+  settingsTitle: "Settings",
+  interfaceLanguage: "Language of the app",
+  interfaceLanguageSystem: "The system's",
+  updatesTitle: "Updates",
+  updatesVersion: (version) => `You have version ${version}.`,
+  updatesCheck: "Check for updates",
+  updatesChecking: "Checking…",
+  updatesNone: "You have the latest version.",
+  updatesAvailable: (version) => `There's a new version: ${version}.`,
+  updatesInstall: "Install and restart",
+  updatesInstalling: "Downloading and installing. The app will restart by itself.",
+  updatesFailed: (detail) =>
+    `It couldn't be completed. You can download the new version by hand. Detail: ${detail}`,
+  updatesSeeReleases: "See the versions on GitHub",
+  updatesOnStart: "Check when the app opens",
+  updatesPrivacy:
+    "Checking for an update asks GitHub. Nothing about you or your novels is sent. Unless you tick the box, the app only checks when you press the button.",
   era: "When the story takes place",
   eraHint: "For example: present day, the 1950s",
   create: "Create novel",
@@ -1305,6 +1354,14 @@ const en: Messages = {
 };
 
 export type Locale = "es" | "en";
+
+/** Each language by its own name, for choosing the app's: the reader may not know the current one. */
+export const LOCALE_NAMES: Readonly<Record<Locale, string>> = { es: "Español", en: "English" };
+
+/** Where the author's choice of language for the app is kept. Nothing stored: the system's. */
+export const LOCALE_SETTING = "interface-language";
+
+export const isLocale = (value: unknown): value is Locale => value === "es" || value === "en";
 
 /** Spanish and English from the start (SPEC §10). Anything else falls back to English. */
 export function pickLocale(language: string): Locale {

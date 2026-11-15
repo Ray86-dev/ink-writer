@@ -1,5 +1,5 @@
 import type { ResearchAnswer, ResearchRequest } from "@ink-writer/core";
-import type { Shell } from "../../src/shell";
+import type { AvailableUpdate, Shell } from "../../src/shell";
 
 type Reply = ResearchAnswer | Error;
 
@@ -14,7 +14,7 @@ const PLACE = {
 const ok = (body: unknown): ResearchAnswer => ({ status: 200, body: JSON.stringify(body) });
 
 /**
- * The shell's side of the documentation, with no network: it records every search the page asks
+ * The shell's side of the documentation and of the updates, with no network: it records every search the page asks
  * for, answers from a table, and counts them against a daily limit as the real one does.
  */
 export function fakeResearch() {
@@ -45,8 +45,30 @@ export function fakeResearch() {
     dailyRequests: 60,
     usedToday: 0,
     opened: [] as string[],
+    // Updates: what the releases would answer, and what the page asked for.
+    version: "0.1.0",
+    update: null as AvailableUpdate | Error | null,
+    updateChecks: 0,
+    installed: 0,
+    installFails: null as Error | null,
   };
-  const shell: Pick<Shell, "research" | "openLink"> = {
+  const shell: Pick<Shell, "research" | "openLink" | "updates"> = {
+    updates: {
+      version: async () => state.version,
+      check: async () => {
+        state.updateChecks += 1;
+        if (state.update instanceof Error) {
+          throw state.update;
+        }
+        return state.update;
+      },
+      install: async () => {
+        if (state.installFails !== null) {
+          throw state.installFails;
+        }
+        state.installed += 1;
+      },
+    },
     research: {
       transport: {
         fetch: async (request) => {

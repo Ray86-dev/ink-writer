@@ -378,7 +378,11 @@ export function ProjectScreen({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (panel !== null) {
+      if (exportMenu.current?.open === true) {
+        // Back to what opened it, as any menu does.
+        exportMenu.current.open = false;
+        exportMenu.current.querySelector("summary")?.focus();
+      } else if (panel !== null) {
         setPanel(null);
       } else if (cards !== null) {
         setCards(null);
@@ -467,7 +471,7 @@ export function ProjectScreen({
     // The mouse only brings the controls back: everything it does here also has a key or a button.
     // biome-ignore lint/a11y/noStaticElementInteractions: see above
     <div className={`project ${zen ? "zen" : ""}`} onMouseMove={reveal}>
-      <header className="chrome">
+      <header className="chrome" inert={closeBlocked}>
         <button type="button" onClick={onBack}>
           ← {messages.novels}
         </button>
@@ -608,7 +612,7 @@ export function ProjectScreen({
         />
       )}
 
-      <div className="workspace" hidden={cards !== null || home}>
+      <div className="workspace" hidden={cards !== null || home} inert={closeBlocked}>
         {panel === "structure" && (
           <StructurePanel
             storage={storage}
@@ -717,11 +721,23 @@ export function ProjectScreen({
 
       {closeBlocked && (
         <div className="overlay">
-          <div role="alertdialog" aria-labelledby="close-title" className="dialog">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="close-title"
+            aria-describedby="close-body"
+            className="dialog"
+          >
             <h2 id="close-title">{messages.closeBlockedTitle}</h2>
-            <p>{messages.closeBlockedBody}</p>
+            <p id="close-body">{messages.closeBlockedBody}</p>
             <div className="dialog-actions">
-              <button type="button" className="primary" onClick={() => setCloseBlocked(false)}>
+              <button
+                type="button"
+                className="primary"
+                // biome-ignore lint/a11y/noAutofocus: a dialog must take the focus when it opens
+                autoFocus
+                onClick={() => setCloseBlocked(false)}
+              >
                 {messages.keepTrying}
               </button>
               <button type="button" onClick={() => shell.forceClose()}>

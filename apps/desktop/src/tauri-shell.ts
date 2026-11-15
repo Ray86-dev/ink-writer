@@ -1,7 +1,7 @@
 import type { AiTransport, ResearchAnswer } from "@ink-writer/core";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import type { PaidRequestLimit, Shell } from "./shell";
+import type { AvailableUpdate, PaidRequestLimit, Shell } from "./shell";
 import { bytesToBase64, createTauriDriver } from "./tauri-driver";
 import { type AiEvent, createTauriTransport } from "./tauri-transport";
 
@@ -63,6 +63,11 @@ export function createTauriShell(): Shell {
       searchLimit: () => invoke<PaidRequestLimit>("research_limits_get"),
       setSearchLimit: (dailyRequests) =>
         invoke<PaidRequestLimit>("research_limits_set", { dailyRequests }),
+    },
+    updates: {
+      version: async () => (await invoke<{ version: string }>("app_info")).version,
+      check: () => invoke<AvailableUpdate | null>("update_check"),
+      install: () => invoke<void>("update_install"),
     },
     async openLink(url) {
       await invoke("open_link", { url });
