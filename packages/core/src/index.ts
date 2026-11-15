@@ -1,20 +1,35 @@
+export type { DigestDeps, DigestResult, SceneDigest } from "./analysis/digest";
+export {
+  digestInstructions,
+  digestScene,
+  fingerprint,
+  summaryBasis,
+  ungroundedNames,
+  validateDigest,
+  withDigest,
+} from "./analysis/digest";
 export type { AnalysisDeps, SceneAnalysis, SceneToAnalyze } from "./analysis/pipeline";
 export { analyzeScene } from "./analysis/pipeline";
 export type { AnalysisQueueOptions, QueueRun, QueueStatus } from "./analysis/queue";
 export { AnalysisQueue, hashText } from "./analysis/queue";
 export type {
   AnalysisState,
+  Digest,
   Entity,
+  EntitySummary,
   Fact,
   Issue,
   Mention,
   QuoteRef,
   Relation,
+  SceneNote,
+  ScenePrompt,
 } from "./analysis/state";
 export { emptyState, liveEntities, withoutScene } from "./analysis/state";
 export type {
   CardFact,
   CardIssue,
+  CardPrompt,
   CardRelation,
   ChapterCard,
   EntityCard,
@@ -59,6 +74,7 @@ export {
   loadHintStates,
   NO_HINT_STATES,
   nextTask,
+  promptKey,
   saveHintSettings,
   TASK_KINDS,
   toHintStates,

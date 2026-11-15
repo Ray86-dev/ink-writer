@@ -1013,3 +1013,9 @@ button.quiet {
 .companion-says p {
   margin: 0 0 8px;
 }
+
+.card-summary p:first-of-type {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.6;
+}

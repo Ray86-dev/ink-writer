@@ -1,4 +1,4 @@
-import type { CardIssue, EntityCard, NovelView, Passage } from "../cards/cards";
+import type { CardIssue, CardPrompt, EntityCard, NovelView, Passage } from "../cards/cards";
 import type { Storage, StoredHintState } from "../storage/storage";
 
 /**
@@ -94,7 +94,7 @@ export interface Hint {
    */
   readonly key: string;
   readonly type: HintType;
-  readonly kind: CardIssue["kind"];
+  readonly kind: CardIssue["kind"] | "question" | "suggestion";
   /** Where it's marked in the text. For a contradiction, the later of the two passages. */
   readonly at: Passage;
   /** The passage it clashes with, shown from the second step on. */
@@ -104,6 +104,11 @@ export interface Hint {
   /** For a correction, what to put instead of the quote. */
   readonly fix: string | null;
   readonly step: HintStep;
+}
+
+/** A question or a task is known by its passage: the model may word it differently next time. */
+export function promptKey(prompt: Pick<CardPrompt, "kind" | "at">): string {
+  return [prompt.kind, prompt.at.sceneId, prompt.at.quote].join("\u001e");
 }
 
 export function hintKey(issue: Pick<CardIssue, "kind" | "a" | "b">): string {
@@ -183,6 +188,25 @@ export function buildHints(
       step: states.steps.get(key) ?? 1,
     });
   }
+  for (const prompt of view.prompts) {
+    const type: HintType = prompt.kind === "question" ? "questions" : "suggestions";
+    const key = promptKey(prompt);
+    if (!settings.types[type] || states.decisions.has(key) || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    hints.push({
+      key,
+      type,
+      kind: prompt.kind,
+      at: prompt.at,
+      other: null,
+      reason: prompt.text,
+      fix: null,
+      // A question isn't a riddle: it's shown whole.
+      step: 3,
+    });
+  }
   return hints;
 }
 
@@ -194,6 +218,12 @@ export type Task =
   | {
       readonly key: string;
       readonly kind: "resolve";
+      readonly hint: Hint;
+    }
+  | {
+      readonly key: string;
+      readonly kind: "write";
+      /** A small writing task the model proposed from a passage. */
       readonly hint: Hint;
     }
   | {
@@ -258,6 +288,11 @@ export function nextTask(input: TaskInput): Task | null {
           scenes: card.scenes.length,
         });
       }
+    }
+  }
+  for (const hint of hints) {
+    if (hint.type === "suggestions") {
+      candidates.push({ key: `task\u001ewrite\u001e${hint.key}`, kind: "write", hint });
     }
   }
   if (settings.types.suggestions) {

@@ -2,6 +2,7 @@
 import {
   type AnalysisState,
   DEFAULT_HINT_SETTINGS,
+  fingerprint,
   type HintSettings,
   hashText,
   loadHintSettings,
@@ -9,6 +10,7 @@ import {
   openSqlStorage,
   type Storage,
   saveHintSettings,
+  summaryBasis,
 } from "@ink-writer/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Editor } from "@tiptap/core";
@@ -133,7 +135,7 @@ describe("hints on the project screen", () => {
   };
   const marked = () =>
     [...document.querySelectorAll(".prose .hint-mark")].map((mark) => mark.textContent);
-  const items = (panel: ReturnType<typeof within>) =>
+  const items = (panel: ReturnType<typeof within>): HTMLElement[] =>
     panel.queryAllByRole("listitem").filter((item: HTMLElement) => item.classList.contains("hint"));
   const text = () => currentEditor().getText({ blockSeparator: "\n" });
   const ready = () => waitFor(() => expect(currentEditor().state.doc.childCount).toBe(2));
@@ -518,6 +520,165 @@ describe("hints on the project screen", () => {
       // Hints aren't tasks: they stay.
       expect(hintsButton().textContent).toBe("Pistas: 2");
       expect((await loadHintSettings(storage)).noTasksOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+  });
+
+  describe("what the model wrote about the scenes", () => {
+    beforeEach(async () => {
+      await storage.saveSceneDigest({
+        sceneId: one,
+        note: {
+          sceneId: one,
+          change: "Se espera a Inés.",
+          textHash: fingerprint(FIRST.join("\n")),
+        },
+        summaries: [
+          {
+            entityId: "marta",
+            text: "Marta tiene los ojos verdes en una escena y marrones en otra.",
+            basis: summaryBasis(analysed().facts),
+          },
+        ],
+        prompts: [
+          {
+            id: "p1",
+            sceneId: one,
+            kind: "question",
+            text: "¿Quién es Inés?",
+            quote: "viene Inés",
+          },
+        ],
+      });
+      await storage.saveSceneDigest({
+        sceneId: two,
+        note: null,
+        summaries: [],
+        prompts: [
+          {
+            id: "p2",
+            sceneId: two,
+            kind: "suggestion",
+            text: "Cuenta la llamada de Inés.",
+            quote: "Inés llamó",
+          },
+        ],
+      });
+    });
+
+    const openCard = async (name: string) => {
+      fireEvent.click(screen.getByRole("button", { name: "Fichas" }));
+      const cards = within(await screen.findByRole("region", { name: "Fichas" }));
+      fireEvent.click(await cards.findByRole("button", { name }));
+      return { cards, card: within(await cards.findByRole("article", { name })) };
+    };
+
+    it("a question is a hint shown whole, and “write now” goes to its passage ready to write", async () => {
+      show();
+      const panel = await openPanel();
+      await waitFor(() => expect(items(panel)).toHaveLength(4));
+      expect(hintsButton().textContent).toBe("Pistas: 4");
+      const question = within(
+        items(panel).find((item) => item.textContent?.includes("¿Quién es Inés?")) as HTMLElement,
+      );
+
+      expect(question.getByText("Preguntas")).toBeTruthy();
+      expect(question.getByText("viene Inés")).toBeTruthy();
+      expect(question.queryByRole("button", { name: "Dame otra pista" })).toBeNull();
+
+      fireEvent.click(question.getByRole("button", { name: "Escribir ahora" }));
+
+      await waitFor(() => {
+        const { state } = currentEditor();
+        expect(state.doc.textBetween(state.selection.from, state.selection.to)).toBe("viene Inés");
+      });
+      expect(currentEditor().isEditable).toBe(true);
+      // Going there writes nothing: the text is the author's to write.
+      expect(text()).toBe(FIRST.join("\n"));
+    });
+
+    it("“not useful to me” closes a question for good", async () => {
+      const first = show();
+      const panel = await openPanel();
+      await waitFor(() => expect(items(panel)).toHaveLength(4));
+      const question = within(
+        items(panel).find((item) => item.textContent?.includes("¿Quién es Inés?")) as HTMLElement,
+      );
+
+      fireEvent.click(question.getByRole("button", { name: "No me sirve" }));
+
+      await waitFor(() => expect(hintsButton().textContent).toBe("Pistas: 3"));
+      first.unmount();
+      show();
+      await waitFor(() => expect(hintsButton().textContent).toBe("Pistas: 3"));
+    });
+
+    it("the model's writing task becomes the next step once nothing is left to resolve", async () => {
+      show();
+      const panel = await openPanel();
+      let task = within(await panel.findByRole("region", { name: "Siguiente paso" }));
+      expect(task.getByText("Resolver")).toBeTruthy();
+
+      fireEvent.click(task.getByRole("button", { name: "Esta no me sirve" }));
+      await waitFor(() => {
+        task = within(panel.getByRole("region", { name: "Siguiente paso" }));
+        expect(task.getByText("¿Quién o qué es Inés?")).toBeTruthy();
+      });
+      fireEvent.click(task.getByRole("button", { name: "Esta no me sirve" }));
+
+      await waitFor(() => {
+        task = within(panel.getByRole("region", { name: "Siguiente paso" }));
+        expect(task.getByText("Cuenta la llamada de Inés.")).toBeTruthy();
+      });
+      expect(task.getByText("Escribir")).toBeTruthy();
+      expect(
+        task.getByText("Te lo propongo porque sale de un pasaje de Capítulo 1 · Escena 2."),
+      ).toBeTruthy();
+    });
+
+    it("with hints off, no question and no task shows, and the card keeps its summary", async () => {
+      await setHints({ level: "off" });
+      show();
+      await ready();
+      const panel = await openPanel();
+
+      expect(items(panel)).toEqual([]);
+      expect(panel.queryByRole("region", { name: "Siguiente paso" })).toBeNull();
+      expect(panel.queryByText("¿Quién es Inés?")).toBeNull();
+      fireEvent.click(panel.getByRole("button", { name: "Cerrar panel" }));
+
+      const { card } = await openCard("Marta");
+      expect(
+        within(card.getByRole("region", { name: "Resumen" })).getByText(
+          "Marta tiene los ojos verdes en una escena y marrones en otra.",
+        ),
+      ).toBeTruthy();
+    });
+
+    it("a card's summary goes the moment one of its passages is deleted", async () => {
+      show("write");
+      await ready();
+      const editor = currentEditor();
+
+      // The author deletes "Marta tenía los ojos verdes."
+      editor.commands.deleteRange({ from: 0, to: editor.state.doc.child(0).nodeSize });
+      const { card } = await openCard("Marta");
+
+      expect(card.queryByRole("region", { name: "Resumen" })).toBeNull();
+      expect(card.queryByText(/ojos verdes en una escena/)).toBeNull();
+      expect(models.state.asked).toEqual([]);
+    });
+
+    it("the chapter's card says what changes in each scene", async () => {
+      show();
+      await ready();
+      fireEvent.click(screen.getByRole("button", { name: "Fichas" }));
+      const cards = within(await screen.findByRole("region", { name: "Fichas" }));
+      fireEvent.click(cards.getByRole("button", { name: /^Capítulos \d+$/ }));
+      const chapter = within(await cards.findByRole("article", { name: "Capítulo 1" }));
+
+      const changes = within(chapter.getByRole("region", { name: "Qué cambia" }));
+      expect(changes.getByText("Se espera a Inés.")).toBeTruthy();
+      expect(changes.getByRole("button", { name: "Escena 1" })).toBeTruthy();
     });
   });
 });

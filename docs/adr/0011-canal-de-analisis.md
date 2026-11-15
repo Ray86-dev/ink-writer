@@ -140,4 +140,4 @@ Se documenta para no darlo por bueno por haber pasado los umbrales:
 - **Avisos espurios y razones absurdas.** Los umbrales no los puntúan. `gemma4:latest` llegó a justificar un conflicto real de edades con que «Marta no puede ser un hermano». M5 debería tratar la razón como una ayuda y no como una afirmación.
 - **Casos sin palabra en común.** «Su hermana pequeña» y «le llevaba diez años» dependen de que el modelo elija la categoría. El léxico de la muerte tampoco cubre un entierro contado sin nombrarla.
 - **Novelas largas sin medir.** Estas tienen 8 escenas. No se sabe cómo se comportan los grupos por palabra con miles de hechos: el recorte a 12 por grupo podría dejar fuera justo el hecho que importa. Hace falta el fixture largo que pide `fixtures/README.md`, también para medir el inglés.
-- **Coste.** Son unas 5,5 peticiones por escena. Con el cupo gratuito de OpenRouter dan para unas 9 escenas al día. Ollama no tiene ese límite.
+- **Coste.** Son unas 5,5 peticiones por escena. Con el cupo gratuito de OpenRouter dan para unas 9 escenas al día. Ollama no tiene ese límite. El paso que añade la 0017 suma una petición por escena.

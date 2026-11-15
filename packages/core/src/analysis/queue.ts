@@ -2,6 +2,7 @@ import { readScene } from "../export/manuscript";
 import { plainText } from "../prose/text";
 import { StructuredOutputError } from "../provider/structured";
 import type { Storage } from "../storage/storage";
+import { digestScene } from "./digest";
 import { type AnalysisDeps, analyzeScene } from "./pipeline";
 import { withoutScene } from "./state";
 
@@ -195,6 +196,28 @@ export class AnalysisQueue {
     this.checkedAll = true;
   }
 
+  /**
+   * What the model writes about the scene it just analysed. The analysis is already saved and stands
+   * whatever happens here: a digest that fails is only a card without its summary, until the scene
+   * changes. If the service is down, the next scene's analysis is what reports it.
+   */
+  private async digest(
+    state: Awaited<ReturnType<typeof analyzeScene>>["state"],
+    scene: { readonly id: string; readonly title: string; readonly text: string },
+    signal: AbortSignal,
+  ): Promise<void> {
+    try {
+      const { digest } = await digestScene(state, scene, { ...this.options.analysis, signal });
+      if (!signal.aborted) {
+        await this.options.storage.saveSceneDigest(digest);
+      }
+    } catch (error) {
+      if (!(error instanceof StructuredOutputError)) {
+        throw error;
+      }
+    }
+  }
+
   private async work(signal: AbortSignal): Promise<QueueRun> {
     const { storage, projectId, analysis } = this.options;
     await this.refreshHashes();
@@ -234,6 +257,7 @@ export class AnalysisQueue {
         );
         await storage.saveSceneAnalysis(projectId, scene.id, hash, state);
         analyzed.push(scene.id);
+        await this.digest(state, { id: scene.id, title: scene.title, text }, signal);
       } catch (error) {
         if (!(error instanceof StructuredOutputError)) {
           throw error;

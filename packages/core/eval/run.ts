@@ -18,6 +18,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { digestScene, withDigest } from "../src/analysis/digest";
 import { type AnalysisDeps, analyzeScene, type SceneToAnalyze } from "../src/analysis/pipeline";
 import { emptyState } from "../src/analysis/state";
 import { createDeepSeekProvider } from "../src/provider/deepseek";
@@ -128,6 +129,21 @@ interface RunRecord {
   readonly seconds: number;
   /** In dollars, at the highest rates, so it can only be above the bill. Only on a paid model. */
   readonly estimatedCost?: number;
+  /** What the digest step wrote and what was thrown away for having no origin. Not scored. */
+  readonly digest?: DigestTally;
+}
+
+interface DigestTally {
+  scenes: number;
+  changes: number;
+  summaries: number;
+  questions: number;
+  suggestions: number;
+  discardedChanges: number;
+  discardedSummaries: number;
+  discardedPrompts: number;
+  /** Scenes whose digest the model couldn't give in a usable shape. */
+  failed: number;
 }
 
 function previousRecord(novel: string, provider: string, model: string): RunRecord | null {
@@ -284,6 +300,19 @@ async function main(): Promise<void> {
   let state = emptyState(manuscript.scenes.map((scene) => scene.id));
   let discarded = 0;
   let unplaced = 0;
+  const tally: DigestTally = {
+    scenes: 0,
+    changes: 0,
+    summaries: 0,
+    questions: 0,
+    suggestions: 0,
+    discardedChanges: 0,
+    discardedSummaries: 0,
+    discardedPrompts: 0,
+    failed: 0,
+  };
+  const withoutDigest = flag("no-digest");
+  let digestIds = 0;
   for (const scene of manuscript.scenes) {
     const stepStart = performance.now();
     const result = await analyzeScene(state, scene, deps);
@@ -298,6 +327,52 @@ async function main(): Promise<void> {
     }
     for (const quote of result.unplacedFacts) {
       if (verbose) console.log(`    sin dueño: «${quote}»`);
+    }
+
+    if (withoutDigest) {
+      continue;
+    }
+    tally.scenes += 1;
+    try {
+      const {
+        digest,
+        discarded: thrown,
+        rejected,
+      } = await digestScene(state, scene, {
+        ...deps,
+        // Its own numbering: sharing the analysis's would shift every id after it, change the
+        // prompts of the steps that follow, and so miss the cache and alter what's being scored.
+        newId: () => {
+          digestIds += 1;
+          return `d${digestIds}`;
+        },
+      });
+      state = withDigest(state, digest);
+      tally.changes += digest.note === null ? 0 : 1;
+      tally.summaries += digest.summaries.length;
+      tally.questions += digest.prompts.filter((prompt) => prompt.kind === "question").length;
+      tally.suggestions += digest.prompts.filter((prompt) => prompt.kind === "suggestion").length;
+      tally.discardedChanges += thrown.change ? 1 : 0;
+      tally.discardedSummaries += thrown.summaries;
+      tally.discardedPrompts += thrown.prompts;
+      if (verbose || flag("digest")) {
+        console.log(`    cambia: ${digest.note?.change ?? "—"}`);
+        for (const summary of digest.summaries) {
+          const name = state.entities.find((entity) => entity.id === summary.entityId);
+          console.log(`    resumen de ${name?.canonicalName}: ${summary.text}`);
+        }
+        for (const prompt of digest.prompts) {
+          console.log(`    ${prompt.kind}: ${prompt.text} | «${prompt.quote}»`);
+        }
+        for (const line of rejected) {
+          console.log(`    descartado: ${line}`);
+        }
+      }
+    } catch (error) {
+      if (!(error instanceof StructuredOutputError) || error.failure !== "bad_answer") {
+        throw error;
+      }
+      tally.failed += 1;
     }
   }
 
@@ -325,6 +400,16 @@ async function main(): Promise<void> {
   const previous = previousRecord(novel, providerName, model);
   printScore(score, previous);
   console.log(`  Hechos descartados por no poder asignarse a nadie: ${unplaced}`);
+  if (!withoutDigest) {
+    const lines = [
+      `Lo que redacta la IA (sin umbral), en ${tally.scenes} escenas:`,
+      `  ·   Qué cambia: ${tally.changes}, descartados ${tally.discardedChanges}`,
+      `  ·   Resúmenes de ficha: ${tally.summaries}, descartados ${tally.discardedSummaries}`,
+      `  ·   Preguntas: ${tally.questions}. Tareas de escritura: ${tally.suggestions}. Descartadas: ${tally.discardedPrompts}`,
+      `  ·   Escenas sin respuesta útil: ${tally.failed}`,
+    ];
+    console.log(`\n${lines.join("\n")}`);
+  }
 
   const seconds = Math.round((performance.now() - started) / 1000);
   const stats =
@@ -352,6 +437,7 @@ async function main(): Promise<void> {
       requests: stats?.misses ?? requests,
       seconds,
       ...(meter === null ? {} : { estimatedCost: meter.spent() }),
+      ...(withoutDigest ? {} : { digest: tally }),
     };
     mkdirSync(RESULTS, { recursive: true });
     const name = `${date.replace(/[:.]/g, "-")}-${novel}-${providerName}-${model.replace(/[^a-zA-Z0-9.-]/g, "_")}.json`;

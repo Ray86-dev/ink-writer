@@ -559,6 +559,7 @@ describe("stored overrides", () => {
       chapters: [],
       names: [],
       issues: [],
+      prompts: [],
     });
   });
 });

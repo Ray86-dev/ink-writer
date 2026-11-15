@@ -185,6 +185,14 @@ function EntityDetail({ card, view, onSelect, onOpenPassage, apply, undo }: Enti
         )}
       </header>
 
+      {card.summary !== null && (
+        <section className="card-section card-summary" aria-label={messages.cardsSummary}>
+          <h3>{messages.cardsSummary}</h3>
+          <p>{card.summary}</p>
+          <p className="card-empty">{messages.cardsSummaryNote}</p>
+        </section>
+      )}
+
       <Issues issues={card.issues} messages={messages} onOpenPassage={onOpenPassage} />
 
       <section className="card-section" aria-label={messages.cardsWritten}>
@@ -480,6 +488,25 @@ function ChapterDetail({
           ))}
         </ul>
       </section>
+      {card.changes.length > 0 && (
+        <section className="card-section" aria-label={messages.cardsChanges}>
+          <h3>{messages.cardsChanges}</h3>
+          <ul>
+            {card.changes.map((item) => (
+              <li key={item.sceneId}>
+                <p>{item.change}</p>
+                <button
+                  type="button"
+                  className="card-link"
+                  onClick={() => onOpenScene(item.sceneId)}
+                >
+                  {item.sceneTitle}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <Issues issues={card.issues} messages={messages} onOpenPassage={onOpenPassage} />
       {nothing && <p className="card-empty">{messages.cardsChapterEmpty}</p>}
       {group(messages.cardsWho, card.people)}

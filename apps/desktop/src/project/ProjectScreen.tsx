@@ -38,7 +38,14 @@ type Panel = "structure" | "history" | "ai" | "hints" | null;
 
 const MODES: readonly EditorMode[] = ["write", "live", "read"];
 
-const NO_CARDS: NovelView = { cards: [], relations: [], chapters: [], names: [], issues: [] };
+const NO_CARDS: NovelView = {
+  cards: [],
+  relations: [],
+  chapters: [],
+  names: [],
+  issues: [],
+  prompts: [],
+};
 const NO_SCENES: readonly SceneText[] = [];
 
 export interface ProjectScreenProps {

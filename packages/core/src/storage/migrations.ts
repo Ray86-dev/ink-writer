@@ -168,4 +168,30 @@ export const MIGRATIONS: readonly Migration[] = [
       ) STRICT`,
     ],
   },
+  {
+    version: 7,
+    name: "digest",
+    // What the model writes on top of the analysis (SPEC §5, step 4). Each row says what it was
+    // written from, so that it's never shown over a text that has changed.
+    statements: [
+      `CREATE TABLE entity_summaries (
+        entity_id TEXT PRIMARY KEY REFERENCES entities (id) ON DELETE RESTRICT,
+        summary TEXT NOT NULL,
+        basis TEXT NOT NULL
+      ) STRICT`,
+      `CREATE TABLE scene_notes (
+        scene_id TEXT PRIMARY KEY REFERENCES scenes (id) ON DELETE RESTRICT,
+        change TEXT NOT NULL,
+        text_hash TEXT NOT NULL
+      ) STRICT`,
+      `CREATE TABLE scene_prompts (
+        id TEXT PRIMARY KEY,
+        scene_id TEXT NOT NULL REFERENCES scenes (id) ON DELETE RESTRICT,
+        kind TEXT NOT NULL CHECK (kind IN ('question', 'suggestion')),
+        text TEXT NOT NULL,
+        quote TEXT NOT NULL
+      ) STRICT`,
+      "CREATE INDEX scene_prompts_by_scene ON scene_prompts (scene_id)",
+    ],
+  },
 ];

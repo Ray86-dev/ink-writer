@@ -217,6 +217,12 @@ export interface Messages {
   readonly hintFixMyself: string;
   readonly hintIntentional: string;
   readonly hintLater: string;
+  readonly hintWriteNow: string;
+  readonly hintNotUseful: string;
+  readonly taskWriteReason: (where: string) => string;
+  readonly cardsSummary: string;
+  readonly cardsSummaryNote: string;
+  readonly cardsChanges: string;
   readonly companionOpen: string;
   readonly taskTitle: string;
   readonly taskKinds: {
@@ -354,7 +360,7 @@ const es: Messages = {
   aiOpenrouterNotice:
     "Con OpenRouter, el texto de cada escena sale de tu equipo y llega a un tercero. Algunos proveedores de modelos gratuitos pueden guardar lo que reciben o usarlo para entrenar. Con Ollama, el texto no sale.",
   aiOpenrouterLimits:
-    "Solo se ofrecen modelos gratuitos, así que no se gasta nada. El cupo gratuito da para unas 9 escenas al día; el resto espera en la cola.",
+    "Solo se ofrecen modelos gratuitos, así que no se gasta nada. El cupo gratuito da para unas 7 escenas al día; el resto espera en la cola.",
   aiAcceptNotice: "Lo entiendo, quiero usar OpenRouter",
   aiConnect: "Conectar con OpenRouter",
   aiConnecting: "Se ha abierto tu navegador. Esperando a que autorices…",
@@ -493,6 +499,12 @@ const es: Messages = {
   hintFixMyself: "Lo corrijo yo",
   hintIntentional: "Es intencionado",
   hintLater: "Ahora no",
+  hintWriteNow: "Escribir ahora",
+  hintNotUseful: "No me sirve",
+  taskWriteReason: (where) => `Te lo propongo porque sale de un pasaje de ${where}.`,
+  cardsSummary: "Resumen",
+  cardsSummaryNote: "Redactado por la IA solo a partir de los pasajes de abajo.",
+  cardsChanges: "Qué cambia",
   companionOpen: "Ver la pista",
   taskTitle: "Siguiente paso",
   taskKinds: { define: "Definir", write: "Escribir", resolve: "Resolver", complete: "Completar" },
@@ -633,7 +645,7 @@ const en: Messages = {
   aiOpenrouterNotice:
     "With OpenRouter, the text of each scene leaves your computer and reaches a third party. Some providers of free models may keep what they receive or use it for training. With Ollama, the text doesn't leave.",
   aiOpenrouterLimits:
-    "Only free models are offered, so nothing is spent. The free allowance covers about 9 scenes a day; the rest waits in the queue.",
+    "Only free models are offered, so nothing is spent. The free allowance covers about 7 scenes a day; the rest waits in the queue.",
   aiAcceptNotice: "I understand, I want to use OpenRouter",
   aiConnect: "Connect OpenRouter",
   aiConnecting: "Your browser has opened. Waiting for you to authorize…",
@@ -771,6 +783,12 @@ const en: Messages = {
   hintFixMyself: "I'll fix it myself",
   hintIntentional: "It's intentional",
   hintLater: "Not now",
+  hintWriteNow: "Write now",
+  hintNotUseful: "Not useful to me",
+  taskWriteReason: (where) => `I'm suggesting it because it comes from a passage in ${where}.`,
+  cardsSummary: "Summary",
+  cardsSummaryNote: "Written by the AI only from the passages below.",
+  cardsChanges: "What changes",
   companionOpen: "See the hint",
   taskTitle: "Next step",
   taskKinds: { define: "Define", write: "Write", resolve: "Resolve", complete: "Complete" },

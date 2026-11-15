@@ -53,6 +53,8 @@ Niveles, interruptores por tipo, pistas graduales, Siguiente paso, cierre autom�
 
 **Salida:** con las pistas apagadas no se dispara ninguna tarea, marca ni búsqueda.
 
+**Cerrado.** Con las pistas apagadas no hay tarea, marca, pista ni compañera en ningún modo, con su prueba de pantalla; la búsqueda es de M7 y tendrá que respetar lo mismo. Las pistas de coherencia y correcciones salen de lo que el análisis ya detecta, sin IA nueva. El resumen de cada ficha, el «qué cambia», las preguntas y la tarea de escritura los redacta un paso nuevo del análisis, evaluado con `deepseek-flash` en las dos novelas sin que cambie lo que ya se medía. Ese paso no tiene umbral y solo se ha medido con ese modelo. Siguiente paso vive en el panel de pistas hasta que exista el Dashboard. Decisiones y límites en `docs/adr/0016-pistas-y-siguiente-paso-sin-ia.md` y `docs/adr/0017-lo-que-redacta-la-ia.md`.
+
 ## M6 · Conexiones
 
 **Antes de empezar:** ejecutar con una cuenta Plus o Pro la comprobación pendiente de `docs/adr/0008-resultado-m0-vias-de-ia.md`. Su resultado decide si ChatGPT es la vía principal.

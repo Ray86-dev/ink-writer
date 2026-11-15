@@ -41,6 +41,9 @@ export function describeHint(hint: Hint, messages: Messages): string {
   if (hint.step === 1) {
     return messages.hintVague[hint.type === "corrections" ? "corrections" : "coherence"];
   }
+  if (hint.kind === "question" || hint.kind === "suggestion") {
+    return hint.reason;
+  }
   if (hint.step === 2 && hint.other !== null) {
     return messages.hintPointed(where(hint.other));
   }
@@ -76,7 +79,16 @@ function HintItem({ hint, props }: { readonly hint: Hint; readonly props: HintsP
             {messages.hintMore}
           </button>
         )}
-        {hint.type === "corrections" ? (
+        {hint.kind === "question" || hint.kind === "suggestion" ? (
+          <>
+            <button type="button" onClick={() => props.onFixMyself(hint)}>
+              {messages.hintWriteNow}
+            </button>
+            <button type="button" onClick={() => props.onDecide(hint.key, "not_useful")}>
+              {messages.hintNotUseful}
+            </button>
+          </>
+        ) : hint.type === "corrections" ? (
           <>
             {exact && hint.fix !== null && (
               <button type="button" className="primary" onClick={() => props.onApply(hint)}>
@@ -118,19 +130,26 @@ function TaskCard({ task, props }: { readonly task: Task; readonly props: HintsP
           action: messages.taskResolveGo,
           go: () => props.onOpenPassage(task.hint.at),
         }
-      : task.kind === "define"
+      : task.kind === "write"
         ? {
-            body: messages.taskDefine(task.card.name),
-            reason: messages.taskDefineReason(task.card.name, task.scenes),
-            action: messages.taskDefineGo,
-            go: () => props.onOpenCard(task.card.id),
+            body: task.hint.reason,
+            reason: messages.taskWriteReason(where(task.hint.at)),
+            action: messages.hintWriteNow,
+            go: () => props.onFixMyself(task.hint),
           }
-        : {
-            body: messages.taskComplete(task.scene.title),
-            reason: messages.taskCompleteReason,
-            action: messages.taskCompleteGo,
-            go: () => props.onOpenScene(task.scene.id),
-          };
+        : task.kind === "define"
+          ? {
+              body: messages.taskDefine(task.card.name),
+              reason: messages.taskDefineReason(task.card.name, task.scenes),
+              action: messages.taskDefineGo,
+              go: () => props.onOpenCard(task.card.id),
+            }
+          : {
+              body: messages.taskComplete(task.scene.title),
+              reason: messages.taskCompleteReason,
+              action: messages.taskCompleteGo,
+              go: () => props.onOpenScene(task.scene.id),
+            };
   return (
     <section className="task" aria-label={messages.taskTitle}>
       <h3>{messages.taskTitle}</h3>

@@ -62,7 +62,7 @@ Leer el texto de una escena hacía dos consultas: la base compactada y las actua
 
 ## Lo que no se ha hecho
 
-- **El tipo de tarea Escribir,** las pistas de Preguntas y Sugerencias, el resumen de cada ficha y el «qué cambia» de cada capítulo. Todo eso lo redacta la IA: es el paso 4 de `SPEC.md` §5 y exige prompts nuevos con su evaluación.
+- **El tipo de tarea Escribir,** las pistas de Preguntas y Sugerencias, el resumen de cada ficha y el «qué cambia» de cada capítulo. Todo eso lo redacta la IA: es el paso 4 de `SPEC.md` §5 y exige prompts nuevos con su evaluación. Se hizo después, en la [0017](0017-lo-que-redacta-la-ia.md).
 - **Siguiente paso está en el panel de pistas.** `SPEC.md` §3.1 lo pone grande en el Dashboard, que es de M8.
 - **«Ahora no» no se guarda:** dura hasta que se vuelve a abrir la novela.
 - **Los ajustes de pistas son de toda la app,** no de cada novela.
