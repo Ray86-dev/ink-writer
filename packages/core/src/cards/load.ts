@@ -21,15 +21,25 @@ export async function loadSceneTexts(storage: Storage, projectId: string): Promi
   return scenes;
 }
 
+export interface Novel {
+  readonly view: NovelView;
+  /** Every scene that isn't in the trash, in reading order, with its text. */
+  readonly scenes: readonly SceneText[];
+}
+
 /**
  * The cards as they stand: the stored analysis, the author's overrides on top, and only what the
  * saved text still says. Flush an open scene first, or what was just typed in it won't count.
  */
-export async function loadNovelView(storage: Storage, projectId: string): Promise<NovelView> {
+export async function loadNovel(storage: Storage, projectId: string): Promise<Novel> {
   const [analysis, overrides, scenes] = await Promise.all([
     storage.loadAnalysis(projectId),
     loadOverrides(storage, projectId),
     loadSceneTexts(storage, projectId),
   ]);
-  return buildNovelView({ analysis, overrides, scenes });
+  return { view: buildNovelView({ analysis, overrides, scenes }), scenes };
+}
+
+export async function loadNovelView(storage: Storage, projectId: string): Promise<NovelView> {
+  return (await loadNovel(storage, projectId)).view;
 }

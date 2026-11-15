@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-15T10:47:17.717Z",
+  "novel": "la-veda",
+  "provider": "deepseek",
+  "model": "deepseek-flash",
+  "reasoning": "default",
+  "score": {
+    "mustFlag": {
+      "found": [
+        "c_ojos",
+        "c_veda",
+        "c_nombre",
+        "c_viaje",
+        "c_edad_hermanos",
+        "c_difunta",
+        "o_halla",
+        "o_raya"
+      ],
+      "missed": []
+    },
+    "falseAlarms": [],
+    "inventedQuotes": 0,
+    "discardedQuotes": 0,
+    "twoLuisMerged": false,
+    "references": {
+      "found": 2,
+      "total": 3,
+      "missed": [
+        "la doctora atendió a Inés Cabrera"
+      ]
+    },
+    "extraIssues": 1,
+    "passed": true
+  },
+  "requests": 0,
+  "seconds": 0,
+  "estimatedCost": 0,
+  "digest": {
+    "scenes": 8,
+    "changes": 8,
+    "summaries": 29,
+    "questions": 16,
+    "suggestions": 8,
+    "discardedChanges": 0,
+    "discardedSummaries": 0,
+    "discardedPrompts": 0,
+    "failed": 0
+  }
+}

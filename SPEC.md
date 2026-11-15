@@ -146,8 +146,11 @@ SQLite local para estructura. Yjs para la prosa. Esquema orientativo:
 | `relations` | id, from_entity, to_entity, label, scene_id, quote |
 | `user_overrides` | id, project_id, kind (merge, split, note, correction, dismiss), payload, created_at |
 | `settings` | key, value |
-| `issues` | id, kind, category, status, hint_steps, fact_a, fact_b, resolution |
-| `tasks` | id, kind, body, reason, issue_id, status |
+| `issues` | id, kind, scene_a, quote_a, scene_b, quote_b, fix, reason |
+| `hint_states` | project_id, hint_key, step, decision, updated_at |
+| `entity_summaries` | entity_id, summary, basis |
+| `scene_notes` | scene_id, change, text_hash |
+| `scene_prompts` | id, scene_id, kind (question, suggestion), text, quote |
 | `research_topics` | id, entity_id, term, era, status, searched_at |
 | `research_items` | id, topic_id, category, text, source_url, source_title, retrieved_at, status |
 | `ai_usage` | day, provider, requests, searches |
@@ -157,6 +160,7 @@ Reglas:
 - Cada dato se sitúa en el texto por su cita literal. Si la cita ya no está en la escena, el dato no se muestra. Ver `docs/adr/0015-fichas-enlaces-y-correcciones-del-autor.md`.
 - El reanálisis de una escena **sustituye** sus `mentions`, `facts` y `relations`.
 - `user_overrides` nunca se borra por un reanálisis y se aplica encima de él cada vez que se calculan las fichas.
+- Las pistas y las tareas no se guardan: se calculan desde las fichas. Lo que el autor decide de cada una va a `hint_states`, por los pasajes que cita, y tampoco lo toca ningún reanálisis.
 
 ## 5. Canal de análisis
 
@@ -168,7 +172,7 @@ Reglas:
 1. **Extraer** de la escena entidades, alias, hechos, relaciones y tiempo narrativo, con la cita literal de cada dato. Una cita que no aparezca literalmente en la escena se descarta.
 2. **Resolver identidades** contra las entidades existentes, teniendo en cuenta epítetos («la doctora») y el sujeto omitido del español («llegó tarde»).
 3. **Comparar** los hechos nuevos con el registro, sin releer la novela, en grupos pequeños. Clasificar en contradicción, evolución o sin relación. Cómo se forman los grupos: `docs/adr/0011-canal-de-analisis.md`.
-4. **Generar** resúmenes de ficha, pistas graduales y tareas.
+4. **Redactar,** en una petición aparte por escena: un resumen de cada ficha que toca, qué cambia en la escena, hasta dos preguntas y una tarea de escritura. Lo que no tiene origen en el texto se descarta, y lo escrito deja de mostrarse cuando cambia el texto del que salió. Ver `docs/adr/0017-lo-que-redacta-la-ia.md`. Las pistas de coherencia y sus tres pasos no los redacta ningún modelo: ver `docs/adr/0016-pistas-y-siguiente-paso-sin-ia.md`.
 5. **Revisar ortotipografía** por escena, incluidas las rayas de diálogo.
 
 Una novela de 80.000 palabras ronda los 100.000 tokens por pasada, por eso se analiza por escena y se guarda el resultado.

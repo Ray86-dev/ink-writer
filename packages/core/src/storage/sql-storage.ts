@@ -1,4 +1,5 @@
 import type { EntityType, FactCategory } from "../analysis/contract";
+import type { SceneDigest } from "../analysis/digest";
 import type {
   AnalysisState,
   Entity,
@@ -20,6 +21,7 @@ import {
   type Scene,
   type SnapshotInfo,
   type Storage,
+  type StoredHintState,
   type StoredOverride,
 } from "./storage";
 
@@ -327,18 +329,32 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
     },
 
     async loadSceneProse(sceneId: string) {
-      const [scene] = await driver.query("SELECT ydoc, ydoc_version FROM scenes WHERE id = ?", [
-        sceneId,
-      ]);
-      const rows = await driver.query(
-        "SELECT id, update_data FROM scene_updates WHERE scene_id = ? ORDER BY id",
-        [sceneId],
-      );
-      return {
-        base: scene === undefined || scene.ydoc === null ? null : blob(scene, "ydoc"),
-        baseVersion: scene === undefined ? 0 : integer(scene, "ydoc_version"),
-        updates: rows.map((row) => ({ id: integer(row, "id"), data: blob(row, "update_data") })),
-      };
+      // The base and the updates are two reads. A compaction between them moves text from the
+      // updates into a base this read wouldn't have, and the scene would come out with text
+      // missing. The version says whether that happened, and then it's read again.
+      for (;;) {
+        const [scene] = await driver.query("SELECT ydoc, ydoc_version FROM scenes WHERE id = ?", [
+          sceneId,
+        ]);
+        const rows = await driver.query(
+          "SELECT id, update_data FROM scene_updates WHERE scene_id = ? ORDER BY id",
+          [sceneId],
+        );
+        const baseVersion = scene === undefined ? 0 : integer(scene, "ydoc_version");
+        const [after] = await driver.query("SELECT ydoc_version FROM scenes WHERE id = ?", [
+          sceneId,
+        ]);
+        if (after === undefined || integer(after, "ydoc_version") === baseVersion) {
+          return {
+            base: scene === undefined || scene.ydoc === null ? null : blob(scene, "ydoc"),
+            baseVersion,
+            updates: rows.map((row) => ({
+              id: integer(row, "id"),
+              data: blob(row, "update_data"),
+            })),
+          };
+        }
+      }
     },
 
     async compactSceneProse(
@@ -427,6 +443,66 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
       await driver.execute("DELETE FROM user_overrides WHERE id = ?", [id]);
     },
 
+    async saveSceneDigest(digest: SceneDigest) {
+      const statements: SqlStatement[] = [
+        { sql: "DELETE FROM scene_notes WHERE scene_id = ?", params: [digest.sceneId] },
+        { sql: "DELETE FROM scene_prompts WHERE scene_id = ?", params: [digest.sceneId] },
+      ];
+      if (digest.note !== null) {
+        statements.push({
+          sql: "INSERT INTO scene_notes (scene_id, change, text_hash) VALUES (?, ?, ?)",
+          params: [digest.sceneId, digest.note.change, digest.note.textHash],
+        });
+      }
+      for (const prompt of digest.prompts) {
+        statements.push({
+          sql: "INSERT INTO scene_prompts (id, scene_id, kind, text, quote) VALUES (?, ?, ?, ?, ?)",
+          params: [prompt.id, digest.sceneId, prompt.kind, prompt.text, prompt.quote],
+        });
+      }
+      for (const summary of digest.summaries) {
+        statements.push({
+          sql: `INSERT INTO entity_summaries (entity_id, summary, basis) VALUES (?, ?, ?)
+                ON CONFLICT (entity_id)
+                DO UPDATE SET summary = excluded.summary, basis = excluded.basis`,
+          params: [summary.entityId, summary.text, summary.basis],
+        });
+      }
+      await driver.transaction(statements);
+    },
+
+    async listHintStates(projectId: string) {
+      const rows = await driver.query(
+        "SELECT hint_key, step, decision FROM hint_states WHERE project_id = ? ORDER BY rowid",
+        [projectId],
+      );
+      return rows.map(
+        (row): StoredHintState => ({
+          key: text(row, "hint_key"),
+          step: integer(row, "step"),
+          decision: textOrNull(row, "decision"),
+        }),
+      );
+    },
+
+    async revealHint(projectId: string, key: string, step: number) {
+      await driver.execute(
+        `INSERT INTO hint_states (project_id, hint_key, step, updated_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT (project_id, hint_key)
+         DO UPDATE SET step = MAX(step, excluded.step), updated_at = excluded.updated_at`,
+        [projectId, key, step, now()],
+      );
+    },
+
+    async decideHint(projectId: string, key: string, decision: string | null) {
+      await driver.execute(
+        `INSERT INTO hint_states (project_id, hint_key, decision, updated_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT (project_id, hint_key)
+         DO UPDATE SET decision = excluded.decision, updated_at = excluded.updated_at`,
+        [projectId, key, decision, now()],
+      );
+    },
+
     async getSetting(key: string) {
       const [row] = await driver.query("SELECT value FROM settings WHERE key = ?", [key]);
       return row === undefined ? null : text(row, "value");
@@ -500,6 +576,19 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
           .filter((alias) => alias.entity_id === row.id)
           .map((alias) => text(alias, "alias")),
       }));
+      const summaries = await driver.query(
+        `SELECT s.entity_id, s.summary, s.basis FROM entity_summaries s
+         JOIN entities e ON e.id = s.entity_id WHERE e.project_id = ? ORDER BY s.rowid`,
+        [projectId],
+      );
+      const notes = await driver.query(
+        `SELECT * FROM scene_notes WHERE ${inLiveScene} ORDER BY rowid`,
+        [projectId],
+      );
+      const prompts = await driver.query(
+        `SELECT * FROM scene_prompts WHERE ${inLiveScene} ORDER BY rowid`,
+        [projectId],
+      );
       return {
         entities,
         mentions: mentions.map(toMention),
@@ -507,6 +596,26 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
         relations: relations.map(toRelation),
         issues: issues.map(toIssue),
         sceneOrder: order.map((row) => text(row, "id")),
+        digest: {
+          summaries: summaries.map((row) => ({
+            entityId: text(row, "entity_id"),
+            text: text(row, "summary"),
+            basis: text(row, "basis"),
+          })),
+          notes: notes.map((row) => ({
+            sceneId: text(row, "scene_id"),
+            change: text(row, "change"),
+            textHash: text(row, "text_hash"),
+          })),
+          prompts: prompts.map((row) => ({
+            id: text(row, "id"),
+            sceneId: text(row, "scene_id"),
+            kind:
+              text(row, "kind") === "question" ? ("question" as const) : ("suggestion" as const),
+            text: text(row, "text"),
+            quote: text(row, "quote"),
+          })),
+        },
       };
     },
 
@@ -536,6 +645,9 @@ export function createSqlStorage(driver: SqlDriver, options: SqlStorageOptions =
         { sql: "DELETE FROM facts WHERE scene_id = ?", params: [sceneId] },
         { sql: "DELETE FROM relations WHERE scene_id = ?", params: [sceneId] },
         { sql: "DELETE FROM issues WHERE scene_a = ? OR scene_b = ?", params: [sceneId, sceneId] },
+        // Written about the text as it was. The digest of the new text puts its own in.
+        { sql: "DELETE FROM scene_notes WHERE scene_id = ?", params: [sceneId] },
+        { sql: "DELETE FROM scene_prompts WHERE scene_id = ?", params: [sceneId] },
       );
       for (const mention of state.mentions.filter((item) => item.sceneId === sceneId)) {
         statements.push({

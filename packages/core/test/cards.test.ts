@@ -558,6 +558,8 @@ describe("stored overrides", () => {
       relations: [],
       chapters: [],
       names: [],
+      issues: [],
+      prompts: [],
     });
   });
 });

@@ -19,6 +19,8 @@ npm run eval -- --provider deepseek --model deepseek-flash --max-cost 0.50
 | `--novel` | Qué novela evaluar. Por defecto, `la-veda` |
 | `--max-cost` | Tope de gasto en dólares. Obligatorio en un modelo de pago |
 | `--verbose` | Muestra entidades, hechos y avisos |
+| `--digest` | Muestra lo que redacta la IA de cada escena y lo que se descarta |
+| `--no-digest` | No pide ese paso: solo el análisis |
 | `--trace <archivo>` | Guarda cada pregunta y cada respuesta |
 | `--cache-only` | Vuelve a puntuar con lo guardado. Si falta una respuesta, falla en vez de preguntar |
 | `--no-cache` | Pregunta todo de nuevo |
@@ -29,6 +31,10 @@ npm run eval -- --provider deepseek --model deepseek-flash --max-cost 0.50
 **Sin gastar.** Por OpenRouter solo acepta modelos que OpenRouter declare gratuitos, se detiene en la primera respuesta con coste y no empieza si el cupo diario no alcanza. Nunca pide búsqueda web, que se cobra incluso con modelos gratuitos.
 
 **Con DeepSeek sí se gasta.** La API directa cobra por tokens y necesita saldo, así que el evaluador exige `--max-cost`. Cuenta cada respuesta a la tarifa más alta publicada, se detiene al llegar al tope y también si una respuesta no dice cuánto usó. Muestra además el saldo al empezar y al terminar, para contrastarlo. Lo que ya está en la caché no se paga.
+
+**Repetir es gratis y exacto.** La caché guarda las respuestas completas y también las que el modelo cortó, porque esa es su respuesta a esa pregunta. Con `--cache-only`, una ejecución ya hecha se repite idéntica sin ninguna petición. Los fallos del servicio no se guardan.
+
+**Lo que redacta la IA no tiene umbral.** Después de analizar cada escena se pide un resumen de cada ficha, qué cambia en la escena, preguntas y una tarea de escritura. El evaluador cuenta lo que se conserva y lo que se descarta por no tener origen en el texto, pero no puede decir si un resumen es bueno: eso hay que leerlo con `--digest`. Ver `docs/adr/0017-lo-que-redacta-la-ia.md`.
 
 La clave se lee de `DEEPSEEK_API_KEY` o de `%LOCALAPPDATA%\ink-writer-dev\deepseek-key`. Para guardarla sin que aparezca en pantalla ni en el historial, cópiala y ejecuta en PowerShell:
 

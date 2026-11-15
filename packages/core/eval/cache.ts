@@ -41,8 +41,15 @@ export function withCache(
       }
       if (cached !== null) {
         stats.hits += 1;
-        yield { type: "text", delta: (JSON.parse(cached) as { text: string }).text };
-        yield { type: "end", outcome: { status: "completed" } };
+        const stored = JSON.parse(cached) as { text: string; incomplete?: string | null };
+        yield { type: "text", delta: stored.text };
+        yield {
+          type: "end",
+          outcome:
+            stored.incomplete === undefined
+              ? { status: "completed" }
+              : { status: "incomplete", reason: stored.incomplete },
+        };
         return;
       }
       stats.misses += 1;
@@ -61,9 +68,13 @@ export function withCache(
         if (event.type === "text") {
           text += event.delta;
         }
-        // Only finished answers: a failure must be tried again, not remembered.
+        // A failure of the service must be tried again, not remembered. An answer that the model
+        // cut short is the model's answer to that prompt: remembering it too is what makes a run
+        // repeat exactly, instead of asking again and drifting from there on.
         if (event.type === "end" && event.outcome.status === "completed") {
           writeFileSync(file, JSON.stringify({ text }));
+        } else if (event.type === "end" && event.outcome.status === "incomplete") {
+          writeFileSync(file, JSON.stringify({ text, incomplete: event.outcome.reason }));
         }
         yield event;
       }

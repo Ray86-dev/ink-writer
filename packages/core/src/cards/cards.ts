@@ -1,4 +1,5 @@
 import type { EntityType, FactCategory } from "../analysis/contract";
+import { fingerprint, summaryBasis } from "../analysis/digest";
 import { isEpithet, looksLikeVariant, nameKey } from "../analysis/names";
 import { type AnalysisState, type Issue, liveEntities } from "../analysis/state";
 import type { KnownName } from "./name-finder";
@@ -58,6 +59,11 @@ export interface CardIssue {
 
 export interface EntityCard extends EntityRef {
   readonly aliases: readonly string[];
+  /**
+   * What the model wrote about the card, or null. Only there while the card shows exactly the
+   * passages it was written from: any other set of passages and it's gone until it's written again.
+   */
+  readonly summary: string | null;
   readonly note: string | null;
   /** What you've written, in the order the novel tells it. */
   readonly facts: readonly CardFact[];
@@ -98,7 +104,20 @@ export interface ChapterCard {
   readonly lore: readonly EntityRef[];
   /** When it happens, as the text says it. */
   readonly when: readonly (Passage & { readonly storyTime: string })[];
+  /** What changes in each scene, as the model put it, for the scenes whose text is still the same. */
+  readonly changes: readonly {
+    readonly sceneId: string;
+    readonly sceneTitle: string;
+    readonly change: string;
+  }[];
   readonly issues: readonly CardIssue[];
+}
+
+/** A question for the author, or a small writing task, with the passage that raises it. */
+export interface CardPrompt {
+  readonly kind: "question" | "suggestion";
+  readonly text: string;
+  readonly at: Passage;
 }
 
 /** One proper name of the novel, for the Names card: an index to spot variants (SPEC §3.2). */
@@ -118,6 +137,13 @@ export interface NovelView {
   readonly relations: readonly RelationCard[];
   readonly chapters: readonly ChapterCard[];
   readonly names: readonly NameEntry[];
+  /**
+   * Everything that's open in the novel, in reading order of where it's noticed. In each, `a` is
+   * the earlier passage and `b` the later one.
+   */
+  readonly issues: readonly CardIssue[];
+  /** Questions and tasks whose passage is still in the text, in reading order. */
+  readonly prompts: readonly CardPrompt[];
 }
 
 /**
@@ -140,6 +166,18 @@ export function withoutStale(
         stands(issue.a.sceneId, issue.a.quote) &&
         (!("b" in issue) || stands(issue.b.sceneId, issue.b.quote)),
     ),
+    ...(state.digest === undefined
+      ? {}
+      : {
+          digest: {
+            summaries: state.digest.summaries,
+            // Written about a text: only good while the scene still is that text.
+            notes: state.digest.notes.filter(
+              (note) => fingerprint(texts.get(note.sceneId) ?? "") === note.textHash,
+            ),
+            prompts: state.digest.prompts.filter((prompt) => stands(prompt.sceneId, prompt.quote)),
+          },
+        }),
   };
 }
 
@@ -188,13 +226,17 @@ export function buildNovelView(input: {
   );
   const ref = (id: string) => refs.get(id);
 
-  const toIssue = (issue: Issue): CardIssue => ({
-    kind: issue.kind,
-    reason: issue.reason,
-    a: passage(issue.a),
-    b: "b" in issue ? passage(issue.b) : null,
-    fix: "fix" in issue ? issue.fix : null,
-  });
+  const toIssue = (issue: Issue): CardIssue => {
+    const [a, b] =
+      "b" in issue ? inOrder([issue.a, issue.b]).map(passage) : [passage(issue.a), null];
+    return {
+      kind: issue.kind,
+      reason: issue.reason,
+      a: a as Passage,
+      b: b ?? null,
+      fix: "fix" in issue ? issue.fix : null,
+    };
+  };
   const quotesOf = (issue: Issue) => ("b" in issue ? [issue.a, issue.b] : [issue.a]);
 
   const cards: EntityCard[] = entities.map((entity) => {
@@ -251,11 +293,16 @@ export function buildNovelView(input: {
       }
     }
 
+    const written = state.digest?.summaries.find((summary) => summary.entityId === entity.id);
     return {
       id: entity.id,
       name: entity.canonicalName,
       type: entity.type,
       aliases: entity.aliases,
+      summary:
+        written !== undefined && facts.length > 0 && written.basis === summaryBasis(facts)
+          ? written.text
+          : null,
       note: applied.notes.get(entity.id) ?? null,
       facts: facts.map((fact) => ({
         ...passage(fact),
@@ -322,6 +369,12 @@ export function buildNovelView(input: {
       when: inOrder(state.facts)
         .filter((fact) => inChapter.has(fact.sceneId) && fact.storyTime !== null)
         .map((fact) => ({ ...passage(fact), storyTime: fact.storyTime as string })),
+      changes: own.flatMap((scene) => {
+        const note = state.digest?.notes.find((item) => item.sceneId === scene.id);
+        return note === undefined
+          ? []
+          : [{ sceneId: scene.id, sceneTitle: scene.title, change: note.change }];
+      }),
       issues: state.issues
         .filter((issue) => quotesOf(issue).some((cited) => inChapter.has(cited.sceneId)))
         .map(toIssue),
@@ -352,7 +405,17 @@ export function buildNovelView(input: {
     }))
     .sort(byName);
 
-  return { cards, relations, chapters, names };
+  const issues = state.issues
+    .map(toIssue)
+    .sort((x, y) => position(x.b ?? x.a) - position(y.b ?? y.a));
+
+  const prompts: CardPrompt[] = inOrder(state.digest?.prompts ?? []).map((prompt) => ({
+    kind: prompt.kind,
+    text: prompt.text,
+    at: passage(prompt),
+  }));
+
+  return { cards, relations, chapters, names, issues, prompts };
 }
 
 /** The names the editor can link as the author types: proper names only, never a description. */

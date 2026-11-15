@@ -37,11 +37,11 @@ export interface DailyAllowance {
 }
 
 /**
- * The free tier allows few requests a day. Reading twice, resolving, comparing several groups and
- * proofreading come to about this many per scene, measured on `fixtures/`.
+ * The free tier allows few requests a day. Reading twice, resolving, comparing several groups,
+ * proofreading and the digest come to about this many per scene, measured on `fixtures/`.
  */
 export function estimateRequests(uncachedScenes: number): number {
-  return uncachedScenes * 6;
+  return uncachedScenes * 7;
 }
 
 export function assertAllowance(allowance: DailyAllowance | null, needed: number): void {

@@ -2,13 +2,15 @@ import {
   type AiConnection,
   buildManuscript,
   createNameFinder,
+  type Hint,
   knownNames,
   loadAiConnection,
-  loadNovelView,
+  loadNovel,
   type NovelView,
   type Passage,
   type Project,
   type SceneSessionOptions,
+  type SceneText,
   type Storage,
   saveAiConnection,
   type Trash,
@@ -18,8 +20,10 @@ import {
 import type { Editor } from "@tiptap/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type CardSelection, CardsScreen } from "../cards/CardsScreen";
-import { showPassage } from "../editor/name-links";
+import { applyCorrection, showPassage } from "../editor/name-links";
 import { SceneEditor } from "../editor/SceneEditor";
+import { Companion, HintsPanel } from "../hints/HintsPanel";
+import { useHints } from "../hints/useHints";
 import { useLanguage } from "../i18n";
 import { describeError } from "../messages";
 import type { Shell } from "../shell";
@@ -30,11 +34,19 @@ import { type AnalysisOptions, useAnalysis } from "./useAnalysis";
 import { useSceneSession } from "./useSceneSession";
 
 export type EditorMode = "write" | "live" | "read";
-type Panel = "structure" | "history" | "ai" | null;
+type Panel = "structure" | "history" | "ai" | "hints" | null;
 
 const MODES: readonly EditorMode[] = ["write", "live", "read"];
 
-const NO_CARDS: NovelView = { cards: [], relations: [], chapters: [], names: [] };
+const NO_CARDS: NovelView = {
+  cards: [],
+  relations: [],
+  chapters: [],
+  names: [],
+  issues: [],
+  prompts: [],
+};
+const NO_SCENES: readonly SceneText[] = [];
 
 export interface ProjectScreenProps {
   readonly storage: Storage;
@@ -104,6 +116,9 @@ export function ProjectScreen({
   const [cards, setCards] = useState<CardSelection | null>(null);
   /** A passage to show once its scene is open. */
   const [jump, setJump] = useState<Passage | null>(null);
+  const [sceneTexts, setSceneTexts] = useState<readonly SceneText[]>(NO_SCENES);
+  /** A correction the author asked to apply, once its scene is open. */
+  const [fixing, setFixing] = useState<Hint | null>(null);
 
   const analysis = useAnalysis(storage, project, shell.ai.transport, connection, analysisOptions);
 
@@ -136,7 +151,9 @@ export function ProjectScreen({
    */
   const reloadCards = useCallback(async () => {
     await sessionRef.current?.flush();
-    setNovel(await loadNovelView(storage, project.id));
+    const loaded = await loadNovel(storage, project.id);
+    setNovel(loaded.view);
+    setSceneTexts(loaded.scenes);
   }, [storage, project.id]);
 
   // On opening the novel, and each time a run of the analysis ends. Not while it's at work: reading
@@ -149,6 +166,10 @@ export function ProjectScreen({
   }, [reloadCards, settled]);
 
   const find = useMemo(() => createNameFinder(knownNames(novel)), [novel]);
+
+  const reportProblem = useCallback((error: unknown) => setNotice(describeError(error)), []);
+  const hinting = useHints(storage, project.id, novel, sceneTexts, reportProblem);
+  const hintLevel = hinting.settings?.level ?? "off";
 
   const openCards = useCallback(
     (selection: CardSelection) => {
@@ -263,6 +284,42 @@ export function ProjectScreen({
   const changeMode = (next: EditorMode) => {
     remember("editor-mode", next);
     setMode(next);
+    if (next === "read") {
+      // Links and marks are of the text as it is now.
+      reloadCards().catch(reportProblem);
+    }
+  };
+
+  // The author pressed "Apply" on a correction: once its scene is on screen, it goes in the text.
+  useEffect(() => {
+    if (fixing === null || editor === null || session?.sceneId !== fixing.at.sceneId) {
+      return;
+    }
+    setFixing(null);
+    if (fixing.fix === null || !applyCorrection(editor, fixing.at.quote, fixing.fix)) {
+      setNotice(messages.cardsPassageGone);
+      return;
+    }
+    // The passage is gone from the text now, so the hint closes by itself.
+    reloadCards().catch(reportProblem);
+  }, [fixing, editor, session, messages, reloadCards, reportProblem]);
+
+  const applyHint = (hint: Hint) => {
+    setNotice(null);
+    setCards(null);
+    remember(sceneKey, hint.at.sceneId);
+    setSceneId(hint.at.sceneId);
+    setFixing(hint);
+  };
+
+  const fixMyself = (hint: Hint) => {
+    setPanel(null);
+    changeMode("write");
+    openPassage(hint.at);
+  };
+
+  const guard = (action: Promise<void>) => {
+    action.catch(reportProblem);
   };
 
   const sceneEdited = analysis.sceneEdited;
@@ -342,6 +399,21 @@ export function ProjectScreen({
 
   const zen = typing && panel === null && cards === null && mode !== "read";
   const inScene = novel.cards.filter((card) => card.scenes.some((scene) => scene.id === sceneId));
+  // Marks only when reading, and only at the levels that underline (SPEC §3.3 and §3.4).
+  const showMarks = mode === "read" && (hintLevel === "discreet" || hintLevel === "companion");
+  const openHints = hinting.hints;
+  const marks = useMemo(
+    () =>
+      showMarks
+        ? openHints.flatMap((hint) =>
+            [hint.at, ...(hint.other === null ? [] : [hint.other])]
+              .filter((passage) => passage.sceneId === sceneId)
+              .map((passage) => ({ key: hint.key, quote: passage.quote })),
+          )
+        : [],
+    [showMarks, openHints, sceneId],
+  );
+  const firstHint = openHints[0];
 
   return (
     // The mouse only brings the controls back: everything it does here also has a key or a button.
@@ -395,6 +467,19 @@ export function ProjectScreen({
             onClick={() => setPanel(panel === "history" ? null : "history")}
           >
             {messages.history}
+          </button>
+          <button
+            type="button"
+            aria-expanded={panel === "hints"}
+            onClick={() => {
+              setPanel(panel === "hints" ? null : "hints");
+              // What's shown is of the text as it is now, so what was just rewritten is closed.
+              reloadCards().catch(reportProblem);
+            }}
+          >
+            {messages.hints}
+            {hintLevel === "off" && `: ${messages.hintsShortOff}`}
+            {(hintLevel === "discreet" || hintLevel === "companion") && `: ${openHints.length}`}
           </button>
           <button
             type="button"
@@ -475,8 +560,13 @@ export function ProjectScreen({
               onEditor={setEditor}
               onInput={onInput}
               links={mode === "write" ? null : links}
+              marks={marks}
             />
           )}
+          {mode === "read" &&
+            hintLevel === "companion" &&
+            firstHint !== undefined &&
+            panel !== "hints" && <Companion hint={firstHint} onOpen={() => setPanel("hints")} />}
         </main>
 
         {mode === "read" && panel === null && (
@@ -503,6 +593,25 @@ export function ProjectScreen({
               </>
             )}
           </aside>
+        )}
+
+        {panel === "hints" && hinting.settings !== null && (
+          <HintsPanel
+            settings={hinting.settings}
+            hints={openHints}
+            task={hinting.task}
+            onSettings={(next) => guard(hinting.changeSettings(next))}
+            onReveal={(hint) => guard(hinting.reveal(hint))}
+            onDecide={(key, decision) => guard(hinting.decide(key, decision))}
+            onLater={hinting.later}
+            onOpenPassage={openPassage}
+            onFixMyself={fixMyself}
+            onApply={applyHint}
+            onOpenCard={openCardOf}
+            onOpenScene={openScene}
+            onQuietToday={() => guard(hinting.quietToday())}
+            onClose={() => setPanel(null)}
+          />
         )}
 
         {panel === "ai" && (

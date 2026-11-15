@@ -92,7 +92,62 @@ describe("analysis storage", () => {
 
     await storage.saveSceneAnalysis(projectId, s1, "h1", state);
 
-    expect(await storage.loadAnalysis(projectId)).toEqual(state);
+    const nothingWritten = { summaries: [], notes: [], prompts: [] };
+    expect(await storage.loadAnalysis(projectId)).toEqual({ ...state, digest: nothingWritten });
+  });
+
+  it("keeps what the model wrote about a scene, and replaces it with its next digest", async () => {
+    await storage.saveSceneAnalysis(projectId, s1, "h1", base());
+    await storage.saveSceneDigest({
+      sceneId: s1,
+      note: { sceneId: s1, change: "Marta llega.", textHash: "t1" },
+      summaries: [{ entityId: "marta", text: "Tiene los ojos verdes.", basis: "b1" }],
+      prompts: [
+        { id: "p1", sceneId: s1, kind: "question", text: "¿Quién es Tomás?", quote: "Tomás" },
+        { id: "p2", sceneId: s1, kind: "suggestion", text: "Describe el puerto.", quote: "puerto" },
+      ],
+    });
+
+    expect((await storage.loadAnalysis(projectId)).digest).toEqual({
+      summaries: [{ entityId: "marta", text: "Tiene los ojos verdes.", basis: "b1" }],
+      notes: [{ sceneId: s1, change: "Marta llega.", textHash: "t1" }],
+      prompts: [
+        { id: "p1", sceneId: s1, kind: "question", text: "¿Quién es Tomás?", quote: "Tomás" },
+        { id: "p2", sceneId: s1, kind: "suggestion", text: "Describe el puerto.", quote: "puerto" },
+      ],
+    });
+
+    await storage.saveSceneDigest({
+      sceneId: s1,
+      note: null,
+      summaries: [{ entityId: "marta", text: "Tiene los ojos grises.", basis: "b2" }],
+      prompts: [],
+    });
+
+    expect((await storage.loadAnalysis(projectId)).digest).toEqual({
+      summaries: [{ entityId: "marta", text: "Tiene los ojos grises.", basis: "b2" }],
+      notes: [],
+      prompts: [],
+    });
+  });
+
+  it("drops a scene's note and prompts when it's analysed again, and keeps the summaries", async () => {
+    await storage.saveSceneAnalysis(projectId, s1, "h1", base());
+    await storage.saveSceneDigest({
+      sceneId: s1,
+      note: { sceneId: s1, change: "Marta llega.", textHash: "t1" },
+      summaries: [{ entityId: "marta", text: "Tiene los ojos verdes.", basis: "b1" }],
+      prompts: [{ id: "p1", sceneId: s1, kind: "question", text: "¿Quién?", quote: "Marta" }],
+    });
+
+    await storage.saveSceneAnalysis(projectId, s1, "h2", base());
+
+    // The summary stays stored: whether it's shown depends on its passages still being the card's.
+    expect((await storage.loadAnalysis(projectId)).digest).toEqual({
+      summaries: [{ entityId: "marta", text: "Tiene los ojos verdes.", basis: "b1" }],
+      notes: [],
+      prompts: [],
+    });
   });
 
   it("replaces a scene's data when it's analysed again (SPEC §4)", async () => {

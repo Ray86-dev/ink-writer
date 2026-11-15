@@ -152,4 +152,46 @@ export const MIGRATIONS: readonly Migration[] = [
       "CREATE INDEX user_overrides_by_project ON user_overrides (project_id, created_at)",
     ],
   },
+  {
+    version: 6,
+    name: "hint_states",
+    // What the author did with each hint: how far they revealed it and how they closed it. Keyed by
+    // the passages it cites, not by an id of the analysis, so that it outlives every reanalysis.
+    statements: [
+      `CREATE TABLE hint_states (
+        project_id TEXT NOT NULL REFERENCES projects (id) ON DELETE RESTRICT,
+        hint_key TEXT NOT NULL,
+        step INTEGER NOT NULL DEFAULT 1,
+        decision TEXT,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (project_id, hint_key)
+      ) STRICT`,
+    ],
+  },
+  {
+    version: 7,
+    name: "digest",
+    // What the model writes on top of the analysis (SPEC §5, step 4). Each row says what it was
+    // written from, so that it's never shown over a text that has changed.
+    statements: [
+      `CREATE TABLE entity_summaries (
+        entity_id TEXT PRIMARY KEY REFERENCES entities (id) ON DELETE RESTRICT,
+        summary TEXT NOT NULL,
+        basis TEXT NOT NULL
+      ) STRICT`,
+      `CREATE TABLE scene_notes (
+        scene_id TEXT PRIMARY KEY REFERENCES scenes (id) ON DELETE RESTRICT,
+        change TEXT NOT NULL,
+        text_hash TEXT NOT NULL
+      ) STRICT`,
+      `CREATE TABLE scene_prompts (
+        id TEXT PRIMARY KEY,
+        scene_id TEXT NOT NULL REFERENCES scenes (id) ON DELETE RESTRICT,
+        kind TEXT NOT NULL CHECK (kind IN ('question', 'suggestion')),
+        text TEXT NOT NULL,
+        quote TEXT NOT NULL
+      ) STRICT`,
+      "CREATE INDEX scene_prompts_by_scene ON scene_prompts (scene_id)",
+    ],
+  },
 ];

@@ -1,20 +1,35 @@
+export type { DigestDeps, DigestResult, SceneDigest } from "./analysis/digest";
+export {
+  digestInstructions,
+  digestScene,
+  fingerprint,
+  summaryBasis,
+  ungroundedNames,
+  validateDigest,
+  withDigest,
+} from "./analysis/digest";
 export type { AnalysisDeps, SceneAnalysis, SceneToAnalyze } from "./analysis/pipeline";
 export { analyzeScene } from "./analysis/pipeline";
 export type { AnalysisQueueOptions, QueueRun, QueueStatus } from "./analysis/queue";
 export { AnalysisQueue, hashText } from "./analysis/queue";
 export type {
   AnalysisState,
+  Digest,
   Entity,
+  EntitySummary,
   Fact,
   Issue,
   Mention,
   QuoteRef,
   Relation,
+  SceneNote,
+  ScenePrompt,
 } from "./analysis/state";
 export { emptyState, liveEntities, withoutScene } from "./analysis/state";
 export type {
   CardFact,
   CardIssue,
+  CardPrompt,
   CardRelation,
   ChapterCard,
   EntityCard,
@@ -26,7 +41,8 @@ export type {
   SceneText,
 } from "./cards/cards";
 export { buildNovelView, knownNames, withoutStale } from "./cards/cards";
-export { loadNovelView, loadSceneTexts } from "./cards/load";
+export type { Novel } from "./cards/load";
+export { loadNovel, loadNovelView, loadSceneTexts } from "./cards/load";
 export type { KnownName, NameMatch } from "./cards/name-finder";
 export { createNameFinder } from "./cards/name-finder";
 export type { Applied, AuthorOverride, Override } from "./cards/overrides";
@@ -35,6 +51,34 @@ export { toDocx } from "./export/docx";
 export type { Manuscript, ManuscriptChapter } from "./export/manuscript";
 export { buildManuscript } from "./export/manuscript";
 export { toMarkdown } from "./export/markdown";
+export type {
+  Hint,
+  HintDecision,
+  HintLevel,
+  HintSettings,
+  HintStates,
+  HintStep,
+  HintType,
+  Task,
+  TaskInput,
+  TaskKind,
+} from "./hints/hints";
+export {
+  buildHints,
+  DEFAULT_HINT_SETTINGS,
+  dayOf,
+  HINT_LEVELS,
+  HINT_TYPES,
+  hintKey,
+  loadHintSettings,
+  loadHintStates,
+  NO_HINT_STATES,
+  nextTask,
+  promptKey,
+  saveHintSettings,
+  TASK_KINDS,
+  toHintStates,
+} from "./hints/hints";
 export type { DiffPart } from "./prose/diff";
 export { compareTexts } from "./prose/diff";
 export type { SaveState, SceneSessionOptions } from "./prose/scene-session";
@@ -109,6 +153,7 @@ export type {
   Scene,
   SnapshotInfo,
   Storage,
+  StoredHintState,
   StoredOverride,
   StoredSceneProse,
   Trash,

@@ -1,3 +1,4 @@
+import type { SceneDigest } from "../analysis/digest";
 import type { AnalysisState } from "../analysis/state";
 
 export interface Project {
@@ -68,6 +69,13 @@ export interface StoredOverride {
   readonly createdAt: number;
 }
 
+/** What the author did with a hint, as stored. `hints/hints.ts` gives it meaning. */
+export interface StoredHintState {
+  readonly key: string;
+  readonly step: number;
+  readonly decision: string | null;
+}
+
 export type MoveDirection = "up" | "down";
 
 export class InvalidInputError extends Error {
@@ -136,6 +144,18 @@ export interface Storage {
   listOverrides(projectId: string): Promise<StoredOverride[]>;
   /** Only the author takes one back, as when undoing a merge. */
   removeOverride(id: string): Promise<void>;
+
+  /**
+   * Stores what the model wrote about a scene, in place of what its last digest left. The summaries
+   * replace those of the same cards.
+   */
+  saveSceneDigest(digest: SceneDigest): Promise<void>;
+
+  listHintStates(projectId: string): Promise<StoredHintState[]>;
+  /** Keeps how far a hint was revealed. It never goes back to showing less. */
+  revealHint(projectId: string, key: string, step: number): Promise<void>;
+  /** Keeps how the author closed a hint or a task. Null opens it again. */
+  decideHint(projectId: string, key: string, decision: string | null): Promise<void>;
 
   /** A choice the author made for the whole app. Null if they haven't. Never a credential. */
   getSetting(key: string): Promise<string | null>;

@@ -75,9 +75,10 @@
 
 No cambian los prompts ni lo que se pregunta al modelo, así que la evaluación de `fixtures/` no se ve afectada.
 
+**Comprobado a mano por el autor** el 15 de noviembre de 2026, en Windows 11: el login contra OpenRouter real desde la app, de principio a fin.
+
 ## Sin comprobar todavía
 
-- **El login contra OpenRouter real desde la app.** Las pruebas usan un servidor simulado. Hay que hacerlo una vez a mano.
 - **Un análisis en la app con un modelo real,** por Ollama o por OpenRouter. El canal se midió en M3 con el arnés, y aquí solo se ha probado el recorrido con respuestas simuladas.
 - **El almacén del sistema en macOS y Linux.**
 - **El aspecto del panel.** Las pruebas comprueban lo que dice y lo que hace, no cómo se ve.

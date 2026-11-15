@@ -69,6 +69,38 @@ export type Issue =
       readonly reason: string;
     };
 
+/** What the model wrote about a card, from the passages it had then (SPEC §5, step 4). */
+export interface EntitySummary {
+  readonly entityId: string;
+  readonly text: string;
+  /** A fingerprint of those passages. The summary is only good while the card shows the same ones. */
+  readonly basis: string;
+}
+
+/** What changes in a scene, in one sentence. */
+export interface SceneNote {
+  readonly sceneId: string;
+  readonly change: string;
+  /** A fingerprint of the scene's text when it was written. It's only good for that very text. */
+  readonly textHash: string;
+}
+
+/** A question for the author, or a small writing task, raised by a passage of a scene. */
+export interface ScenePrompt {
+  readonly id: string;
+  readonly sceneId: string;
+  readonly kind: "question" | "suggestion";
+  readonly text: string;
+  /** The text that raises it, which appears literally in the scene. */
+  readonly quote: string;
+}
+
+export interface Digest {
+  readonly summaries: readonly EntitySummary[];
+  readonly notes: readonly SceneNote[];
+  readonly prompts: readonly ScenePrompt[];
+}
+
 export interface AnalysisState {
   readonly entities: readonly Entity[];
   readonly mentions: readonly Mention[];
@@ -77,6 +109,8 @@ export interface AnalysisState {
   readonly issues: readonly Issue[];
   /** Scenes in reading order, so that a comparison knows what came first. */
   readonly sceneOrder: readonly string[];
+  /** What the model wrote on top of the analysis. Absent until a scene has been digested. */
+  readonly digest?: Digest;
 }
 
 export const emptyState = (sceneOrder: readonly string[] = []): AnalysisState => ({
@@ -115,5 +149,15 @@ export function withoutScene(state: AnalysisState, sceneId: string): AnalysisSta
     facts: state.facts.filter((fact) => fact.sceneId !== sceneId),
     relations: state.relations.filter((relation) => relation.sceneId !== sceneId),
     issues: state.issues.filter((issue) => !citesScene(issue, sceneId)),
+    ...(state.digest === undefined
+      ? {}
+      : {
+          digest: {
+            // A summary stays: it's shown or not by whether its passages are still the card's.
+            summaries: state.digest.summaries,
+            notes: state.digest.notes.filter((note) => note.sceneId !== sceneId),
+            prompts: state.digest.prompts.filter((prompt) => prompt.sceneId !== sceneId),
+          },
+        }),
   };
 }

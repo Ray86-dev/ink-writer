@@ -133,6 +133,78 @@ export const NameLinks = Extension.create<{ source: NameLinkSource | null }>({
   },
 });
 
+/** A passage to mark in the text, as the place a hint is about. */
+export interface PassageMark {
+  readonly key: string;
+  readonly quote: string;
+}
+
+const marksKey = new PluginKey<DecorationSet>("hintMarks");
+
+/**
+ * Marks the passages that hints are about. Only decoration, like the links, and only ever given
+ * something to mark in the reading mode: nothing shows while the author writes (SPEC §3.3).
+ */
+export const HintMarks = Extension.create<{ marks: (() => readonly PassageMark[]) | null }>({
+  name: "hintMarks",
+
+  addOptions() {
+    return { marks: null };
+  },
+
+  addProseMirrorPlugins() {
+    const read = this.options.marks;
+    if (read === null) {
+      return [];
+    }
+    const build = (doc: ProseNode): DecorationSet => {
+      const marks = read();
+      if (marks.length === 0) {
+        return DecorationSet.empty;
+      }
+      const decorations: Decoration[] = [];
+      doc.descendants((node, position) => {
+        if (!node.isTextblock) {
+          return true;
+        }
+        const text = node.textBetween(0, node.content.size, undefined, LEAF);
+        for (const mark of marks) {
+          const index = text.indexOf(mark.quote);
+          if (index >= 0) {
+            decorations.push(
+              Decoration.inline(position + 1 + index, position + 1 + index + mark.quote.length, {
+                class: "hint-mark",
+                "data-hint": mark.key,
+              }),
+            );
+          }
+        }
+        return false;
+      });
+      return DecorationSet.create(doc, decorations);
+    };
+    return [
+      new Plugin<DecorationSet>({
+        key: marksKey,
+        state: {
+          init: (_config, state) => build(state.doc),
+          apply: (transaction, previous, _old, next) =>
+            transaction.docChanged || transaction.getMeta(marksKey) === true
+              ? build(next.doc)
+              : previous,
+        },
+        props: { decorations: (state) => marksKey.getState(state) },
+      }),
+    ];
+  },
+});
+
+export function refreshHintMarks(editor: Editor): void {
+  if (!editor.isDestroyed) {
+    editor.view.dispatch(editor.state.tr.setMeta(marksKey, true).setMeta("addToHistory", false));
+  }
+}
+
 /** Looks again, after the known names or the mode changed. */
 export function refreshNameLinks(editor: Editor): void {
   if (!editor.isDestroyed) {
@@ -140,11 +212,7 @@ export function refreshNameLinks(editor: Editor): void {
   }
 }
 
-/**
- * Selects a passage and brings it into view. False if the text no longer says it. It only moves the
- * selection: nothing is written.
- */
-export function showPassage(editor: Editor, quote: string): boolean {
+function findPassage(editor: Editor, quote: string): { from: number; to: number } | null {
   let range: { from: number; to: number } | null = null;
   editor.state.doc.descendants((node, position) => {
     if (range !== null || !node.isTextblock) {
@@ -156,9 +224,31 @@ export function showPassage(editor: Editor, quote: string): boolean {
     }
     return false;
   });
+  return range;
+}
+
+/**
+ * Selects a passage and brings it into view. False if the text no longer says it. It only moves the
+ * selection: nothing is written.
+ */
+export function showPassage(editor: Editor, quote: string): boolean {
+  const range = findPassage(editor, quote);
   if (range === null) {
     return false;
   }
   editor.chain().setTextSelection(range).scrollIntoView().run();
   return true;
+}
+
+/**
+ * Puts a correction in place of a passage. This is the one way the app ever changes the manuscript,
+ * and only because the author pressed "Apply" on that very correction (rule 1). It's one undoable
+ * step. False, with nothing changed, if the text no longer says the passage.
+ */
+export function applyCorrection(editor: Editor, quote: string, fix: string): boolean {
+  const range = findPassage(editor, quote);
+  if (range === null) {
+    return false;
+  }
+  return editor.chain().insertContentAt(range, fix).scrollIntoView().run();
 }
