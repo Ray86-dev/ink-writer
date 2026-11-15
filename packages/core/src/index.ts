@@ -19,16 +19,16 @@ export type {
   ChapterCard,
   EntityCard,
   EntityRef,
-  KnownName,
   NameEntry,
-  NameMatch,
   NovelView,
   Passage,
   RelationCard,
   SceneText,
 } from "./cards/cards";
-export { buildNovelView, createNameFinder, knownNames, withoutStale } from "./cards/cards";
+export { buildNovelView, knownNames, withoutStale } from "./cards/cards";
 export { loadNovelView, loadSceneTexts } from "./cards/load";
+export type { KnownName, NameMatch } from "./cards/name-finder";
+export { createNameFinder } from "./cards/name-finder";
 export type { Applied, AuthorOverride, Override } from "./cards/overrides";
 export { addOverride, applyOverrides, loadOverrides, parseOverride } from "./cards/overrides";
 export { toDocx } from "./export/docx";

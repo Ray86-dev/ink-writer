@@ -3,7 +3,10 @@ import {
   AnalysisQueue,
   buildManuscript,
   collectDraft,
+  createNameFinder,
   createOllamaProvider,
+  knownNames,
+  loadNovelView,
   openSqlStorage,
   plainText,
   readParagraphs,
@@ -153,6 +156,30 @@ export async function runSmokeChecks(
         "The analysis didn't keep the fact with its quote",
       );
       answer += `, ${facts.length} fact stored`;
+
+      // From what's stored to a card, and from the card's names to links in the real editor.
+      const novel = await loadNovelView(storage, project.id);
+      const card = novel.cards.find((item) => item.name === "Tomás");
+      assert(
+        card?.facts[0]?.quote === "los ojos verdes de su madre",
+        "The card doesn't show the passage",
+      );
+      const find = createNameFinder(knownNames(novel));
+      const linked = await SceneSession.open(storage, scene.id, { autoSnapshotMs: 0 });
+      const linkEditor = new Editor({
+        element: context.host,
+        extensions: proseExtensions(linked.doc, {
+          find: () => find,
+          needsModifier: () => true,
+          onOpen: () => {},
+        }),
+      });
+      const link = context.host.querySelector(".name-link");
+      assert(link?.textContent === "Tomás", "The name isn't linked in the editor");
+      assert(linkEditor.getText() === prose, "Linking a name changed the text");
+      linkEditor.destroy();
+      await linked.close();
+      answer += ", 1 card with its name linked";
     }
   }
 

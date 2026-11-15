@@ -141,11 +141,12 @@ SQLite local para estructura. Yjs para la prosa. Esquema orientativo:
 | `scene_snapshots` | id, scene_id, created_at, ydoc, label, word_count |
 | `entities` | id, project_id, type, canonical_name, status, summary |
 | `entity_aliases` | entity_id, alias, source |
-| `mentions` | id, scene_id, entity_id, quote, anchor |
-| `facts` | id, scene_id, entity_id, category, attribute, value, quote, sentence, anchor, story_time, in_dialogue |
-| `relations` | id, from_entity, to_entity, label, scene_id, anchor |
-| `user_overrides` | id, kind (merge, split, note, correction, dismiss), payload, created_at |
-| `issues` | id, kind, category, status, hint_steps, fact_a, fact_b, anchor, resolution |
+| `mentions` | scene_id, entity_id, quote |
+| `facts` | id, scene_id, entity_id, category, attribute, value, quote, sentence, story_time, in_dialogue |
+| `relations` | id, from_entity, to_entity, label, scene_id, quote |
+| `user_overrides` | id, project_id, kind (merge, split, note, correction, dismiss), payload, created_at |
+| `settings` | key, value |
+| `issues` | id, kind, category, status, hint_steps, fact_a, fact_b, resolution |
 | `tasks` | id, kind, body, reason, issue_id, status |
 | `research_topics` | id, entity_id, term, era, status, searched_at |
 | `research_items` | id, topic_id, category, text, source_url, source_title, retrieved_at, status |
@@ -153,9 +154,9 @@ SQLite local para estructura. Yjs para la prosa. Esquema orientativo:
 
 Reglas:
 - Una escena es un documento Yjs: su base compactada (`ydoc`) más las actualizaciones de `scene_updates`, un registro de solo añadir. Ver `docs/adr/0010-editor-y-guardado-de-la-prosa.md`.
-- Las posiciones de `anchor` son posiciones relativas de Yjs, para sobrevivir a las ediciones.
+- Cada dato se sitúa en el texto por su cita literal. Si la cita ya no está en la escena, el dato no se muestra. Ver `docs/adr/0015-fichas-enlaces-y-correcciones-del-autor.md`.
 - El reanálisis de una escena **sustituye** sus `mentions`, `facts` y `relations`.
-- `user_overrides` nunca se borra por un reanálisis y se aplica después de él.
+- `user_overrides` nunca se borra por un reanálisis y se aplica encima de él cada vez que se calculan las fichas.
 
 ## 5. Canal de análisis
 

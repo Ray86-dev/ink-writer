@@ -2,6 +2,7 @@ import type { EntityType } from "../analysis/contract";
 import { nameKey } from "../analysis/names";
 import type { AnalysisState, Entity } from "../analysis/state";
 import type { Storage, StoredOverride } from "../storage/storage";
+import { createNameFinder } from "./name-finder";
 
 /**
  * What the author says about the cards (SPEC §4, `user_overrides`). None of it is written into what
@@ -126,9 +127,6 @@ export interface Applied {
   readonly splitOff: ReadonlyMap<string, string>;
 }
 
-const containsName = (where: string, name: string) =>
-  where.toLocaleLowerCase().includes(name.toLocaleLowerCase());
-
 const unique = (names: readonly string[]) => {
   const seen = new Set<string>();
   return names.filter((name) => {
@@ -230,6 +228,15 @@ export function applyOverrides(
           aliases: source.aliases.filter((alias) => nameKey(alias) !== nameKey(name)),
         });
         entities.push({ id: newEntityId, type: source.type, canonicalName: name, aliases: [] });
+        // Whether a text names the split-off thing itself: "Marta" isn't named by "Marta Rey".
+        const findName = createNameFinder(
+          [source.canonicalName, ...source.aliases].map((known) => ({
+            name: known,
+            entityId: nameKey(known) === nameKey(name) ? newEntityId : sourceId,
+          })),
+        );
+        const containsName = (where: string) =>
+          findName(where).some((match) => match.entityId === newEntityId);
         splitOff.set(newEntityId, overrideId);
         // What names the split-off thing goes with it. The rest stays where it was.
         mentions = mentions.map((item) =>
@@ -238,12 +245,12 @@ export function applyOverrides(
             : item,
         );
         facts = facts.map((item) =>
-          item.entityId === sourceId && containsName(item.sentence, name)
+          item.entityId === sourceId && containsName(item.sentence)
             ? { ...item, entityId: newEntityId }
             : item,
         );
         relations = relations.map((item) =>
-          containsName(item.quote, name)
+          containsName(item.quote)
             ? {
                 ...item,
                 fromEntityId: item.fromEntityId === sourceId ? newEntityId : item.fromEntityId,

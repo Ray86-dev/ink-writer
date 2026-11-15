@@ -83,6 +83,6 @@ No cambian los prompts ni lo que se pregunta al modelo, así que la evaluación 
 - **El aspecto del panel.** Las pruebas comprueban lo que dice y lo que hace, no cómo se ve.
 - **La política de datos de cada modelo gratuito,** que pedía la 0012. El aviso es general y no distingue entre modelos.
 
-## Pendiente en M4
+## El resto de M4
 
-Las fichas, la tarjeta Nombres, fusionar, separar, notas, los enlaces en vivo y `user_overrides`.
+Las fichas, los enlaces y las correcciones del autor están en la [0015](0015-fichas-enlaces-y-correcciones-del-autor.md).

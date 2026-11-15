@@ -1,7 +1,12 @@
 import {
   type AiConnection,
   buildManuscript,
+  createNameFinder,
+  knownNames,
   loadAiConnection,
+  loadNovelView,
+  type NovelView,
+  type Passage,
   type Project,
   type SceneSessionOptions,
   type Storage,
@@ -11,7 +16,9 @@ import {
   toMarkdown,
 } from "@ink-writer/core";
 import type { Editor } from "@tiptap/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CardSelection, CardsScreen } from "../cards/CardsScreen";
+import { showPassage } from "../editor/name-links";
 import { SceneEditor } from "../editor/SceneEditor";
 import { useLanguage } from "../i18n";
 import { describeError } from "../messages";
@@ -26,6 +33,8 @@ export type EditorMode = "write" | "live" | "read";
 type Panel = "structure" | "history" | "ai" | null;
 
 const MODES: readonly EditorMode[] = ["write", "live", "read"];
+
+const NO_CARDS: NovelView = { cards: [], relations: [], chapters: [], names: [] };
 
 export interface ProjectScreenProps {
   readonly storage: Storage;
@@ -90,6 +99,11 @@ export function ProjectScreen({
   const [editor, setEditor] = useState<Editor | null>(null);
   const typingRef = useRef(false);
   const [connection, setConnection] = useState<AiConnection | null>(null);
+  const [novel, setNovel] = useState<NovelView>(NO_CARDS);
+  /** Null while the author is at the text. */
+  const [cards, setCards] = useState<CardSelection | null>(null);
+  /** A passage to show once its scene is open. */
+  const [jump, setJump] = useState<Passage | null>(null);
 
   const analysis = useAnalysis(storage, project, shell.ai.transport, connection, analysisOptions);
 
@@ -112,6 +126,50 @@ export function ProjectScreen({
       active = false;
     };
   }, [storage]);
+
+  const sessionRef = useRef<typeof session>(null);
+  sessionRef.current = session;
+
+  /**
+   * Works the cards out again from what's stored and saved. What was just typed is saved first, so
+   * that a deleted passage is gone from them at once.
+   */
+  const reloadCards = useCallback(async () => {
+    await sessionRef.current?.flush();
+    setNovel(await loadNovelView(storage, project.id));
+  }, [storage, project.id]);
+
+  // On opening the novel, and each time a run of the analysis ends. Not while it's at work: reading
+  // every scene again for each step would be for nothing.
+  const analysisView = analysis.view;
+  const settled = analysisView.status === "working" ? null : analysisView;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `settled` changes with each run
+  useEffect(() => {
+    reloadCards().catch((error: unknown) => setNotice(describeError(error)));
+  }, [reloadCards, settled]);
+
+  const find = useMemo(() => createNameFinder(knownNames(novel)), [novel]);
+
+  const openCards = useCallback(
+    (selection: CardSelection) => {
+      setPanel(null);
+      setCards(selection);
+      reloadCards().catch((error: unknown) => setNotice(describeError(error)));
+    },
+    [reloadCards],
+  );
+
+  const openCardOf = useCallback(
+    (entityId: string) => {
+      const card = novel.cards.find((item) => item.id === entityId);
+      if (card !== undefined) {
+        openCards({ tab: card.type, id: card.id });
+      }
+    },
+    [novel, openCards],
+  );
+
+  const links = useMemo(() => ({ find, onOpen: openCardOf }), [find, openCardOf]);
 
   const changeConnection = useCallback(
     async (next: AiConnection | null) => {
@@ -171,6 +229,37 @@ export function ProjectScreen({
     [sceneKey],
   );
 
+  const openPassage = useCallback(
+    (passage: Passage) => {
+      setNotice(null);
+      setCards(null);
+      remember(sceneKey, passage.sceneId);
+      setSceneId(passage.sceneId);
+      setJump(passage);
+    },
+    [sceneKey],
+  );
+
+  const openScene = useCallback(
+    (id: string) => {
+      setCards(null);
+      remember(sceneKey, id);
+      setSceneId(id);
+    },
+    [sceneKey],
+  );
+
+  // Once the scene of the passage is on screen, the passage is selected in it.
+  useEffect(() => {
+    if (jump === null || editor === null || session?.sceneId !== jump.sceneId || cards !== null) {
+      return;
+    }
+    if (!showPassage(editor, jump.quote)) {
+      setNotice(messages.cardsPassageGone);
+    }
+    setJump(null);
+  }, [jump, editor, session, cards, messages]);
+
   const changeMode = (next: EditorMode) => {
     remember("editor-mode", next);
     setMode(next);
@@ -199,6 +288,8 @@ export function ProjectScreen({
       if (event.key !== "Escape") return;
       if (panel !== null) {
         setPanel(null);
+      } else if (cards !== null) {
+        setCards(null);
       } else {
         typingRef.current = !typingRef.current;
         setTyping(typingRef.current);
@@ -206,7 +297,7 @@ export function ProjectScreen({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [panel]);
+  }, [panel, cards]);
 
   // Closing the window saves first. It stays open only if the text can't be saved.
   const closeCurrentRef = useRef(closeCurrent);
@@ -249,7 +340,8 @@ export function ProjectScreen({
     }
   };
 
-  const zen = typing && panel === null && mode !== "read";
+  const zen = typing && panel === null && cards === null && mode !== "read";
+  const inScene = novel.cards.filter((card) => card.scenes.some((scene) => scene.id === sceneId));
 
   return (
     // The mouse only brings the controls back: everything it does here also has a key or a button.
@@ -287,6 +379,15 @@ export function ProjectScreen({
             onClick={() => setPanel(panel === "structure" ? null : "structure")}
           >
             {messages.structure}
+          </button>
+          <button
+            type="button"
+            aria-pressed={cards !== null}
+            onClick={() =>
+              cards === null ? openCards({ tab: "person", id: null }) : setCards(null)
+            }
+          >
+            {messages.cards}
           </button>
           <button
             type="button"
@@ -332,7 +433,21 @@ export function ProjectScreen({
         </p>
       )}
 
-      <div className="workspace">
+      {cards !== null && (
+        <CardsScreen
+          storage={storage}
+          projectId={project.id}
+          view={novel}
+          selection={cards}
+          onSelect={setCards}
+          onOpenPassage={openPassage}
+          onOpenScene={openScene}
+          onChanged={reloadCards}
+          onClose={() => setCards(null)}
+        />
+      )}
+
+      <div className="workspace" hidden={cards !== null}>
         {panel === "structure" && (
           <StructurePanel
             storage={storage}
@@ -359,6 +474,7 @@ export function ProjectScreen({
               editable={mode !== "read"}
               onEditor={setEditor}
               onInput={onInput}
+              links={mode === "write" ? null : links}
             />
           )}
         </main>
@@ -366,7 +482,26 @@ export function ProjectScreen({
         {mode === "read" && panel === null && (
           <aside className="panel panel-right" aria-label={messages.readingPanelTitle}>
             <h2>{messages.readingPanelTitle}</h2>
-            <p>{messages.readingPanelEmpty}</p>
+            {inScene.length === 0 ? (
+              <p>{messages.readingPanelEmpty}</p>
+            ) : (
+              <>
+                <h3>{messages.cardsInScene}</h3>
+                <ul className="card-links">
+                  {inScene.map((card) => (
+                    <li key={card.id}>
+                      <button
+                        type="button"
+                        className="card-link"
+                        onClick={() => openCards({ tab: card.type, id: card.id })}
+                      >
+                        {card.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </aside>
         )}
 
