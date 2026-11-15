@@ -136,4 +136,20 @@ export const MIGRATIONS: readonly Migration[] = [
       ) STRICT`,
     ],
   },
+  {
+    version: 5,
+    name: "user_overrides",
+    // What the author corrects in the cards. No analysis ever writes or deletes here (rule 4), and
+    // nothing references an entity by key: an override outlives whatever it's about.
+    statements: [
+      `CREATE TABLE user_overrides (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL REFERENCES projects (id) ON DELETE RESTRICT,
+        kind TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      ) STRICT`,
+      "CREATE INDEX user_overrides_by_project ON user_overrides (project_id, created_at)",
+    ],
+  },
 ];

@@ -12,6 +12,25 @@ export type {
   Relation,
 } from "./analysis/state";
 export { emptyState, liveEntities, withoutScene } from "./analysis/state";
+export type {
+  CardFact,
+  CardIssue,
+  CardRelation,
+  ChapterCard,
+  EntityCard,
+  EntityRef,
+  KnownName,
+  NameEntry,
+  NameMatch,
+  NovelView,
+  Passage,
+  RelationCard,
+  SceneText,
+} from "./cards/cards";
+export { buildNovelView, createNameFinder, knownNames, withoutStale } from "./cards/cards";
+export { loadNovelView, loadSceneTexts } from "./cards/load";
+export type { Applied, AuthorOverride, Override } from "./cards/overrides";
+export { addOverride, applyOverrides, loadOverrides, parseOverride } from "./cards/overrides";
 export { toDocx } from "./export/docx";
 export type { Manuscript, ManuscriptChapter } from "./export/manuscript";
 export { buildManuscript } from "./export/manuscript";
@@ -90,6 +109,7 @@ export type {
   Scene,
   SnapshotInfo,
   Storage,
+  StoredOverride,
   StoredSceneProse,
   Trash,
 } from "./storage/storage";

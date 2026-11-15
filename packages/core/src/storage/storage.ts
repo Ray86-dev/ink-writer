@@ -58,6 +58,16 @@ export interface NewSnapshot {
   readonly wordCount: number;
 }
 
+/** Something the author said about the cards, as stored. `cards/overrides.ts` gives it meaning. */
+export interface StoredOverride {
+  readonly id: string;
+  readonly projectId: string;
+  readonly kind: string;
+  /** JSON. */
+  readonly payload: string;
+  readonly createdAt: number;
+}
+
 export type MoveDirection = "up" | "down";
 
 export class InvalidInputError extends Error {
@@ -119,6 +129,13 @@ export interface Storage {
   /** Newest first. */
   listSnapshots(sceneId: string): Promise<SnapshotInfo[]>;
   loadSnapshot(id: string): Promise<Uint8Array | null>;
+
+  /** Keeps something the author said about the cards. No reanalysis touches it (rule 4). */
+  addOverride(projectId: string, kind: string, payload: string): Promise<StoredOverride>;
+  /** Oldest first, which is the order they apply in. */
+  listOverrides(projectId: string): Promise<StoredOverride[]>;
+  /** Only the author takes one back, as when undoing a merge. */
+  removeOverride(id: string): Promise<void>;
 
   /** A choice the author made for the whole app. Null if they haven't. Never a credential. */
   getSetting(key: string): Promise<string | null>;
