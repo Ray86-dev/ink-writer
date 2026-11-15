@@ -75,6 +75,58 @@ export interface Messages {
   readonly closeBlockedBody: string;
   readonly keepTrying: string;
   readonly closeAnyway: string;
+
+  readonly ai: string;
+  readonly aiTitle: string;
+  readonly aiIntro: string;
+  readonly aiCurrentNone: string;
+  readonly aiCurrent: (route: string, model: string) => string;
+  readonly aiRouteLabel: string;
+  readonly aiRouteOff: string;
+  readonly aiRouteOllama: string;
+  readonly aiRouteOpenrouter: string;
+  readonly aiOllamaHint: string;
+  readonly aiOllamaUnreachable: string;
+  readonly aiOllamaNoModels: string;
+  readonly aiOpenrouterNotice: string;
+  readonly aiOpenrouterLimits: string;
+  readonly aiAcceptNotice: string;
+  readonly aiConnect: string;
+  readonly aiConnecting: string;
+  readonly aiConnected: string;
+  readonly aiDisconnect: string;
+  readonly aiLoadingModels: string;
+  readonly aiModelsFailed: string;
+  readonly aiNoModels: string;
+  readonly aiRetry: string;
+  readonly aiModelLabel: string;
+  readonly aiPickModel: string;
+  readonly aiConnectErrors: {
+    readonly timeout: string;
+    readonly listen: string;
+    readonly browser: string;
+    readonly unreachable: string;
+    readonly refused: string;
+    readonly store: string;
+  };
+
+  readonly analysisOff: string;
+  readonly analysisReady: string;
+  readonly analysisWorking: string;
+  readonly analysisDone: string;
+  readonly analysisSkipped: (count: number) => string;
+  readonly analysisWaiting: (pending: number) => string;
+  readonly analysisBlocked: (pending: number) => string;
+  readonly analysisFailed: (detail: string) => string;
+  readonly analysisShort: {
+    readonly off: string;
+    readonly ready: string;
+    readonly working: string;
+    readonly done: string;
+    readonly waiting: string;
+    readonly blocked: string;
+    readonly failed: string;
+  };
 }
 
 const es: Messages = {
@@ -157,6 +209,67 @@ const es: Messages = {
     "No se está pudiendo guardar. Si cierras ahora, perderás lo último que has escrito.",
   keepTrying: "Seguir intentándolo",
   closeAnyway: "Cerrar y perderlo",
+
+  ai: "IA",
+  aiTitle: "Análisis con IA",
+  aiIntro:
+    "La IA lee lo que escribes para llevar las fichas y avisar de incoherencias. Nunca escribe en tu novela. Tú eliges qué modelo lee, y la app no usa ningún otro.",
+  aiCurrentNone: "Ahora no analiza ningún modelo.",
+  aiCurrent: (route, model) => `Ahora analiza: ${route}, ${model}.`,
+  aiRouteLabel: "Quién analiza",
+  aiRouteOff: "Nadie",
+  aiRouteOllama: "Ollama, en este equipo",
+  aiRouteOpenrouter: "OpenRouter, modelos gratuitos",
+  aiOllamaHint:
+    "Tu texto no sale de este equipo. Hace falta un modelo mediano: los muy pequeños pasan por alto incoherencias.",
+  aiOllamaUnreachable: "No encuentro Ollama en este equipo. Comprueba que está en marcha.",
+  aiOllamaNoModels: "Ollama no tiene ningún modelo descargado.",
+  aiOpenrouterNotice:
+    "Con OpenRouter, el texto de cada escena sale de tu equipo y llega a un tercero. Algunos proveedores de modelos gratuitos pueden guardar lo que reciben o usarlo para entrenar. Con Ollama, el texto no sale.",
+  aiOpenrouterLimits:
+    "Solo se ofrecen modelos gratuitos, así que no se gasta nada. El cupo gratuito da para unas 9 escenas al día; el resto espera en la cola.",
+  aiAcceptNotice: "Lo entiendo, quiero usar OpenRouter",
+  aiConnect: "Conectar con OpenRouter",
+  aiConnecting: "Se ha abierto tu navegador. Esperando a que autorices…",
+  aiConnected: "OpenRouter está conectado.",
+  aiDisconnect: "Desconectar",
+  aiLoadingModels: "Buscando modelos…",
+  aiModelsFailed: "No se pudo obtener la lista de modelos.",
+  aiNoModels: "Ahora mismo no hay ningún modelo gratuito que sirva para el análisis.",
+  aiRetry: "Reintentar",
+  aiModelLabel: "Modelo",
+  aiPickModel: "Elige un modelo",
+  aiConnectErrors: {
+    timeout: "No llegó ninguna respuesta del navegador en 5 minutos. Inténtalo de nuevo.",
+    listen: "No se pudo preparar la conexión en este equipo.",
+    browser: "No se pudo abrir el navegador.",
+    unreachable: "No hay conexión con OpenRouter. Comprueba tu conexión a internet.",
+    refused: "OpenRouter no aceptó la conexión. Inténtalo de nuevo.",
+    store: "No se pudo guardar la clave en este equipo, así que no se ha conectado.",
+  },
+
+  analysisOff: "El análisis está apagado.",
+  analysisReady: "Leerá lo nuevo cuando hagas una pausa.",
+  analysisWorking: "Analizando…",
+  analysisDone: "Todo lo escrito está analizado.",
+  analysisSkipped: (count) =>
+    count === 1
+      ? "El modelo no dio una respuesta útil para 1 escena. Se volverá a intentar cuando cambie."
+      : `El modelo no dio una respuesta útil para ${count} escenas. Se volverá a intentar cuando cambien.`,
+  analysisWaiting: (pending) =>
+    `No se puede hablar con el modelo ahora. ${pending === 1 ? "Queda 1 escena" : `Quedan ${pending} escenas`} en cola y se reintenta solo.`,
+  analysisBlocked: (pending) =>
+    `El servicio rechazó la petición y el análisis está detenido. ${pending === 1 ? "Queda 1 escena" : `Quedan ${pending} escenas`} en cola. Revisa la conexión o elige otro modelo.`,
+  analysisFailed: (detail) => `El análisis falló: ${detail}`,
+  analysisShort: {
+    off: "apagada",
+    ready: "activa",
+    working: "analizando",
+    done: "al día",
+    waiting: "en espera",
+    blocked: "detenida",
+    failed: "con un fallo",
+  },
 };
 
 const en: Messages = {
@@ -237,6 +350,67 @@ const en: Messages = {
   closeBlockedBody: "Saving isn't working. If you close now, you'll lose the last thing you wrote.",
   keepTrying: "Keep trying",
   closeAnyway: "Close and lose it",
+
+  ai: "AI",
+  aiTitle: "AI analysis",
+  aiIntro:
+    "The AI reads what you write to keep the story's records and point out inconsistencies. It never writes in your novel. You choose which model reads, and the app uses no other.",
+  aiCurrentNone: "No model is analyzing now.",
+  aiCurrent: (route, model) => `Analyzing now: ${route}, ${model}.`,
+  aiRouteLabel: "Who analyzes",
+  aiRouteOff: "Nobody",
+  aiRouteOllama: "Ollama, on this computer",
+  aiRouteOpenrouter: "OpenRouter, free models",
+  aiOllamaHint:
+    "Your text doesn't leave this computer. It takes a mid-sized model: very small ones miss inconsistencies.",
+  aiOllamaUnreachable: "Ollama can't be found on this computer. Check that it's running.",
+  aiOllamaNoModels: "Ollama has no models downloaded.",
+  aiOpenrouterNotice:
+    "With OpenRouter, the text of each scene leaves your computer and reaches a third party. Some providers of free models may keep what they receive or use it for training. With Ollama, the text doesn't leave.",
+  aiOpenrouterLimits:
+    "Only free models are offered, so nothing is spent. The free allowance covers about 9 scenes a day; the rest waits in the queue.",
+  aiAcceptNotice: "I understand, I want to use OpenRouter",
+  aiConnect: "Connect OpenRouter",
+  aiConnecting: "Your browser has opened. Waiting for you to authorize…",
+  aiConnected: "OpenRouter is connected.",
+  aiDisconnect: "Disconnect",
+  aiLoadingModels: "Looking for models…",
+  aiModelsFailed: "The list of models couldn't be fetched.",
+  aiNoModels: "Right now there's no free model that works for the analysis.",
+  aiRetry: "Retry",
+  aiModelLabel: "Model",
+  aiPickModel: "Choose a model",
+  aiConnectErrors: {
+    timeout: "No answer came back from the browser in 5 minutes. Try again.",
+    listen: "The connection couldn't be set up on this computer.",
+    browser: "The browser couldn't be opened.",
+    unreachable: "OpenRouter can't be reached. Check your internet connection.",
+    refused: "OpenRouter didn't accept the connection. Try again.",
+    store: "The key couldn't be saved on this computer, so it isn't connected.",
+  },
+
+  analysisOff: "The analysis is off.",
+  analysisReady: "It'll read what's new when you pause.",
+  analysisWorking: "Analyzing…",
+  analysisDone: "Everything written has been analyzed.",
+  analysisSkipped: (count) =>
+    count === 1
+      ? "The model gave no usable answer for 1 scene. It'll be tried again when it changes."
+      : `The model gave no usable answer for ${count} scenes. They'll be tried again when they change.`,
+  analysisWaiting: (pending) =>
+    `The model can't be reached right now. ${pending === 1 ? "1 scene is" : `${pending} scenes are`} queued and it retries by itself.`,
+  analysisBlocked: (pending) =>
+    `The service refused the request and the analysis has stopped. ${pending === 1 ? "1 scene is" : `${pending} scenes are`} queued. Check the connection or choose another model.`,
+  analysisFailed: (detail) => `The analysis failed: ${detail}`,
+  analysisShort: {
+    off: "off",
+    ready: "on",
+    working: "analyzing",
+    done: "up to date",
+    waiting: "waiting",
+    blocked: "stopped",
+    failed: "failed",
+  },
 };
 
 export type Locale = "es" | "en";
@@ -259,6 +433,20 @@ export function describeStartupError(error: unknown, messages: Messages): string
   }
   const detail = describe(error);
   return detail === ALREADY_OPEN ? messages.alreadyOpen : messages.failed(detail);
+}
+
+/**
+ * Why connecting OpenRouter didn't work, from the word the shell's error starts with. Null if the
+ * author cancelled, which needs no explaining.
+ */
+export function describeConnectError(error: unknown, messages: Messages): string | null {
+  const detail = describe(error);
+  const kind = detail.split(":")[0]?.trim() ?? "";
+  if (kind === "cancelled") {
+    return null;
+  }
+  const known = messages.aiConnectErrors as Readonly<Record<string, string>>;
+  return Object.hasOwn(known, kind) ? (known[kind] ?? detail) : detail;
 }
 
 export function describeError(error: unknown): string {

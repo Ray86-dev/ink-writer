@@ -14,12 +14,14 @@ import { createNodeSqliteDriver } from "../../../packages/core/test/support/node
 import { ProjectScreen, safeFileName } from "../src/project/ProjectScreen";
 import type { Shell } from "../src/shell";
 import { stubLayout } from "./support/environment";
+import { fakeAi } from "./support/fake-ai";
 
 const fakeShell = () => {
   const exported: { name: string; extension: string; data: Uint8Array }[] = [];
   const closing: (() => Promise<boolean>)[] = [];
   const shell: Shell = {
     driver: {} as Shell["driver"],
+    ai: fakeAi().ai,
     exportFile: vi.fn(async (name, extension, data) => {
       exported.push({ name, extension, data });
       return true;

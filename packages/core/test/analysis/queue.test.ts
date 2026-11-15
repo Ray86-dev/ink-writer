@@ -425,6 +425,63 @@ describe("analysis queue", () => {
       await queue.stop();
     });
 
+    it("a closed scene isn't kept waiting because the author writes the next one", async () => {
+      const one = await newScene("1", "Marta llegó.");
+      const two = await newScene("2", "Tomás salió.");
+      const queue = makeQueue({ pauseMs: 1000 });
+
+      queue.sceneClosed(one);
+      queue.sceneEdited(two);
+      await advance(queue, 1);
+
+      expect(factsOf(await storage.loadAnalysis(projectId))).toContain("Marta llegó");
+
+      // What's typed from then on still waits for its pause.
+      await write(two, "Tomás volvió.");
+      queue.sceneEdited(two);
+      const asked = model.state.asked.length;
+      await advance(queue, 999);
+      expect(model.state.asked.length).toBe(asked);
+      await advance(queue, 1);
+      expect(factsOf(await storage.loadAnalysis(projectId))).toContain("Tomás volvió");
+      await queue.stop();
+    });
+
+    it("a scene closed while another is being analysed goes right after it", async () => {
+      const one = await newScene("1", "Marta llegó.");
+      const two = await newScene("2", "");
+      let release = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const slow: AiProvider = {
+        ...model.provider,
+        async *generate(request) {
+          await held;
+          yield* model.provider.generate(request);
+        },
+      };
+      const queue = makeQueue({
+        pauseMs: 1_000_000,
+        analysis: { provider: slow, model: "m", language: "es" },
+      });
+      queue.sceneClosed(one);
+      await vi.advanceTimersByTimeAsync(1);
+
+      // The first run is waiting for the model when the author leaves the second scene.
+      await write(two, "Tomás salió.");
+      queue.sceneClosed(two);
+      release();
+      await advance(queue, 1);
+      await advance(queue, 1);
+
+      expect(factsOf(await storage.loadAnalysis(projectId))).toEqual([
+        "Marta llegó",
+        "Tomás salió",
+      ]);
+      await queue.stop();
+    });
+
     it("doesn't start two runs at once", async () => {
       await newScene("1", "Marta llegó.");
       const queue = makeQueue();

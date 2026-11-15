@@ -39,6 +39,8 @@ export function useSceneSession(
   storage: Storage,
   sceneId: string | null,
   options?: SceneSessionOptions,
+  /** Called once a scene the author left is closed, with everything typed in it saved. */
+  onClosed?: (sceneId: string) => void,
 ): OpenScene {
   const [session, setSession] = useState<SceneSession | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("saved");
@@ -48,6 +50,8 @@ export function useSceneSession(
   const current = useRef<SceneSession | null>(null);
   const optionsRef = useRef(options);
   optionsRef.current = options;
+  const onClosedRef = useRef(onClosed);
+  onClosedRef.current = onClosed;
 
   useEffect(() => {
     if (sceneId === null) {
@@ -89,6 +93,7 @@ export function useSceneSession(
         if (closing !== null) {
           await closing.close();
           stopListening();
+          onClosedRef.current?.(closing.sceneId);
           if (current.current === closing) {
             current.current = null;
           }

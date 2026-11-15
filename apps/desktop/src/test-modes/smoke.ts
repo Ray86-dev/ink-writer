@@ -1,5 +1,9 @@
 import {
+  type AiTransport,
+  AnalysisQueue,
   buildManuscript,
+  collectDraft,
+  createOllamaProvider,
   openSqlStorage,
   plainText,
   readParagraphs,
@@ -15,6 +19,8 @@ import { bytesToBase64, type Invoke } from "../tauri-driver";
 export interface SmokeContext {
   readonly invoke?: Invoke;
   readonly host?: HTMLElement;
+  /** With one, a stand-in for the AI services must be listening: see `scripts/smoke.mjs`. */
+  readonly transport?: AiTransport;
 }
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -102,5 +108,53 @@ export async function runSmokeChecks(
     assert(saved === true, "The shell didn't save the export");
   }
 
-  return `schema ${migration.to}, ${scenes.length} scene, ${bytes.length} blob bytes, ${words} words saved`;
+  // A model's answer comes back through the shell piece by piece, as it would from a real service.
+  let answer = "none";
+  if (context.transport !== undefined) {
+    const provider = createOllamaProvider(context.transport);
+    const models = await provider.listModels();
+    assert(models[0]?.id === "smoke-model", "The model list didn't come through the shell");
+    const draft = await collectDraft(
+      provider.generate({ model: "smoke-model", instructions: "Repite.", input: prose }),
+    );
+    assert(draft.completed, `The answer didn't complete: ${JSON.stringify(draft.outcome)}`);
+    assert(draft.text === prose, "The answer changed on its way through the shell");
+
+    const paid = await context.transport
+      .send({
+        route: "openrouter",
+        method: "POST",
+        path: "/api/v1/chat/completions",
+        body: { model: "some/paid-model", messages: [] },
+      })
+      .then(
+        () => "sent",
+        (error: unknown) => String(error),
+      );
+    assert(paid.includes("free"), `The shell didn't refuse a paid model: ${paid}`);
+    answer = `${draft.text.length} characters`;
+
+    // The whole way round: the scene saved above is read, sent, and what comes back is stored.
+    if (context.host !== undefined) {
+      const queue = new AnalysisQueue({
+        storage,
+        projectId: project.id,
+        analysis: { provider, model: "smoke-model", language: "es" },
+      });
+      const run = await queue.run();
+      await queue.stop();
+      assert(
+        run.status === "done" && run.analyzed.includes(scene.id),
+        `The scene wasn't analysed: ${JSON.stringify(run)}`,
+      );
+      const { facts } = await storage.loadAnalysis(project.id);
+      assert(
+        facts.some((fact) => fact.quote === "los ojos verdes de su madre"),
+        "The analysis didn't keep the fact with its quote",
+      );
+      answer += `, ${facts.length} fact stored`;
+    }
+  }
+
+  return `schema ${migration.to}, ${scenes.length} scene, ${bytes.length} blob bytes, ${words} words saved, AI answer of ${answer}`;
 }

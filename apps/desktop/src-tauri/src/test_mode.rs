@@ -4,6 +4,8 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
+use crate::ai::Bases;
+
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(120);
 
 #[derive(Debug, PartialEq, Eq)]
@@ -14,6 +16,8 @@ pub struct TestMode {
     pub dir: Option<PathBuf>,
     /// A value for the check.
     pub arg: Option<String>,
+    /// Where a stand-in for the AI services listens. A test never reaches the real ones.
+    pub ai_base: Option<String>,
     pub timeout: Duration,
 }
 
@@ -23,6 +27,7 @@ impl TestMode {
         let mut mode = None;
         let mut dir = None;
         let mut arg = None;
+        let mut ai_base = None;
         let mut timeout = DEFAULT_TIMEOUT;
         for value in args {
             if let Some(name) = value.strip_prefix("--test-mode=") {
@@ -31,6 +36,8 @@ impl TestMode {
                 dir = Some(PathBuf::from(path));
             } else if let Some(text) = value.strip_prefix("--test-arg=") {
                 arg = Some(text.to_string());
+            } else if let Some(base) = value.strip_prefix("--test-ai=") {
+                ai_base = Some(base.to_string());
             } else if let Some(seconds) = value.strip_prefix("--test-timeout=")
                 && let Ok(seconds) = seconds.parse()
             {
@@ -41,8 +48,14 @@ impl TestMode {
             name,
             dir,
             arg,
+            ai_base,
             timeout,
         })
+    }
+
+    /// The stand-in if there's one. Otherwise an address where nothing listens.
+    pub fn ai_bases(&self) -> Bases {
+        Bases::all_at(self.ai_base.as_deref().unwrap_or("http://127.0.0.1:1"))
     }
 
     /// Where this run's database folder is. It can never be the user's own data folder.
@@ -80,12 +93,14 @@ mod tests {
             "--test-mode=crash-writer",
             "--test-dir=/tmp/x",
             "--test-arg=42",
+            "--test-ai=http://127.0.0.1:4000",
             "--test-timeout=600",
         ])
         .unwrap();
         assert_eq!(mode.name, "crash-writer");
         assert_eq!(mode.dir, Some(PathBuf::from("/tmp/x")));
         assert_eq!(mode.arg.as_deref(), Some("42"));
+        assert_eq!(mode.ai_bases().ollama, "http://127.0.0.1:4000");
         assert_eq!(mode.timeout, Duration::from_secs(600));
     }
 
@@ -93,6 +108,13 @@ mod tests {
     fn has_a_default_timeout_even_when_given_nonsense() {
         let mode = parse(&["--test-mode=smoke", "--test-timeout=soon"]).unwrap();
         assert_eq!(mode.timeout, DEFAULT_TIMEOUT);
+    }
+
+    #[test]
+    fn without_a_stand_in_the_ai_services_are_out_of_reach() {
+        let bases = parse(&["--test-mode=smoke"]).unwrap().ai_bases();
+        assert_eq!(bases.openrouter, "http://127.0.0.1:1");
+        assert_eq!(bases.ollama, "http://127.0.0.1:1");
     }
 
     #[test]

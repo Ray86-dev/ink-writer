@@ -48,6 +48,7 @@ describe("migrate", () => {
       "scene_snapshots",
       "scene_updates",
       "scenes",
+      "settings",
       "sqlite_sequence",
     ]);
   });

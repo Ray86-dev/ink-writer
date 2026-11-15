@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createTauriDriver, type Invoke } from "../tauri-driver";
-import { createTauriShell } from "../tauri-shell";
+import { createTauriAiTransport, createTauriShell } from "../tauri-shell";
 import { runCrashVerify, runCrashWriter } from "./crash";
 import { runPerformance } from "./performance";
 import { runSmokeChecks } from "./smoke";
@@ -32,7 +32,10 @@ export async function runTestMode(test: TestInfo): Promise<void> {
     const driver = createTauriDriver(invoke);
     switch (test.mode) {
       case "smoke":
-        await finish(true, await runSmokeChecks(driver, context));
+        await finish(
+          true,
+          await runSmokeChecks(driver, { ...context, transport: createTauriAiTransport() }),
+        );
         break;
       case "crash-writer":
         // Runs until killed. Reaching the end at all is a failure.

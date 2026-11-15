@@ -29,6 +29,17 @@ export {
   plainText,
   readParagraphs,
 } from "./prose/text";
+export type { AiConnection, ConnectionRoute } from "./provider/connection";
+export {
+  acceptOpenRouterNotice,
+  analysisModels,
+  CONNECTION_ROUTES,
+  connectionAllowed,
+  createConnectionProvider,
+  hasAcceptedOpenRouterNotice,
+  loadAiConnection,
+  saveAiConnection,
+} from "./provider/connection";
 export {
   buildDeepSeekBody,
   createDeepSeekProvider,
