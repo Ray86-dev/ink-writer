@@ -47,6 +47,14 @@ export type { KnownName, NameMatch } from "./cards/name-finder";
 export { createNameFinder } from "./cards/name-finder";
 export type { Applied, AuthorOverride, Override } from "./cards/overrides";
 export { addOverride, applyOverrides, loadOverrides, parseOverride } from "./cards/overrides";
+export type {
+  Network,
+  NetworkKind,
+  NetworkLimits,
+  NetworkLink,
+  NetworkNode,
+} from "./dashboard/network";
+export { buildNetwork, EMPTY_NETWORK, NETWORK_LIMITS } from "./dashboard/network";
 export { toDocx } from "./export/docx";
 export type { Manuscript, ManuscriptChapter } from "./export/manuscript";
 export { buildManuscript } from "./export/manuscript";

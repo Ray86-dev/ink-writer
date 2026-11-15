@@ -32,7 +32,7 @@ El mockup navegable está en `docs/design/mockup/`. La dirección visual definit
 
 Pantalla de inicio. Contiene:
 
-- **Red de tinta**: la novela como grafo 3D. Nodos: capítulos, personajes, lugares y lore. Crece al escribir. Tocar un nodo abre su ficha.
+- **Red de tinta**: la novela como grafo 3D. Nodos: capítulos, personajes, lugares y lore. Crece al escribir. Tocar un nodo abre su ficha. Muestra solo lo principal de la novela, 16 nodos como mucho; todo lo demás está en las tarjetas (`docs/adr/0020-dashboard-tinta-viva.md`).
 - **Siguiente paso**: una sola tarea, grande, con su motivo.
 - **Tarjetas**: Capítulos, Personajes, Relaciones, Lugares, Nombres, Lore, Cronología, Verificación de datos, Documentación y Ayuda. Cada una muestra el total, las novedades y enlaces directos.
 
@@ -112,7 +112,7 @@ Dos funciones en una tarjeta:
 
 La app investiga sobre lugares (calles, clima, cafeterías), oficios, objetos, época y costumbres. Normas en §7. Por ahora busca por su cuenta los lugares y la época; los oficios, objetos y costumbres los añade el autor como temas (`docs/adr/0019-documentacion-con-fuentes-abiertas.md`).
 
-Las sugerencias se agrupan en la tarjeta Documentación y en cada ficha. Hasta que exista el Dashboard, la tarjeta es una pestaña de las fichas. Nunca aparecen mientras se escribe. Solo entran en las notas si el autor pulsa **A mis notas**. No se consideran datos de la novela hasta entonces.
+Las sugerencias se agrupan en la tarjeta Documentación y en cada ficha. La tarjeta del Dashboard lleva a la pestaña Documentación de las fichas, donde están las sugerencias. Nunca aparecen mientras se escribe. Solo entran en las notas si el autor pulsa **A mis notas**. No se consideran datos de la novela hasta entonces.
 
 Antes de documentar un lugar, se pregunta si existe, si está basado en uno real o si es inventado del todo. Si es inventado, no se busca nada y se pregunta al autor.
 
@@ -126,7 +126,7 @@ Conexión, modelo por función, tope diario de búsquedas y análisis, y estado 
 
 ### 3.10 Ayuda
 
-Regular las pistas, por qué la IA no escribe por ti, cómo se crean las fichas.
+Regular las pistas, por qué la IA no escribe por ti, cómo se crean las fichas. Es la tarjeta Ayuda del Dashboard.
 
 ## 4. Modelo de datos
 

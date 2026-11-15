@@ -40,9 +40,9 @@ El hipervínculo es un motivo visual: azul y subrayado fino. En modo zen, color 
 | Abrir el proyecto | La tinta brota del capítulo 1 y recorre la red | three.js, shader |
 | Escena nueva | Nodo y enlaces nuevos se expanden | three.js, shader |
 | Pasar por un nodo | Se oscurece y se atenúa lo no relacionado | three.js, shader |
-| Abrir una ficha | La tinta inunda desde el nodo y se retira | three.js, y `<dialog>` |
+| Abrir una ficha | La tinta inunda desde el nodo y se retira. En la app inunda y abre la ficha; aún no se retira | three.js |
 | Tarjetas | Entrada escalonada, ligera elevación | CSS |
-| Cambios de pantalla | La tarjeta se convierte en ficha | View Transitions o Motion |
+| Cambios de pantalla | La tarjeta se convierte en ficha. Pendiente: hoy el cambio es directo | View Transitions o Motion |
 | Editor | Nada mientras se teclea | Sin WebGL |
 
 Curva principal: `cubic-bezier(.2,.8,.2,1)`. Duraciones de 200 a 600 ms. La revelación inicial, unos 3 segundos y sin bloquear la interacción.
@@ -56,7 +56,7 @@ Implementación: three.js proyecta los nodos en 3D y un shader de pantalla compl
 - Renderizar a resolución reducida, porque la tinta es suave. Bajarla más si caen los fotogramas.
 - **Reducir movimiento:** un fotograma estático.
 - **Sin WebGL:** se ocultan el lienzo y las etiquetas, y quedan las tarjetas.
-- El coste de los uniformes crece con cada nodo y enlace. La demo admite 16 nodos y 24 enlaces. Una novela real tiene más, así que en M8 hay que agrupar por tipo o capítulo, mostrar solo los nodos principales y ampliar con zoom, o pasar los datos a una textura.
+- El coste de los uniformes crece con cada nodo y enlace. La demo admite 16 nodos y 24 enlaces, y la app también: de una novela más grande se muestran solo los nodos principales, y el resto está en las tarjetas. Ampliar con zoom queda pendiente (`docs/adr/0020-dashboard-tinta-viva.md`).
 - Comprobar pronto en WebKitGTK (Linux), donde WebGL es menos fiable, y en un portátil modesto.
 
 ## Accesibilidad

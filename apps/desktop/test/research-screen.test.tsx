@@ -66,6 +66,7 @@ describe("documentation on the project screen", () => {
     };
     return render(
       <ProjectScreen
+        startAt="text"
         storage={storage}
         project={{ id: projectId, title: "La veda", language: "es", era }}
         shell={shell}

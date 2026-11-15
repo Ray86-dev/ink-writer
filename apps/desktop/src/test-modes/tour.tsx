@@ -1,4 +1,6 @@
 import {
+  type AnalysisState,
+  hashText,
   openSqlStorage,
   PROSE_FIELD,
   plainText,
@@ -23,6 +25,100 @@ const SAMPLE = [
   "La casa olía a cerrado. Sobre la mesa, alguien había dejado una carta sin firmar.",
   "—¿Quién anda ahí? —preguntó, sin esperar respuesta.",
 ];
+
+const LETTER = [
+  "Tomás, su hermano, la encontró en el faro de la Punta. Este año la veda empieza el martes, dijo.",
+  "Marta guardó la carta sin firmar en el bolsillo.",
+];
+const EYES = [
+  "Al verla pensó que Marta tenía los ojos marrones de su madre.",
+  "Inés Cabrera, patrona del único barco que seguía faenando, dijo que la veda empezaba el jueves.",
+];
+
+/** What an analysis of the sample would have left, so that the tour has cards to show. */
+function analysed(first: string, second: string, third: string): AnalysisState {
+  const fact = (
+    id: string,
+    sceneId: string,
+    entityId: string,
+    attribute: string,
+    quote: string,
+  ): AnalysisState["facts"][number] => ({
+    id,
+    sceneId,
+    entityId,
+    category: "physical",
+    attribute,
+    value: quote,
+    quote,
+    sentence: quote,
+    storyTime: null,
+    inDialogue: false,
+  });
+  return {
+    entities: [
+      { id: "marta", type: "person", canonicalName: "Marta Rey", aliases: ["Marta"] },
+      { id: "tomas", type: "person", canonicalName: "Tomás", aliases: [] },
+      { id: "ines", type: "person", canonicalName: "Inés Cabrera", aliases: ["Inés"] },
+      { id: "remedios", type: "person", canonicalName: "Remedios", aliases: [] },
+      { id: "puerto", type: "place", canonicalName: "Puerto Viejo", aliases: [] },
+      { id: "sal", type: "place", canonicalName: "calle de la Sal", aliases: [] },
+      { id: "faro", type: "place", canonicalName: "faro de la Punta", aliases: [] },
+      { id: "carta", type: "lore", canonicalName: "carta sin firmar", aliases: [] },
+      { id: "veda", type: "lore", canonicalName: "veda", aliases: [] },
+    ],
+    mentions: [
+      { sceneId: first, entityId: "marta", quote: "Marta Rey" },
+      { sceneId: first, entityId: "puerto", quote: "Puerto Viejo" },
+      { sceneId: first, entityId: "sal", quote: "calle de la Sal" },
+      { sceneId: first, entityId: "remedios", quote: "Remedios" },
+      { sceneId: first, entityId: "carta", quote: "carta sin firmar" },
+      { sceneId: second, entityId: "tomas", quote: "Tomás" },
+      { sceneId: second, entityId: "faro", quote: "faro de la Punta" },
+      { sceneId: second, entityId: "veda", quote: "veda" },
+      { sceneId: second, entityId: "marta", quote: "Marta" },
+      { sceneId: second, entityId: "carta", quote: "carta sin firmar" },
+      { sceneId: third, entityId: "marta", quote: "Marta" },
+      { sceneId: third, entityId: "ines", quote: "Inés Cabrera" },
+      { sceneId: third, entityId: "veda", quote: "veda" },
+    ],
+    facts: [
+      fact("f1", first, "marta", "arrival", "Marta Rey bajó del autobús en Puerto Viejo"),
+      fact("f2", first, "marta", "status", "aún estaba soltera"),
+      fact("f3", second, "veda", "start", "la veda empieza el martes"),
+      fact("f4", third, "marta", "eyes", "Marta tenía los ojos marrones de su madre"),
+      fact("f5", third, "ines", "job", "patrona del único barco que seguía faenando"),
+      fact("f6", third, "veda", "start", "la veda empezaba el jueves"),
+    ],
+    relations: [
+      {
+        id: "r1",
+        sceneId: second,
+        fromEntityId: "tomas",
+        toEntityId: "marta",
+        label: "hermano de",
+        quote: "Tomás, su hermano",
+      },
+      {
+        id: "r2",
+        sceneId: first,
+        fromEntityId: "remedios",
+        toEntityId: "marta",
+        label: "tía de",
+        quote: "su tía Remedios",
+      },
+    ],
+    issues: [
+      {
+        kind: "contradiction",
+        a: { sceneId: second, quote: "la veda empieza el martes" },
+        b: { sceneId: third, quote: "la veda empezaba el jueves" },
+        reason: "La veda empieza el martes en un capítulo y el jueves en otro.",
+      },
+    ],
+    sceneOrder: [first, second, third],
+  };
+}
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -58,8 +154,37 @@ async function seed(shell: Shell): Promise<void> {
   const chapter = await storage.createChapter(project.id, "Capítulo 1");
   const other = await storage.createChapter(project.id, "Capítulo 2");
   const scene = await storage.createScene(chapter.id, "El regreso");
-  await storage.createScene(chapter.id, "La carta");
-  await storage.createScene(other.id, "Los ojos de su madre");
+  const letter = await storage.createScene(chapter.id, "La carta");
+  const eyes = await storage.createScene(other.id, "Los ojos de su madre");
+  // The other two scenes, and what an analysis of the three would have found.
+  for (const [target, paragraphs] of [
+    [letter, LETTER],
+    [eyes, EYES],
+  ] as const) {
+    const filling = await SceneSession.open(storage, target.id, { autoSnapshotMs: 0 });
+    filling.doc.transact(() => {
+      const fragment = filling.doc.getXmlFragment(PROSE_FIELD);
+      for (const text of paragraphs) {
+        const element = new Y.XmlElement("paragraph");
+        element.insert(0, [new Y.XmlText(text)]);
+        fragment.push([element]);
+      }
+    });
+    await filling.close();
+  }
+  const state = analysed(scene.id, letter.id, eyes.id);
+  for (const [target, paragraphs] of [
+    [scene, SAMPLE],
+    [letter, LETTER],
+    [eyes, EYES],
+  ] as const) {
+    await storage.saveSceneAnalysis(
+      project.id,
+      target.id,
+      await hashText(paragraphs.join("\n")),
+      state,
+    );
+  }
   const session = await SceneSession.open(storage, scene.id, { autoSnapshotMs: 0 });
   const write = (paragraphs: readonly string[]) =>
     session.doc.transact(() => {
@@ -142,6 +267,15 @@ export async function runTour(shell: Shell, context: TestContext): Promise<void>
 
   (await until(() => button(/La veda/))).click();
   await until(() => document.querySelector(".prose"));
+
+  // A novel opens at its Dashboard. Every other screen of the tour is of the text.
+  if (screen.startsWith("dashboard")) {
+    await until(() => document.querySelector(".dash-card"));
+    await wait(4000);
+    await context.log("READY");
+    return;
+  }
+  (await until(() => button(/Seguir escribiendo|Keep writing/))).click();
 
   if (screen.startsWith("history")) {
     (await until(() => button(/Historial|History/))).click();

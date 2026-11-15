@@ -28,6 +28,7 @@
     "@tiptap/y-tiptap": "3.2.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "three": "0.187.0",
     "y-protocols": "1.0.7",
     "yjs": "13.6.33"
   },
@@ -37,6 +38,7 @@
     "@testing-library/react": "16.3.3",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/three": "0.187.0",
     "@vitejs/plugin-react": "6.2.1",
     "fflate": "0.8.3",
     "vite": "8.3.6"

@@ -79,6 +79,8 @@ Llevar la demo a la app, conectada a datos reales. Cumplir `DESIGN.md`.
 
 **Salida:** fluido en un portátil modesto, comprobado también en WebKitGTK. Pausa al ocultarse. Alternativa sin WebGL.
 
+**Hecho, con dos condiciones de salida a medias.** El Dashboard es la pantalla de inicio de cada novela: la red de tinta, un siguiente paso y las diez tarjetas, todo con datos reales. La red muestra 16 nodos como mucho, los principales, y el resto está en las tarjetas. Se para al ocultarse, y sin WebGL quedan las tarjetas. Lo que falta por ver: solo se ha mirado en Windows, en el equipo de desarrollo. No se ha probado en un portátil modesto, y en WebKitGTK solo lo ejecuta la prueba de humo del CI. Fuera: la tinta que se retira al cerrar una ficha, la tarjeta que se convierte en ficha y el zoom. Decisiones y límites en `docs/adr/0020-dashboard-tinta-viva.md`.
+
 ## M9 · Primera versión pública
 
 Firma de instaladores, actualizaciones, accesibilidad, inglés y español, documentación, plantillas de contribución.

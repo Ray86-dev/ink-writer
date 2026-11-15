@@ -8,4 +8,6 @@ export function stubLayout(): void {
   Range.prototype.getBoundingClientRect = () => ({ ...rect, toJSON: () => rect }) as DOMRect;
   Element.prototype.scrollIntoView = vi.fn();
   document.elementFromPoint = () => null;
+  // No WebGL here, as on a machine that can't paint the Dashboard's network.
+  HTMLCanvasElement.prototype.getContext = (() => null) as HTMLCanvasElement["getContext"];
 }
