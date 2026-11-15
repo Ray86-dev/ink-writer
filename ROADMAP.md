@@ -87,6 +87,8 @@ Firma de instaladores, actualizaciones, accesibilidad, inglés y español, docum
 
 **Salida:** instalar y escribir sin ver ningún aviso de seguridad.
 
+**En curso. La condición de salida no se cumple todavía.** Hecho: instaladores para los tres sistemas, el flujo que los construye y los deja en un borrador, los avisos de licencias de terceros, el idioma de la app a elegir, un repaso de accesibilidad, la guía de uso y las plantillas de contribución. Falta lo que depende de una decisión del autor: la firma en Windows, la cuenta de Apple para firmar en macOS, y las actualizaciones. Sin firma, quien instala ve un aviso. Nadie ha instalado aún la app. Decisiones y pendientes en `docs/adr/0021-distribucion.md`.
+
 ## Después
 
 - **Sync:** relay cifrado autoalojable.

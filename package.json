@@ -23,6 +23,8 @@
     "precheck:rust": "npm run build:web -w @ink-writer/desktop",
     "check:rust": "cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check && cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings",
     "licenses": "node scripts/check-licenses.mjs",
+    "notices": "node scripts/notices.mjs",
+    "bundle": "npm run tauri -w @ink-writer/desktop -- build",
     "fixtures": "node fixtures/validate.mjs",
     "crash-test": "npm run build:debug && node scripts/crash-test.mjs",
     "perf-test": "npm run build:debug && node scripts/perf-test.mjs",

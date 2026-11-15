@@ -8,6 +8,7 @@ App de escritura de novelas, de escritorio, sin conexión y MIT. El autor escrib
 - `ROADMAP.md`: hitos en orden y criterios de salida. Trabaja hito a hito.
 - `DESIGN.md`: apariencia y movimiento.
 - `docs/adr/`: decisiones técnicas y su porqué. No las reabras sin un ADR nuevo.
+- `docs/guia.md`: guía de uso para quien escribe. Si cambias lo que ve el autor, actualízala.
 - `docs/design/ink-demo/`: demo real del Dashboard. Ábrela para ver el objetivo visual.
 - `docs/design/mockup/`: comportamiento de pantallas, referencia de lógica.
 - `fixtures/`: novela de prueba y resultado esperado del análisis.
@@ -62,6 +63,8 @@ Desde la raíz, con Node 24 y Rust estable:
 | `npm run perf-test` | Mide el tecleo en la app real con 150.000 palabras |
 | `npm run instance-test` | Comprueba que una segunda copia de la app se cierra sola |
 | `npm run licenses` | Revisa las licencias de todas las dependencias (regla 8) |
+| `npm run notices` | Regenera `THIRD-PARTY-NOTICES.md`. Hazlo al añadir o cambiar una dependencia: el CI falla si no está al día |
+| `npm run bundle` | Construye el instalador de este sistema. Publicar: `docs/publicar.md` |
 | `npm run fixtures` | Valida el material de `fixtures/` |
 | `npm run eval -- --provider ollama --model gemma4:latest` | Evalúa el análisis contra `fixtures/` y registra el resultado. Ver `fixtures/README.md` |
 | `npm run eval:login` | Conecta OpenRouter para la evaluación. La clave queda fuera del repositorio |

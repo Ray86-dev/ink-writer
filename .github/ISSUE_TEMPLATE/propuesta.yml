@@ -1,0 +1,21 @@
+name: Propuesta
+description: Una idea o una mejora.
+labels: [propuesta]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de proponer, mira `SPEC.md` y `ROADMAP.md`. Hay cosas que Ink Writer no hará nunca, como escribir la novela por ti: están en las reglas de `CLAUDE.md`.
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qué problema resuelve
+      description: Cuéntalo desde quien escribe, no desde la solución.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Qué propones
+    validations:
+      required: true
