@@ -22,6 +22,8 @@ export function App({ shell, language = navigator.language }: AppProps) {
   const messages = value.messages;
   const [boot, setBoot] = useState<Boot>({ status: "opening" });
   const [project, setProject] = useState<Project | null>(null);
+  /** A novel just created has nothing to show at its Dashboard yet: it opens at its blank page. */
+  const [fresh, setFresh] = useState(false);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -59,13 +61,20 @@ export function App({ shell, language = navigator.language }: AppProps) {
       )}
       {boot.status === "ready" &&
         (project === null ? (
-          <ProjectsScreen storage={boot.storage} onOpen={setProject} />
+          <ProjectsScreen
+            storage={boot.storage}
+            onOpen={(opened, created) => {
+              setFresh(created === true);
+              setProject(opened);
+            }}
+          />
         ) : (
           <ProjectScreen
             key={project.id}
             storage={boot.storage}
             project={project}
             shell={shell}
+            startAt={fresh ? "text" : "dashboard"}
             onBack={() => setProject(null)}
           />
         ))}

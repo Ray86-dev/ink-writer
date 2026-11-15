@@ -355,6 +355,50 @@ export interface Messages {
     readonly blocked: string;
     readonly failed: string;
   };
+
+  readonly home: string;
+  readonly dashBack: string;
+  readonly dashWrite: string;
+  readonly dashNetwork: string;
+  readonly dashOpenNode: (name: string, kind: string, conflict: boolean) => string;
+  readonly dashTrimmed: string;
+  readonly dashOffTitle: string;
+  readonly dashOffTurnOn: string;
+  readonly dashNoTaskTitle: string;
+  readonly dashNoTask: string;
+  readonly dashQuietToday: string;
+  readonly dashBoard: string;
+  readonly dashTiles: {
+    readonly chapters: string;
+    readonly people: string;
+    readonly relations: string;
+    readonly places: string;
+    readonly names: string;
+    readonly lore: string;
+    readonly timeline: string;
+    readonly checks: string;
+    readonly docs: string;
+    readonly help: string;
+  };
+  readonly dashNothingYet: string;
+  readonly dashNoTimeline: string;
+  readonly dashNoChecks: string;
+  readonly dashNoDocs: string;
+  readonly dashSeeAll: string;
+  readonly dashSeeAllOf: (tile: string) => string;
+  readonly dashNew: string;
+  readonly dashNews: (count: number) => string;
+  readonly dashCurrent: string;
+  readonly dashSuggestions: (count: number) => string;
+  readonly dashPlacesToAnswer: (count: number) => string;
+  readonly dashSimilar: (name: string, other: string) => string;
+  readonly dashToResolve: (count: number) => string;
+  readonly dashChecksNote: string;
+  readonly dashHelpLevels: string;
+  readonly dashHelpWhyTitle: string;
+  readonly dashHelpWhy: string;
+  readonly dashHelpCardsTitle: string;
+  readonly dashHelpCards: string;
 }
 
 const es: Messages = {
@@ -758,6 +802,56 @@ const es: Messages = {
     blocked: "detenida",
     failed: "con un fallo",
   },
+
+  home: "Inicio",
+  dashBack: "Volver al inicio",
+  dashWrite: "Seguir escribiendo",
+  dashNetwork: "Red de tinta",
+  dashOpenNode: (name, kind, conflict) =>
+    `Abrir ficha: ${name}. ${kind}.${conflict ? " Tiene algo por resolver." : ""}`,
+  dashTrimmed: "La red muestra lo más presente de la novela. Todo lo demás está en las tarjetas.",
+  dashOffTitle: "Sin tareas. Solo tú y el texto.",
+  dashOffTurnOn: "Activar las pistas",
+  dashNoTaskTitle: "Nada pendiente ahora.",
+  dashNoTask: "Lo siguiente saldrá de lo que escribas.",
+  dashQuietToday: "Hoy solo escribes. Mañana habrá otra propuesta.",
+  dashBoard: "Tu novela",
+  dashTiles: {
+    chapters: "Capítulos",
+    people: "Personajes",
+    relations: "Relaciones",
+    places: "Lugares",
+    names: "Nombres",
+    lore: "Lore",
+    timeline: "Cronología",
+    checks: "Verificación de datos",
+    docs: "Documentación",
+    help: "Ayuda",
+  },
+  dashNothingYet: "Todavía nada.",
+  dashNoTimeline: "El texto aún no dice cuándo ocurre nada.",
+  dashNoChecks: "Nada por resolver.",
+  dashNoDocs: "Nada nuevo.",
+  dashSeeAll: "Ver todo",
+  dashSeeAllOf: (tile) => `Ver todo: ${tile}`,
+  dashNew: "nuevo",
+  dashNews: (count) => (count === 1 ? "1 novedad" : `${count} novedades`),
+  dashCurrent: "en curso",
+  dashSuggestions: (count) => (count === 1 ? "1 sugerencia" : `${count} sugerencias`),
+  dashPlacesToAnswer: (count) =>
+    count === 1
+      ? "1 lugar: ¿existe o es inventado?"
+      : `${count} lugares: ¿existen o son inventados?`,
+  dashSimilar: (name, other) => `${name} y ${other}: ¿el mismo nombre?`,
+  dashToResolve: (count) => `${count} por resolver`,
+  dashChecksNote: "Por ahora solo se comprueba la coherencia interna de la novela.",
+  dashHelpLevels: "Regular las pistas",
+  dashHelpWhyTitle: "Por qué la IA no escribe por ti",
+  dashHelpWhy:
+    "Ink Writer no redacta tu novela. La IA lee lo que escribes, lo ordena en fichas, avisa de lo que no encaja y busca documentación. El texto es tuyo: lo único que puede cambiar en él es una errata, y solo si pulsas «Aplicar».",
+  dashHelpCardsTitle: "Cómo se crean las fichas",
+  dashHelpCards:
+    "Cuando dejas una escena, la IA la lee y anota personajes, lugares y datos, cada uno con el pasaje del que sale. Lo que corrijas tú en una ficha se conserva aunque el texto se vuelva a analizar.",
 };
 
 const en: Messages = {
@@ -1160,6 +1254,54 @@ const en: Messages = {
     blocked: "stopped",
     failed: "failed",
   },
+
+  home: "Home",
+  dashBack: "Back to home",
+  dashWrite: "Keep writing",
+  dashNetwork: "Ink network",
+  dashOpenNode: (name, kind, conflict) =>
+    `Open card: ${name}. ${kind}.${conflict ? " Something about it is unresolved." : ""}`,
+  dashTrimmed: "The network shows what the novel returns to most. Everything else is in the cards.",
+  dashOffTitle: "No tasks. Just you and the text.",
+  dashOffTurnOn: "Turn hints on",
+  dashNoTaskTitle: "Nothing pending right now.",
+  dashNoTask: "What comes next will come from what you write.",
+  dashQuietToday: "Today you only write. There'll be another proposal tomorrow.",
+  dashBoard: "Your novel",
+  dashTiles: {
+    chapters: "Chapters",
+    people: "Characters",
+    relations: "Relationships",
+    places: "Places",
+    names: "Names",
+    lore: "Lore",
+    timeline: "Timeline",
+    checks: "Fact checking",
+    docs: "Research",
+    help: "Help",
+  },
+  dashNothingYet: "Nothing yet.",
+  dashNoTimeline: "The text doesn't say yet when anything happens.",
+  dashNoChecks: "Nothing to resolve.",
+  dashNoDocs: "Nothing new.",
+  dashSeeAll: "See all",
+  dashSeeAllOf: (tile) => `See all: ${tile}`,
+  dashNew: "new",
+  dashNews: (count) => (count === 1 ? "1 new" : `${count} new`),
+  dashCurrent: "in progress",
+  dashSuggestions: (count) => (count === 1 ? "1 suggestion" : `${count} suggestions`),
+  dashPlacesToAnswer: (count) =>
+    count === 1 ? "1 place: real or invented?" : `${count} places: real or invented?`,
+  dashSimilar: (name, other) => `${name} and ${other}: the same name?`,
+  dashToResolve: (count) => `${count} to resolve`,
+  dashChecksNote: "For now only the novel's own consistency is checked.",
+  dashHelpLevels: "Adjust the hints",
+  dashHelpWhyTitle: "Why the AI doesn't write for you",
+  dashHelpWhy:
+    "Ink Writer doesn't draft your novel. The AI reads what you write, sorts it into cards, points out what doesn't fit and looks things up. The text is yours: the only thing that can change in it is a typo, and only if you press “Apply”.",
+  dashHelpCardsTitle: "How the cards are made",
+  dashHelpCards:
+    "When you leave a scene, the AI reads it and notes characters, places and facts, each with the passage it comes from. What you correct on a card is kept even when the text is analysed again.",
 };
 
 export type Locale = "es" | "en";

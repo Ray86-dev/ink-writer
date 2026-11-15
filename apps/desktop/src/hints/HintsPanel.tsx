@@ -117,39 +117,51 @@ function HintItem({ hint, props }: { readonly hint: Hint; readonly props: HintsP
   );
 }
 
+/** Where a task leads. Each kind goes somewhere else. */
+export interface TaskHandlers {
+  readonly onOpenPassage: (passage: Passage) => void;
+  readonly onFixMyself: (hint: Hint) => void;
+  readonly onOpenCard: (entityId: string) => void;
+  readonly onOpenScene: (sceneId: string) => void;
+}
+
+/** What a task asks, why it's proposed, and what doing it means (SPEC §3.5). */
+export function describeTask(task: Task, messages: Messages, handlers: TaskHandlers) {
+  return task.kind === "resolve"
+    ? {
+        body: messages.taskResolve,
+        reason: messages.taskResolveReason(
+          where(task.hint.at),
+          task.hint.other === null ? null : where(task.hint.other),
+        ),
+        action: messages.taskResolveGo,
+        go: () => handlers.onOpenPassage(task.hint.at),
+      }
+    : task.kind === "write"
+      ? {
+          body: task.hint.reason,
+          reason: messages.taskWriteReason(where(task.hint.at)),
+          action: messages.hintWriteNow,
+          go: () => handlers.onFixMyself(task.hint),
+        }
+      : task.kind === "define"
+        ? {
+            body: messages.taskDefine(task.card.name),
+            reason: messages.taskDefineReason(task.card.name, task.scenes),
+            action: messages.taskDefineGo,
+            go: () => handlers.onOpenCard(task.card.id),
+          }
+        : {
+            body: messages.taskComplete(task.scene.title),
+            reason: messages.taskCompleteReason,
+            action: messages.taskCompleteGo,
+            go: () => handlers.onOpenScene(task.scene.id),
+          };
+}
+
 function TaskCard({ task, props }: { readonly task: Task; readonly props: HintsPanelProps }) {
   const { messages } = useLanguage();
-  const text =
-    task.kind === "resolve"
-      ? {
-          body: messages.taskResolve,
-          reason: messages.taskResolveReason(
-            where(task.hint.at),
-            task.hint.other === null ? null : where(task.hint.other),
-          ),
-          action: messages.taskResolveGo,
-          go: () => props.onOpenPassage(task.hint.at),
-        }
-      : task.kind === "write"
-        ? {
-            body: task.hint.reason,
-            reason: messages.taskWriteReason(where(task.hint.at)),
-            action: messages.hintWriteNow,
-            go: () => props.onFixMyself(task.hint),
-          }
-        : task.kind === "define"
-          ? {
-              body: messages.taskDefine(task.card.name),
-              reason: messages.taskDefineReason(task.card.name, task.scenes),
-              action: messages.taskDefineGo,
-              go: () => props.onOpenCard(task.card.id),
-            }
-          : {
-              body: messages.taskComplete(task.scene.title),
-              reason: messages.taskCompleteReason,
-              action: messages.taskCompleteGo,
-              go: () => props.onOpenScene(task.scene.id),
-            };
+  const text = describeTask(task, messages, props);
   return (
     <section className="task" aria-label={messages.taskTitle}>
       <h3>{messages.taskTitle}</h3>

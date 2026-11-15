@@ -2,6 +2,7 @@ import {
   type AiConnection,
   buildManuscript,
   createNameFinder,
+  dayOf,
   type Hint,
   knownNames,
   loadAiConnection,
@@ -20,6 +21,8 @@ import {
 import type { Editor } from "@tiptap/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type CardSelection, CardsScreen } from "../cards/CardsScreen";
+import { Dashboard } from "../dashboard/Dashboard";
+import type { PainterLoader } from "../dashboard/three-painter";
 import { applyCorrection, showPassage } from "../editor/name-links";
 import { SceneEditor } from "../editor/SceneEditor";
 import { Companion, HintsPanel } from "../hints/HintsPanel";
@@ -56,6 +59,10 @@ export interface ProjectScreenProps {
   readonly onBack: () => void;
   readonly sessionOptions?: SceneSessionOptions;
   readonly analysisOptions?: AnalysisOptions;
+  /** The Dashboard is the home of a novel. A novel just created goes straight to its blank page. */
+  readonly startAt?: "dashboard" | "text";
+  /** What paints the Dashboard's network, if not three.js. */
+  readonly loadPainter?: PainterLoader;
 }
 
 /** A title can hold characters that no operating system allows in a file name. */
@@ -96,6 +103,8 @@ export function ProjectScreen({
   onBack,
   sessionOptions,
   analysisOptions,
+  startAt = "dashboard",
+  loadPainter,
 }: ProjectScreenProps) {
   const { messages } = useLanguage();
   const [tree, setTree] = useState<readonly ChapterNode[]>([]);
@@ -113,6 +122,10 @@ export function ProjectScreen({
   const typingRef = useRef(false);
   const [connection, setConnection] = useState<AiConnection | null>(null);
   const [novel, setNovel] = useState<NovelView>(NO_CARDS);
+  /** False until the cards have been worked out once. */
+  const [novelReady, setNovelReady] = useState(false);
+  /** At the Dashboard, and not at the text. The cards open over either. */
+  const [home, setHome] = useState(startAt === "dashboard");
   /** Null while the author is at the text. */
   const [cards, setCards] = useState<CardSelection | null>(null);
   /** A passage to show once its scene is open. */
@@ -155,6 +168,7 @@ export function ProjectScreen({
     const loaded = await loadNovel(storage, project.id);
     setNovel(loaded.view);
     setSceneTexts(loaded.scenes);
+    setNovelReady(true);
   }, [storage, project.id]);
 
   // On opening the novel, and each time a run of the analysis ends. Not while it's at work: reading
@@ -263,6 +277,7 @@ export function ProjectScreen({
       remember(sceneKey, id);
       setSceneId(id);
       setPanel(null);
+      setHome(false);
     },
     [sceneKey],
   );
@@ -271,6 +286,7 @@ export function ProjectScreen({
     (passage: Passage) => {
       setNotice(null);
       setCards(null);
+      setHome(false);
       remember(sceneKey, passage.sceneId);
       setSceneId(passage.sceneId);
       setJump(passage);
@@ -281,6 +297,7 @@ export function ProjectScreen({
   const openScene = useCallback(
     (id: string) => {
       setCards(null);
+      setHome(false);
       remember(sceneKey, id);
       setSceneId(id);
     },
@@ -324,6 +341,7 @@ export function ProjectScreen({
   const applyHint = (hint: Hint) => {
     setNotice(null);
     setCards(null);
+    setHome(false);
     remember(sceneKey, hint.at.sceneId);
     setSceneId(hint.at.sceneId);
     setFixing(hint);
@@ -414,7 +432,20 @@ export function ProjectScreen({
     }
   };
 
-  const zen = typing && panel === null && cards === null && mode !== "read";
+  const zen = typing && panel === null && cards === null && !home && mode !== "read";
+  const atHome = home && cards === null;
+  /** The panels belong to the text, so opening one from the Dashboard goes there. */
+  const togglePanel = (which: Exclude<Panel, null>) => {
+    setHome(false);
+    setPanel(panel === which && !atHome ? null : which);
+  };
+  const goHome = () => {
+    setCards(null);
+    setPanel(null);
+    setHome(true);
+    // What's shown is of the text as it is now.
+    reloadCards().catch(reportProblem);
+  };
   const inScene = novel.cards.filter((card) => card.scenes.some((scene) => scene.id === sceneId));
   // Marks only when reading, and only at the levels that underline (SPEC §3.3 and §3.4).
   const showMarks = mode === "read" && (hintLevel === "discreet" || hintLevel === "companion");
@@ -440,12 +471,19 @@ export function ProjectScreen({
         <button type="button" onClick={onBack}>
           ← {messages.novels}
         </button>
+        <button
+          type="button"
+          aria-pressed={atHome}
+          onClick={atHome ? () => setHome(false) : goHome}
+        >
+          {messages.home}
+        </button>
         <span className="chrome-title">{project.title}</span>
         <span className="save-state" role="status">
           {saveState === "saving" ? messages.saving : saveState === "saved" ? messages.saved : ""}
         </span>
 
-        <fieldset className="modes">
+        <fieldset className="modes" hidden={atHome}>
           <legend className="visually-hidden">{messages.modesLabel}</legend>
           {MODES.map((value) => (
             <label key={value} className={mode === value ? "mode mode-on" : "mode"}>
@@ -464,8 +502,8 @@ export function ProjectScreen({
         <span className="chrome-actions">
           <button
             type="button"
-            aria-expanded={panel === "structure"}
-            onClick={() => setPanel(panel === "structure" ? null : "structure")}
+            aria-expanded={panel === "structure" && !atHome}
+            onClick={() => togglePanel("structure")}
           >
             {messages.structure}
           </button>
@@ -480,16 +518,16 @@ export function ProjectScreen({
           </button>
           <button
             type="button"
-            aria-expanded={panel === "history"}
-            onClick={() => setPanel(panel === "history" ? null : "history")}
+            aria-expanded={panel === "history" && !atHome}
+            onClick={() => togglePanel("history")}
           >
             {messages.history}
           </button>
           <button
             type="button"
-            aria-expanded={panel === "hints"}
+            aria-expanded={panel === "hints" && !atHome}
             onClick={() => {
-              setPanel(panel === "hints" ? null : "hints");
+              togglePanel("hints");
               // What's shown is of the text as it is now, so what was just rewritten is closed.
               reloadCards().catch(reportProblem);
             }}
@@ -500,8 +538,8 @@ export function ProjectScreen({
           </button>
           <button
             type="button"
-            aria-expanded={panel === "ai"}
-            onClick={() => setPanel(panel === "ai" ? null : "ai")}
+            aria-expanded={panel === "ai" && !atHome}
+            onClick={() => togglePanel("ai")}
           >
             {messages.ai}: {messages.analysisShort[analysis.view.status]}
           </button>
@@ -548,10 +586,29 @@ export function ProjectScreen({
           onOpenLink={openLink}
           onChanged={reloadCards}
           onClose={() => setCards(null)}
+          {...(home ? { closeLabel: messages.dashBack } : {})}
         />
       )}
 
-      <div className="workspace" hidden={cards !== null}>
+      {atHome && (
+        <Dashboard
+          projectId={project.id}
+          view={novel}
+          ready={novelReady}
+          hints={hinting}
+          research={research.view}
+          today={dayOf(new Date())}
+          onOpenCards={openCards}
+          onOpenCard={openCardOf}
+          onOpenPassage={openPassage}
+          onOpenScene={openScene}
+          onFixMyself={fixMyself}
+          onWrite={() => setHome(false)}
+          {...(loadPainter === undefined ? {} : { loadPainter })}
+        />
+      )}
+
+      <div className="workspace" hidden={cards !== null || home}>
         {panel === "structure" && (
           <StructurePanel
             storage={storage}

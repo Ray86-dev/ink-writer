@@ -1107,3 +1107,372 @@ button.quiet {
 .docs-candidates button {
   text-align: left;
 }
+
+/* Dashboard: the only screen with a show. Nothing of it is on the page while writing. */
+
+.dash {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.dash-hero {
+  position: relative;
+  min-height: min(84vh, 760px);
+  overflow: hidden;
+}
+
+.dash-ink {
+  position: absolute;
+  inset: 0;
+}
+
+.dash-ink[hidden],
+.dash-labels[hidden] {
+  display: none;
+}
+
+.dash-ink canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.dash-top {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 20px 32px;
+}
+
+.dash-levels-label {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dash-seg {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.82);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.dash-seg button {
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  transition:
+    background var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.dash-seg button[aria-pressed="true"] {
+  color: var(--sheet);
+  background: var(--ink);
+}
+
+/* The names of the nodes are real buttons laid over the ink, so they stay sharp and reachable. */
+.dash-labels {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  pointer-events: none;
+}
+
+.dash-node {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-height: 32px;
+  padding: 3px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgb(246 246 242 / 0.9);
+  border: 0;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: auto;
+  transition:
+    opacity var(--duration-base),
+    background var(--duration-fast),
+    color var(--duration-fast);
+  will-change: transform;
+}
+
+/* A larger area to touch than the label itself. */
+.dash-node::before {
+  position: absolute;
+  inset: -7px -2px;
+  content: "";
+}
+
+.dash-node-chapter {
+  font-family: var(--font-serif);
+  font-size: 14px;
+}
+
+.dash-node-conflict {
+  color: var(--rust);
+}
+
+.dash-node:hover,
+.dash-node:focus-visible {
+  color: var(--sheet);
+  background: var(--ink);
+}
+
+.dash-next {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(500px, 100%);
+  padding: 128px 0 48px 32px;
+}
+
+.dash-next h1 {
+  margin: 0;
+  font-size: clamp(30px, 3.4vw, 46px);
+  font-weight: 400;
+  line-height: 1.16;
+  letter-spacing: -0.01em;
+}
+
+.dash-next p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 16px;
+}
+
+.dash-next .dash-kicker {
+  color: var(--rust);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.dash-actions button {
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    transform var(--duration-fast) var(--ease),
+    border-color var(--duration-fast);
+}
+
+.dash-actions button:not(.primary) {
+  background: rgb(255 255 255 / 0.85);
+}
+
+.dash-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.dash-board {
+  position: relative;
+  z-index: 3;
+  max-width: 1376px;
+  margin: 0 auto;
+  padding: 8px 32px 56px;
+}
+
+.dash-board-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.dash-board-head h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.dash-trimmed {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
+  gap: 14px;
+}
+
+.dash-card {
+  padding: 16px 20px 12px;
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  animation: dash-rise var(--duration-slow) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+  transition:
+    transform var(--duration-base) var(--ease),
+    box-shadow var(--duration-base),
+    border-color var(--duration-base);
+}
+
+.dash-card:hover {
+  border-color: #bfc3bc;
+  box-shadow: 0 14px 28px -20px rgb(18 20 28 / 0.5);
+  transform: translateY(-3px);
+}
+
+@keyframes dash-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+.dash-card header {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.dash-card h3 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.dash-count {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-alert .dash-count {
+  color: var(--rust);
+}
+
+.dash-card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-card li,
+.dash-card details {
+  padding: 7px 0;
+  border-top: 1px solid #eeefea;
+}
+
+.dash-card .card-link {
+  text-align: left;
+}
+
+.dash-card summary {
+  cursor: pointer;
+}
+
+.dash-card details p {
+  margin: 8px 0 4px;
+  color: var(--ink-2);
+}
+
+.dash-note,
+.dash-empty,
+.dash-news {
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.dash-empty,
+.dash-news {
+  margin: 4px 0;
+}
+
+.dash-new,
+.dash-news {
+  font-weight: 600;
+}
+
+.dash-new {
+  font-size: 14px;
+}
+
+/* A machine that can't paint the network: the cards hold everything that was in it. */
+.dash-no-ink {
+  min-height: 0;
+}
+
+.dash-no-ink .dash-next {
+  padding-top: 96px;
+}
+
+@media (max-width: 759px) {
+  .dash-top {
+    position: relative;
+    justify-content: flex-start;
+    padding: 14px 16px;
+  }
+
+  .dash-hero {
+    min-height: 0;
+  }
+
+  /* The network floats in the room left under the next step. */
+  .dash-next {
+    width: 100%;
+    padding: 12px 16px 410px;
+  }
+
+  .dash-no-ink .dash-next {
+    padding: 12px 16px 24px;
+  }
+
+  .dash-board {
+    padding: 8px 16px 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-card,
+  .dash-node,
+  .dash-seg button,
+  .dash-actions button {
+    animation: none;
+    transition: none;
+  }
+
+  .dash-card:hover,
+  .dash-actions button:hover {
+    transform: none;
+  }
+}

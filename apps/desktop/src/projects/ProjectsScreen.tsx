@@ -6,7 +6,8 @@ import { describeError } from "../messages";
 
 export interface ProjectsScreenProps {
   readonly storage: Storage;
-  readonly onOpen: (project: Project) => void;
+  /** `created` is true for a novel made just now. */
+  readonly onOpen: (project: Project, created?: boolean) => void;
 }
 
 /** Lists the novels, and asks for title, language and period to start a new one (SPEC §3.8). */
@@ -44,7 +45,7 @@ export function ProjectsScreen({ storage, onOpen }: ProjectsScreenProps) {
       // Straight to a blank page: writing doesn't require planning anything first (SPEC §3.5).
       const chapter = await storage.createChapter(project.id, messages.firstChapter);
       await storage.createScene(chapter.id, messages.firstScene);
-      onOpen(project);
+      onOpen(project, true);
     } catch (error) {
       setProblem(
         error instanceof InvalidInputError ? messages.fieldRequired : describeError(error),

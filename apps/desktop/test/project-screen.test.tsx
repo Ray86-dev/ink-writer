@@ -89,6 +89,7 @@ describe("ProjectScreen", () => {
     const onBack = vi.fn();
     const view = render(
       <ProjectScreen
+        startAt="text"
         storage={store}
         project={project()}
         shell={shell}

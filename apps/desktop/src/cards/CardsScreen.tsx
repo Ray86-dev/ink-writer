@@ -40,6 +40,8 @@ export interface CardsScreenProps {
   /** Called after the author changed something, for the cards to be worked out again. */
   readonly onChanged: () => Promise<void>;
   readonly onClose: () => void;
+  /** What closing leads to, if it isn't the text. */
+  readonly closeLabel?: string;
 }
 
 const TABS: readonly CardsTab[] = [
@@ -640,6 +642,7 @@ export function CardsScreen({
   onOpenLink,
   onChanged,
   onClose,
+  closeLabel,
 }: CardsScreenProps) {
   const { messages } = useLanguage();
   const [problem, setProblem] = useState<string | null>(null);
@@ -703,7 +706,7 @@ export function CardsScreen({
         <div className="panel-header">
           <h2>{messages.cards}</h2>
           <button type="button" onClick={onClose}>
-            {messages.cardsBack}
+            {closeLabel ?? messages.cardsBack}
           </button>
         </div>
         <ul className="cards-tabs">
