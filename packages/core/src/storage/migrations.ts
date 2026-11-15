@@ -194,4 +194,19 @@ export const MIGRATIONS: readonly Migration[] = [
       "CREATE INDEX scene_prompts_by_scene ON scene_prompts (scene_id)",
     ],
   },
+  {
+    version: 8,
+    name: "ai_usage",
+    // What was asked of each service each day and what it cost, so that the daily limit holds
+    // across restarts. The cost is in dollars.
+    statements: [
+      `CREATE TABLE ai_usage (
+        day TEXT NOT NULL,
+        route TEXT NOT NULL,
+        requests INTEGER NOT NULL DEFAULT 0,
+        cost REAL NOT NULL DEFAULT 0,
+        PRIMARY KEY (day, route)
+      ) STRICT`,
+    ],
+  },
 ];

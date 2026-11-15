@@ -40,6 +40,11 @@ export interface AnalysisQueueOptions {
   readonly pauseMs?: number;
   /** The first wait before trying again after `waiting`. It doubles each time, up to an hour. */
   readonly retryMs?: number;
+  /**
+   * Asked before each scene. A reason not to go on stops the run as `blocked`, with the scene still
+   * queued: it's how a spending limit holds.
+   */
+  readonly beforeScene?: () => Promise<string | null>;
   readonly onRun?: (run: QueueRun) => void;
   /** Something other than the model went wrong, as a failing database. */
   readonly onError?: (error: unknown) => void;
@@ -230,6 +235,12 @@ export class AnalysisQueue {
     for (const scene of await storage.listScenesToAnalyze(projectId)) {
       if (signal.aborted) {
         status = "cancelled";
+        break;
+      }
+      const reason = (await this.options.beforeScene?.()) ?? null;
+      if (reason !== null) {
+        status = "blocked";
+        message = reason;
         break;
       }
       const text = await this.sceneText(scene.id);

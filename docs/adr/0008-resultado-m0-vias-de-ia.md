@@ -1,6 +1,6 @@
 # 0008 · Resultado de M0: vías de IA
 
-**Estado:** aceptada. Modifica la 0003: OpenRouter es la vía principal provisional. La comprobación de ChatGPT queda pendiente y es obligatoria antes de M6.
+**Estado:** aceptada. Modifica la 0003: OpenRouter es la vía principal provisional. La comprobación de ChatGPT queda pendiente y es obligatoria antes de M6. La [0018](0018-conexiones-sin-chatgpt.md) cambió esto último: M6 se hizo sin ChatGPT y la comprobación queda aplazada sin fecha.
 
 **Contexto.** M0 debía comprobar si el producto puede apoyarse en «Continue with ChatGPT» y probar también OpenRouter y Ollama. El prototipo está en `prototypes/m0/`. Pruebas del 8 de noviembre de 2026 en Windows 11 con WebView2 y una RTX 3060 Ti de 8 GB.
 

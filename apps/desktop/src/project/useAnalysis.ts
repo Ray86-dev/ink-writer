@@ -7,6 +7,7 @@ import {
   connectionAllowed,
   createConnectionProvider,
   type Project,
+  SpendingGuard,
   type Storage,
 } from "@ink-writer/core";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -81,13 +82,17 @@ export function useAnalysis(
         if (!active || !allowed) {
           return;
         }
+        // Counts what's spent and stops a paid model at the author's limit, or without one.
+        const guard = new SpendingGuard(storage, { route, model });
         started = new AnalysisQueue({
           storage,
           projectId: project.id,
+          beforeScene: () => guard.check(),
           analysis: {
             provider: createProvider(route, transport),
             model,
             language: project.language,
+            onUsage: guard.onUsage,
             onStep: () => {
               if (active) setView(WORKING);
             },

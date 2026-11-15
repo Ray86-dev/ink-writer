@@ -88,9 +88,38 @@ export interface Messages {
   readonly aiOllamaHint: string;
   readonly aiOllamaUnreachable: string;
   readonly aiOllamaNoModels: string;
-  readonly aiOpenrouterNotice: string;
+  readonly aiRouteDeepseek: string;
+  readonly aiNotices: { readonly openrouter: string; readonly deepseek: string };
+  readonly aiAcceptNotices: { readonly openrouter: string; readonly deepseek: string };
   readonly aiOpenrouterLimits: string;
-  readonly aiAcceptNotice: string;
+  readonly aiWantPaid: string;
+  readonly aiPaidModel: (name: string) => string;
+  readonly aiKeyLabel: string;
+  readonly aiKeyHint: string;
+  readonly aiKeySave: string;
+  readonly aiKeyPresent: string;
+  readonly aiKeyRemove: string;
+  readonly aiLimitsTitle: string;
+  readonly aiLimitsIntro: string;
+  readonly aiCapLabel: string;
+  readonly aiRequestsLabel: string;
+  readonly aiLimitsSave: string;
+  readonly aiLimitsUnset: string;
+  readonly aiSpentToday: (spent: string, cap: string, requests: number, limit: number) => string;
+  readonly aiProblems: {
+    readonly noCap: string;
+    readonly capReached: string;
+    readonly uncounted: string;
+    readonly requestsReached: string;
+    readonly paidOff: string;
+    readonly keyStore: string;
+    readonly unreachable: string;
+    readonly badKey: string;
+    readonly noCredit: string;
+    readonly unknownModel: string;
+    readonly rateLimited: string;
+    readonly serviceDown: string;
+  };
   readonly aiConnect: string;
   readonly aiConnecting: string;
   readonly aiConnected: string;
@@ -357,11 +386,53 @@ const es: Messages = {
     "Tu texto no sale de este equipo. Hace falta un modelo mediano: los muy pequeños pasan por alto incoherencias.",
   aiOllamaUnreachable: "No encuentro Ollama en este equipo. Comprueba que está en marcha.",
   aiOllamaNoModels: "Ollama no tiene ningún modelo descargado.",
-  aiOpenrouterNotice:
-    "Con OpenRouter, el texto de cada escena sale de tu equipo y llega a un tercero. Algunos proveedores de modelos gratuitos pueden guardar lo que reciben o usarlo para entrenar. Con Ollama, el texto no sale.",
+  aiRouteDeepseek: "DeepSeek, con tu clave",
+  aiNotices: {
+    openrouter:
+      "Con OpenRouter, el texto de cada escena sale de tu equipo y llega a un tercero. Algunos proveedores de modelos gratuitos pueden guardar lo que reciben o usarlo para entrenar. Con Ollama, el texto no sale.",
+    deepseek:
+      "Con DeepSeek, el texto de cada escena sale de tu equipo y llega a DeepSeek, que lo trata según sus condiciones. Es de pago: se cobra de tu saldo en DeepSeek. Con Ollama, el texto no sale y no cuesta nada.",
+  },
+  aiAcceptNotices: {
+    openrouter: "Lo entiendo, quiero usar OpenRouter",
+    deepseek: "Lo entiendo, quiero usar DeepSeek",
+  },
   aiOpenrouterLimits:
-    "Solo se ofrecen modelos gratuitos, así que no se gasta nada. El cupo gratuito da para unas 7 escenas al día; el resto espera en la cola.",
-  aiAcceptNotice: "Lo entiendo, quiero usar OpenRouter",
+    "Con modelos gratuitos no se gasta nada. Su cupo da para unas 7 escenas al día; el resto espera en la cola.",
+  aiWantPaid: "Usar también modelos de pago, con un tope que pongo yo",
+  aiPaidModel: (name) => `${name} · de pago`,
+  aiKeyLabel: "Tu clave de DeepSeek",
+  aiKeyHint:
+    "Se guarda en el almacén de claves de tu sistema. La app no la vuelve a mostrar ni la envía a ningún otro sitio.",
+  aiKeySave: "Guardar clave",
+  aiKeyPresent: "Hay una clave de DeepSeek guardada.",
+  aiKeyRemove: "Quitar clave",
+  aiLimitsTitle: "Cuánto se puede gastar",
+  aiLimitsIntro:
+    "Un modelo de pago no se usa hasta que pongas los dos topes. Al llegar a cualquiera, el análisis se detiene hasta el día siguiente y lo pendiente queda en cola.",
+  aiCapLabel: "Gasto máximo al día, en dólares",
+  aiRequestsLabel: "Peticiones de pago máximas al día",
+  aiLimitsSave: "Guardar topes",
+  aiLimitsUnset: "Sin topes: no se usa ningún modelo de pago.",
+  aiSpentToday: (spent, cap, requests, limit) =>
+    `Hoy: ${spent} de ${cap}, y ${requests} de ${limit} peticiones de pago.`,
+  aiProblems: {
+    noCap: "No hay tope de gasto, así que no se usa el modelo de pago. Ponlo en este panel.",
+    capReached:
+      "Se ha llegado al tope de gasto de hoy. El análisis sigue mañana, o si subes el tope.",
+    uncounted:
+      "El servicio no dijo cuánto costó una respuesta, así que el análisis se ha detenido para no gastar a ciegas.",
+    requestsReached:
+      "Se ha llegado al tope de peticiones de pago de hoy. El análisis sigue mañana, o si subes el tope.",
+    paidOff: "Los modelos de pago están desactivados. Pon los topes en este panel para usarlos.",
+    keyStore: "No se pudo leer la clave guardada en este equipo.",
+    unreachable: "No hay conexión con el servicio. Se reintenta solo.",
+    badKey: "El servicio no acepta la clave. Vuelve a conectar o cambia la clave.",
+    noCredit: "No queda saldo en el servicio. Recárgalo o elige otro modelo.",
+    unknownModel: "El servicio ya no ofrece ese modelo. Elige otro.",
+    rateLimited: "El servicio ha llegado a su límite de peticiones por ahora. Se reintenta solo.",
+    serviceDown: "El servicio está fallando. Se reintenta solo.",
+  },
   aiConnect: "Conectar con OpenRouter",
   aiConnecting: "Se ha abierto tu navegador. Esperando a que autorices…",
   aiConnected: "OpenRouter está conectado.",
@@ -642,11 +713,53 @@ const en: Messages = {
     "Your text doesn't leave this computer. It takes a mid-sized model: very small ones miss inconsistencies.",
   aiOllamaUnreachable: "Ollama can't be found on this computer. Check that it's running.",
   aiOllamaNoModels: "Ollama has no models downloaded.",
-  aiOpenrouterNotice:
-    "With OpenRouter, the text of each scene leaves your computer and reaches a third party. Some providers of free models may keep what they receive or use it for training. With Ollama, the text doesn't leave.",
+  aiRouteDeepseek: "DeepSeek, with your key",
+  aiNotices: {
+    openrouter:
+      "With OpenRouter, the text of each scene leaves your computer and reaches a third party. Some providers of free models may keep what they receive or use it for training. With Ollama, the text doesn't leave.",
+    deepseek:
+      "With DeepSeek, the text of each scene leaves your computer and reaches DeepSeek, which handles it under its own terms. It's paid: it's charged to your DeepSeek balance. With Ollama, the text doesn't leave and costs nothing.",
+  },
+  aiAcceptNotices: {
+    openrouter: "I understand, I want to use OpenRouter",
+    deepseek: "I understand, I want to use DeepSeek",
+  },
   aiOpenrouterLimits:
-    "Only free models are offered, so nothing is spent. The free allowance covers about 7 scenes a day; the rest waits in the queue.",
-  aiAcceptNotice: "I understand, I want to use OpenRouter",
+    "Free models cost nothing. Their allowance covers about 7 scenes a day; the rest waits in the queue.",
+  aiWantPaid: "Also use paid models, with a limit that I set",
+  aiPaidModel: (name) => `${name} · paid`,
+  aiKeyLabel: "Your DeepSeek key",
+  aiKeyHint:
+    "It's kept in your system's key store. The app never shows it again or sends it anywhere else.",
+  aiKeySave: "Save key",
+  aiKeyPresent: "A DeepSeek key is saved.",
+  aiKeyRemove: "Remove key",
+  aiLimitsTitle: "How much can be spent",
+  aiLimitsIntro:
+    "A paid model isn't used until you set both limits. On reaching either, the analysis stops until the next day and what's pending stays queued.",
+  aiCapLabel: "Most to spend in a day, in dollars",
+  aiRequestsLabel: "Most paid requests in a day",
+  aiLimitsSave: "Save limits",
+  aiLimitsUnset: "No limits: no paid model is used.",
+  aiSpentToday: (spent, cap, requests, limit) =>
+    `Today: ${spent} of ${cap}, and ${requests} of ${limit} paid requests.`,
+  aiProblems: {
+    noCap: "There's no spending limit, so the paid model isn't used. Set one in this panel.",
+    capReached:
+      "Today's spending limit has been reached. The analysis goes on tomorrow, or if you raise it.",
+    uncounted:
+      "The service didn't say what an answer cost, so the analysis stopped rather than spend blindly.",
+    requestsReached:
+      "Today's limit of paid requests has been reached. The analysis goes on tomorrow, or if you raise it.",
+    paidOff: "Paid models are off. Set the limits in this panel to use them.",
+    keyStore: "The key saved on this computer couldn't be read.",
+    unreachable: "The service can't be reached. It retries by itself.",
+    badKey: "The service doesn't accept the key. Connect again or change the key.",
+    noCredit: "There's no credit left with the service. Top it up or choose another model.",
+    unknownModel: "The service no longer offers that model. Choose another.",
+    rateLimited: "The service has reached its request limit for now. It retries by itself.",
+    serviceDown: "The service is failing. It retries by itself.",
+  },
   aiConnect: "Connect OpenRouter",
   aiConnecting: "Your browser has opened. Waiting for you to authorize…",
   aiConnected: "OpenRouter is connected.",

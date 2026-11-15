@@ -1,4 +1,5 @@
 import type { AiProvider, ModelInfo, Usage } from "../src/provider/provider";
+import { KNOWN_PRICES, type TokenPrices } from "../src/provider/spending";
 
 /**
  * The evaluation runs without spending unless it's told a limit. These are what makes that a guarantee
@@ -52,22 +53,14 @@ export function assertAllowance(allowance: DailyAllowance | null, needed: number
   }
 }
 
-export interface TokenPrices {
-  readonly inputPerMillion: number;
-  readonly outputPerMillion: number;
-}
+export type { TokenPrices };
 
 /**
- * From https://api-docs.deepseek.com/quick_start/pricing/ on 2026-11-09, in dollars. The peak rates,
- * which are double, and the price of input that isn't cached: what's counted can only be above the bill.
+ * Only models with a known price can be paid for: without one, nothing could say when to stop. The
+ * prices are the app's own, in `src/provider/spending.ts`.
  */
-const PAID_MODEL_PRICES: Readonly<Record<string, TokenPrices>> = {
-  "deepseek-flash": { inputPerMillion: 0.3, outputPerMillion: 1.2 },
-};
-
-/** Only models with a known price can be paid for: without one, nothing could say when to stop. */
 export function pricesFor(model: string): TokenPrices {
-  const prices = PAID_MODEL_PRICES[model];
+  const prices = KNOWN_PRICES.deepseek?.[model];
   if (prices === undefined) {
     throw new SpendingRefused(`There's no known price for "${model}"`);
   }

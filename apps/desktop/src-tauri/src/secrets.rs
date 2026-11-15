@@ -1,5 +1,5 @@
-//! Where the OpenRouter key lives. It's read here, by the shell, and no command hands it to the page
-//! (rule 9). It's never stored in the database either, which the page can query.
+//! Where the keys of the AI services live. They're read here, by the shell, and no command hands
+//! one to the page (rule 9). They're never stored in the database either, which the page can query.
 
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, PoisonError};
@@ -7,7 +7,6 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 use crate::files::write_private_atomically;
 
 const SERVICE: &str = "dev.inkwriter.desktop";
-const ACCOUNT: &str = "openrouter-key";
 
 pub trait KeyStore: Send + Sync {
     fn get(&self) -> Result<Option<String>, String>;
@@ -23,11 +22,9 @@ pub struct SystemStore {
 }
 
 impl SystemStore {
-    pub fn new(fallback: PathBuf) -> Self {
-        Self {
-            account: ACCOUNT,
-            fallback,
-        }
+    /// `account` names the key in the system's store, one per service.
+    pub fn new(account: &'static str, fallback: PathBuf) -> Self {
+        Self { account, fallback }
     }
 
     fn entry(&self) -> Result<keyring::Entry, keyring::Error> {
@@ -105,7 +102,8 @@ impl KeyStore for MemoryStore {
     }
 }
 
-/// A store read once, so that each request to a model doesn't go back to the system for the key.
+/// One service's key, read from its store once, so that each request to a model doesn't go back to
+/// the system for it.
 pub struct Keys {
     store: Box<dyn KeyStore>,
     /// `None` until the first read.
@@ -120,7 +118,7 @@ impl Keys {
         }
     }
 
-    pub fn openrouter(&self) -> Result<Option<String>, String> {
+    pub fn get(&self) -> Result<Option<String>, String> {
         let mut cached = lock(&self.cached);
         if cached.is_none() {
             *cached = Some(self.store.get()?);
@@ -128,7 +126,7 @@ impl Keys {
         Ok(cached.clone().flatten())
     }
 
-    pub fn set_openrouter(&self, key: &str) -> Result<(), String> {
+    pub fn set(&self, key: &str) -> Result<(), String> {
         let mut cached = lock(&self.cached);
         self.store.set(key)?;
         *cached = Some(Some(key.to_string()));
@@ -136,7 +134,7 @@ impl Keys {
     }
 
     /// Forgotten here even if the store fails, so that the app stops using it either way.
-    pub fn clear_openrouter(&self) -> Result<(), String> {
+    pub fn clear(&self) -> Result<(), String> {
         let mut cached = lock(&self.cached);
         *cached = Some(None);
         self.store.clear()
@@ -190,13 +188,13 @@ mod tests {
     #[test]
     fn keeps_a_key_until_it_is_cleared() {
         let keys = Keys::new(Box::new(MemoryStore::default()));
-        assert_eq!(keys.openrouter(), Ok(None));
+        assert_eq!(keys.get(), Ok(None));
 
-        keys.set_openrouter("sk-one").unwrap();
-        assert_eq!(keys.openrouter(), Ok(Some("sk-one".into())));
+        keys.set("sk-one").unwrap();
+        assert_eq!(keys.get(), Ok(Some("sk-one".into())));
 
-        keys.clear_openrouter().unwrap();
-        assert_eq!(keys.openrouter(), Ok(None));
+        keys.clear().unwrap();
+        assert_eq!(keys.get(), Ok(None));
     }
 
     #[test]
@@ -210,7 +208,7 @@ mod tests {
         let keys = Keys::new(Box::new(probe));
 
         for _ in 0..3 {
-            assert_eq!(keys.openrouter(), Ok(Some("sk-stored".into())));
+            assert_eq!(keys.get(), Ok(Some("sk-stored".into())));
         }
         assert_eq!(reads.load(Ordering::SeqCst), 1);
     }
@@ -222,9 +220,9 @@ mod tests {
             ..Probe::default()
         }));
 
-        assert!(keys.set_openrouter("sk-lost").is_err());
+        assert!(keys.set("sk-lost").is_err());
         // The read fails too, rather than answering with a key that won't be there next time.
-        assert!(keys.openrouter().is_err());
+        assert!(keys.get().is_err());
     }
 
     #[test]
@@ -236,10 +234,10 @@ mod tests {
         };
         probe.inner.set("sk-stored").unwrap();
         let keys = Keys::new(Box::new(BrokenClear(probe)));
-        assert_eq!(keys.openrouter(), Ok(Some("sk-stored".into())));
+        assert_eq!(keys.get(), Ok(Some("sk-stored".into())));
 
-        assert!(keys.clear_openrouter().is_err());
-        assert_eq!(keys.openrouter(), Ok(None));
+        assert!(keys.clear().is_err());
+        assert_eq!(keys.get(), Ok(None));
     }
 
     struct BrokenClear(Probe);
@@ -282,9 +280,9 @@ mod tests {
     #[test]
     fn the_file_keeps_a_key_where_there_is_no_system_store() {
         let dir = tempfile::tempdir().unwrap();
-        let store = SystemStore::new(dir.path().join("keys").join("openrouter"));
+        let store = SystemStore::new("openrouter-key", dir.path().join("keys").join("openrouter"));
         assert_eq!(store.read_fallback(), Ok(None));
-        assert_eq!(store.account, ACCOUNT);
+        assert_eq!(store.account, "openrouter-key");
 
         std::fs::create_dir_all(dir.path().join("keys")).unwrap();
         write_private_atomically(&store.fallback, b"sk-in-a-file\n").unwrap();

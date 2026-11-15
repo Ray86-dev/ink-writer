@@ -37,6 +37,7 @@ describe("migrate", () => {
     });
     expect(await version(driver)).toBe(MIGRATIONS.length);
     expect(await tableNames(driver)).toEqual([
+      "ai_usage",
       "chapters",
       "entities",
       "entity_aliases",

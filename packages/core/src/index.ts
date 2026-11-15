@@ -92,13 +92,15 @@ export {
   plainText,
   readParagraphs,
 } from "./prose/text";
-export type { AiConnection, ConnectionRoute } from "./provider/connection";
+export type { AiConnection, ConnectionRoute, RemoteRoute } from "./provider/connection";
 export {
+  acceptNotice,
   acceptOpenRouterNotice,
   analysisModels,
   CONNECTION_ROUTES,
   connectionAllowed,
   createConnectionProvider,
+  hasAcceptedNotice,
   hasAcceptedOpenRouterNotice,
   loadAiConnection,
   saveAiConnection,
@@ -129,6 +131,18 @@ export type {
   Usage,
 } from "./provider/provider";
 export { collectDraft, unsupportedRequest } from "./provider/provider";
+export type { DayUsage, TokenPrices } from "./provider/spending";
+export {
+  canBePriced,
+  costOf,
+  isPaidConnection,
+  KNOWN_PRICES,
+  loadSpendingCap,
+  SpendingGuard,
+  saveSpendingCap,
+  spendingDay,
+  usageOn,
+} from "./provider/spending";
 export type { StructuredFailure, StructuredOptions, Validated } from "./provider/structured";
 export { generateStructured, StructuredOutputError } from "./provider/structured";
 export type {
@@ -156,6 +170,7 @@ export type {
   StoredHintState,
   StoredOverride,
   StoredSceneProse,
+  StoredUsage,
   Trash,
 } from "./storage/storage";
 export { InvalidInputError } from "./storage/storage";
