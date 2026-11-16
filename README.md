@@ -1,42 +1,49 @@
 # Ink Writer
 
-App de escritura de novelas, de escritorio y sin conexión. **Tú escribes todo.** La IA construye las fichas de tu historia, vigila la coherencia, te propone pequeños pasos y documenta lo que necesites.
+**English** · [Español](README.es.md)
 
-Estado: versión 0.1.0, sin publicar todavía. Los instaladores no llevan aún la firma de Windows ni la de Apple, así que al instalar sale un aviso de seguridad: ver la [guía](docs/guia.md#avisos-al-instalar).
+An offline desktop app for writing novels. **You write every word.** The AI builds the sheets for your story, watches its coherence, suggests small next steps and researches what you need.
 
-## Qué hace
+Status: version 0.1.0, not released yet. The installers are not signed for Windows or macOS yet, so installing shows a security warning: see the [guide](docs/guia.md#avisos-al-instalar) (in Spanish).
 
-- **Escribir** en un editor sin distracciones, con guardado continuo, historial por escena y exportación a Word y Markdown.
-- **Fichas** de personajes, lugares y lore, que la IA construye a partir de tu texto. Cada dato enlaza al pasaje del que sale.
-- **Pistas** sobre lo que no encaja, graduales y regulables, hasta apagarlas del todo.
-- **Documentación** de lugares, época y temas, con OpenStreetMap, Open-Meteo y Wikipedia. Cada resultado con su fuente.
-- **Inicio** con la novela como una red de tinta y un siguiente paso.
+![The start screen: the novel as a network of ink, with one suggested next step](docs/img/dashboard.jpg)
 
-La IA es opcional y la eliges tú: un modelo local con Ollama, o en la nube con OpenRouter o DeepSeek. Sin telemetría.
+## What it does
 
-Guía de uso: [docs/guia.md](docs/guia.md).
+- **Write** in a distraction-free editor, with continuous saving, per-scene history and export to Word and Markdown.
+- **Sheets** for characters, places and lore, which the AI builds from your text. Every fact links to the passage it comes from.
+- **Hints** about what does not fit, gradual and adjustable, down to switching them off.
+- **Research** on places, period and topics, from OpenStreetMap, Open-Meteo and Wikipedia. Every result shows its source.
+- **Start screen** with the novel as a network of ink and one next step.
 
-## Empezar
+The AI is optional and you choose it: a local model with Ollama, or a cloud one through OpenRouter or DeepSeek. No telemetry.
 
-- Producto: [SPEC.md](SPEC.md)
-- Plan: [ROADMAP.md](ROADMAP.md)
-- Apariencia: [DESIGN.md](DESIGN.md) y la [demo](docs/design/ink-demo/index.html)
-- Decisiones: [docs/adr/](docs/adr/)
-- Instrucciones para Claude Code y comandos: [CLAUDE.md](CLAUDE.md)
-- Contribuir: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Publicar una versión: [docs/publicar.md](docs/publicar.md)
-- Seguridad: [SECURITY.md](SECURITY.md)
+## How this project is built
 
-## Desarrollo
+The repository is spec-driven, and the documents are part of the work. Most are written in Spanish.
 
-Requiere Node 24 y Rust estable, además de las [dependencias de Tauri](https://tauri.app/start/prerequisites/) de cada sistema.
+| Document | What it holds |
+|---|---|
+| [SPEC.en.md](SPEC.en.md) | The product specification: principles, screens, the analysis pipeline and what the AI may and may not do. English translation of [SPEC.md](SPEC.md). |
+| [ROADMAP.md](ROADMAP.md) | The plan by milestones. Each one has an exit criterion it must meet before the next starts. |
+| [fixtures/](fixtures/README.md) | The evaluation set for the AI analysis. `npm run eval` scores a model against it, and a milestone only closes when the thresholds are met with at least two models. |
+| [docs/adr/](docs/adr/) | 21 architecture decision records: Tauri with a TypeScript core, Yjs and SQLite, the AI routes, encrypted sync, distribution. |
+| [DESIGN.md](DESIGN.md) | Visual direction, with a [demo](docs/design/ink-demo/index.html). |
+| [CLAUDE.md](CLAUDE.md) | Instructions and commands for working on the project with Claude Code. |
+| [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [docs/publicar.md](docs/publicar.md) | Contributing, security and how to publish a release. |
+
+User guide: [docs/guia.md](docs/guia.md).
+
+## Development
+
+Requires Node 24 and stable Rust, plus the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your system.
 
 ```sh
 npm install
-npm run dev     # abre la app
-npm test        # pruebas de TypeScript y Rust
+npm run dev     # opens the app
+npm test        # TypeScript and Rust tests
 ```
 
-## Licencia
+## License
 
-MIT. Ver [LICENSE](LICENSE). Lo que la app incluye de terceros, en [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+MIT. See [LICENSE](LICENSE). Third-party components bundled with the app are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
